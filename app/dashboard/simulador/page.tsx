@@ -163,7 +163,7 @@ export default function ProyeccionPage() {
     return fechas;
   };
 
-  const fechasPago = calcularProyeccion('2026-02-10', modalidad, cuotas);
+  const fechasPago = calcularProyeccion('2026-02-23', modalidad, cuotas);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
