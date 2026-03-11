@@ -4,79 +4,124 @@ import { useState } from 'react';
 import { UserPlus, RefreshCcw, ShieldCheck, UserCircle, CheckCircle2 } from 'lucide-react';
 import api from '@/lib/api';
 
-// --- COLORES INSTITUCIONALES ---
-const COLORS = {
-  azulRey: '#0047AB',
-  azulOscuro: '#050533',
-  verdeExito: '#10B981',
-  rojoAlerta: '#DC2626',
-  amarilloCuidado: '#FBBF24',
+const TASAS_POR_MODALIDAD = {
+  'S': 2.5,  // Semanal
+  'Q': 7.5,  // Quincenal
+  'M': 20.0, // Mensual
 };
 
-
 export default function PrestamosPage() {
+  // 1. PRIMERO declaramos todos los estados
+  const [riesgo, setRiesgo] = useState<'verde' | 'amarillo' | 'rojo'>('verde');
+  const [tipoCliente, setTipoCliente] = useState<'nuevo' | 'recurrente'>('nuevo');
+  const [clienteEncontrado, setClienteEncontrado] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
-    cliente: '', // ID del cliente
+    cliente: '',
     monto_capital: '',
-    tasa_interes: '',
-    total_cuotas: '',
-    modalidad: 'S', // Semanal por defecto
-    fecha_inicio: new Date().toISOString().split('T')[0], // Fecha hoy
-    // Datos del Aval
+    tasa_interes: '', // Valor por defecto como string para el input
+    cuotas: '',   // Valor por defecto como string para el input
+    modalidad: '',
     nombre_aval: '',
     direccion_aval: '',
     telefono_aval: '',
-    curp_aval: '', // Recuerda que lo pusimos obligatorio en el modelo
-    parentesco_aval: '', // Recuerda que lo pusimos obligatorio en el modelo
-    garantia_descripcion: '' // El campo "Garantia" de tu form
+    curp_aval: '',
+    parentesco_aval: '',
+    garantia_descripcion: ''
   });
 
-  const [loading, setLoading] = useState(false);
+  // 2. DESPUÉS las funciones que usan esos estados
+  const buscarCliente = async (id: string) => {
+    if (!id) return;
+    try {
+      const response = await api.get(`/clientes/${id}/`);
+      const cliente = response.data;
+      
+      setClienteEncontrado(cliente);
+      setTipoCliente('recurrente');
+
+      // Si Django configuró 'datos_ultimo_aval' en el Serializer
+      if (cliente.datos_ultimo_aval) {
+        setFormData(prev => ({
+          ...prev,
+          cliente: id,
+          nombre_aval: cliente.datos_ultimo_aval.nombre_aval,
+          telefono_aval: cliente.datos_ultimo_aval.telefono_aval,
+          direccion_aval: cliente.datos_ultimo_aval.direccion_aval,
+          curp_aval: cliente.datos_ultimo_aval.curp_aval,
+          parentesco_aval: cliente.datos_ultimo_aval.parentesco_aval,
+          garantia_descripcion: cliente.datos_ultimo_aval.garantia_descripcion,
+        }));
+      }
+    } catch (error) {
+      setTipoCliente('nuevo');
+      setClienteEncontrado(null);
+      // Opcional: limpiar campos de aval si no se encuentra
+    }
+  };
+
+  const handleModalidadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const nuevaModalidad = e.target.value as 'S' | 'Q' | 'M';
+  const nuevaTasa = TASAS_POR_MODALIDAD[nuevaModalidad];
+
+  setFormData(prev => ({
+    ...prev,
+    modalidad: nuevaModalidad,
+    tasa_interes: nuevaTasa.toString() // Actualiza la tasa automáticamente
+  }));
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLoading(true);
 
-  // Aseguramos que los valores sean números y no strings vacíos
+  // 1. Convertimos strings a números de forma segura
   const capital = Number(formData.monto_capital) || 0;
-  const tasa = Number(formData.tasa_interes) || 10; // 10% por defecto si está vacío
-  const numCuotas = Number(formData.total_cuotas) || 8;  // 8 cuotas por defecto si está vacío
+  const tasa = Number(formData.tasa_interes); // El valor que viene del estado (2.5, 7.5 o 20)
+  const cuotas = Number(formData.cuotas) || 8;
 
-  const totalPagar = capital + (capital * (tasa / 100));
+  // 2. FÓRMULA DE ALEXANDER (Interés Simple por Plazo)
+  // Interés de una sola cuota
+  const interesPorCuota = capital * (tasa / 100); 
+  // Interés total de todo el préstamo
+  const interesTotal = interesPorCuota * cuotas;
+  // Monto final (Capital + todos los intereses acumulados)
+  const totalPagar = capital + interesTotal;
 
-  // MAPEAMOS LOS DATOS AL FORMATO DE DJANGO
   const payload = {
     cliente: formData.cliente,
     monto_capital: capital,
-    monto_total_pagar: totalPagar,
-    total_cuotas: numCuotas, // <--- Usamos 'cuotas' como en el modelo de Django
+    tasa_interes: tasa,         // <--- ENVIAMOS LA TASA REAL (Ej. 2.5)
+    monto_total_pagar: totalPagar, // <--- ENVIAMOS EL TOTAL REAL (Ej. 1800)
+    cuotas: cuotas,
     modalidad: formData.modalidad,
     nombre_aval: formData.nombre_aval,
     telefono_aval: formData.telefono_aval,
     direccion_aval: formData.direccion_aval,
-    curp_aval: formData.curp_aval || "S/N", // Evitamos que vaya vacío
+    curp_aval: formData.curp_aval,
     parentesco_aval: formData.parentesco_aval,
-    fecha_inicio: formData.fecha_inicio,
     garantia_descripcion: formData.garantia_descripcion,
+    fecha_inicio: new Date().toISOString().split('T')[0],
   };
 
-  console.log("📦 Payload final enviado a Django:", payload);
+  console.log("🚀 Calculando Préstamo Express:");
+  console.log("- Capital:", capital);
+  console.log("- Tasa:", tasa + "%");
+  console.log("- Semanas:", cuotas);
+  console.log("- Interés Total:", interesTotal);
+  console.log("- TOTAL A PAGAR:", totalPagar);
 
   try {
     const response = await api.post('/prestamos/', payload);
-    alert(`✅ Préstamo folio #${response.data.id} creado con éxito`);
+    alert(`✅ Crédito #${response.data.id} emitido por $${capital.toFixed(2)}`);
   } catch (error: any) {
-    // Si hay error, ahora veremos exactamente qué campo se queja Django
-    console.error("Detalle del error en Django:", error.response?.data);
-    alert("❌ Error en los datos. Revisa la consola para ver qué campo falló.");
+    console.error("Detalle del error:", error.response?.data);
+    alert("❌ Error al guardar. Revisa la consola para más detalles.");
   } finally {
     setLoading(false);
   }
 };
-
-  const [riesgo, setRiesgo] = useState<'verde' | 'amarillo' | 'rojo'>('verde');
-  const [tipoCliente, setTipoCliente] = useState<'nuevo' | 'recurrente'>('nuevo');
-
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       {/* SELECTOR DE SITUACIÓN INSTITUCIONAL */}
@@ -143,10 +188,23 @@ export default function PrestamosPage() {
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">ID del Cliente</label>
-            <input type="number" value={formData.cliente}
-              onChange={(e) => setFormData({ ...formData, cliente: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 transition-all border border-transparent focus:bg-white" placeholder="Ej. 1024" />
-          </div>
+  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">ID del Cliente</label>
+  <input 
+    type="number" 
+    value={formData.cliente}
+    onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
+    onBlur={(e) => buscarCliente(e.target.value)} // <--- BUSCA AL SALIR DEL CAMPO
+    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 transition-all" 
+    placeholder="Ej. 1024" 
+  />
+  
+  {/* Feedback visual si se encuentra al cliente */}
+  {clienteEncontrado && (
+    <p className="text-[10px] text-[#10B981] font-black uppercase ml-2 mt-1 animate-pulse">
+      ✅ Cliente Localizado: {clienteEncontrado.nombre}
+    </p>
+  )}
+</div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Monto Solicitado</label>
             <div className="relative">
@@ -205,16 +263,45 @@ export default function PrestamosPage() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Tasa de Interés Sugerida</label>
-            <input type="number" className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" placeholder="10%" />
-          </div>
+          {/* --- SELECT DE MODALIDAD (ESQUEMA) --- */}
+<div className="space-y-2">
+  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Modalidad de Pago</label>
+  <select 
+    value={formData.modalidad}
+    onChange={handleModalidadChange}
+    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700"
+  >
+    <option value="S">Semanal (2.5%)</option>
+    <option value="Q">Quincenal (7.5%)</option>
+    <option value="M">Mensual (20%)</option>
+  </select>
+</div>
+
+{/* --- INPUT DE TASA (BLOQUEADO) --- */}
+<div className="space-y-2">
+  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Tasa de Interés (%)</label>
+  <div className="relative">
+    <input 
+      type="number" 
+      value={formData.tasa_interes}
+      readOnly // <--- ESTO BLOQUEA EL INPUT
+      className="w-full p-4 bg-slate-100 rounded-2xl outline-none border border-slate-200 font-black text-slate-400 cursor-not-allowed" 
+      placeholder="0%" 
+    />
+    <span className="absolute right-4 top-1/2 -translate-y-1/2">
+      <ShieldCheck size={18} className="text-slate-300" />
+    </span>
+  </div>
+  <p className="text-[9px] text-slate-400 italic ml-2">* Tasa fija según modalidad seleccionada.</p>
+</div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Esquema de Pagos</label>
-            <select className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] appearance-none font-bold text-slate-700">
-              <option value="4">4 Semanas (Periodo Corto)</option>
-              <option value="8">8 Semanas (Periodo Estándar)</option>
-              <option value="12">12 Semanas (Periodo Extendido)</option>
+            <select value={formData.cuotas} 
+    // AGREGAR ESTA LÍNEA:
+    onChange={(e) => setFormData({ ...formData, cuotas: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] appearance-none font-bold text-slate-700">
+              {[...Array(20)].map((_, i) => (
+      <option key={i + 1} value={i + 1}>{i + 1} Semanas</option>
+    ))}
             </select>
           </div>
 

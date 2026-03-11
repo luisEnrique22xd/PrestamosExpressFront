@@ -1,169 +1,95 @@
-// "use client";
-// import React, { useState } from 'react';
-// import { Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
-
-// export default function ProyeccionPage() {
-//   const [monto, setMonto] = useState(1000);
-//   const [modalidad, setModalidad] = useState('semanal');
-//   const [cuotas, setCuotas] = useState(4);
-//   const [interes, setInteres] = useState(10); // 10%
-
-//   // Cálculo de montos
-//   const montoTotal = monto + (monto * (interes / 100));
-//   const pagoPorCuota = montoTotal / cuotas;
-// const calcularProyeccion = (fechaInicio: string, modalidad: string, cuotas: number) => {
-//   let fechas = [];
-//   let fechaActual = new Date(fechaInicio);
-
-//   for (let i = 1; i <= cuotas; i++) {
-//     if (modalidad === 'semanal') {
-//       fechaActual.setDate(fechaActual.getDate() + 7);
-//     } else if (modalidad === 'quincenal') {
-//       fechaActual.setDate(fechaActual.getDate() + 15);
-//     } else if (modalidad === 'mensual') {
-//       fechaActual.setMonth(fechaActual.getMonth() + 1);
-//     }
-//     fechas.push(new Date(fechaActual));
-//   }
-//   return fechas;
-// };
-//   // Generar fechas (Simulando inicio hoy 10 Feb)
-//   const fechasPago = calcularProyeccion('2026-02-10', modalidad, cuotas);
-
-//   return (
-//     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-//       {/* PANEL DE CONFIGURACIÓN */}
-//       <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-//         <h3 className="font-bold text-slate-800 flex items-center gap-2">
-//           <CalendarIcon className="text-sky-500" size={20} /> 
-//           Simulador de Cobro
-//         </h3>
-        
-//         <div className="space-y-4">
-//           <div>
-//             <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Monto</label>
-//             <input 
-//               type="number" 
-//               value={monto} 
-//               onChange={(e) => setMonto(Number(e.target.value))}
-//               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-sky-400 font-bold"
-//             />
-//           </div>
-
-//           <div>
-//             <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Modalidad</label>
-//             <select 
-//               value={modalidad} 
-//               onChange={(e) => setModalidad(e.target.value)}
-//               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-sky-400"
-//             >
-//               <option value="semanal">Semanal</option>
-//               <option value="quincenal">Quincenal</option>
-//               <option value="mensual">Mensual</option>
-//             </select>
-//           </div>
-//         </div>
-
-//         <div className="p-6 bg-[#050533] rounded-3xl text-white">
-//           <p className="text-[10px] uppercase font-bold text-sky-300 mb-2">Resumen de cuota</p>
-//           <p className="text-3xl font-black">${pagoPorCuota.toFixed(2)}</p>
-//           <p className="text-xs text-slate-400 mt-1">Total a recuperar: ${montoTotal.toFixed(2)}</p>
-//         </div>
-//       </div>
-
-//       {/* VISTA DE PROYECCIÓN (CALENDARIO/LISTA) */}
-//       <div className="lg:col-span-2 space-y-4">
-//         <h3 className="font-bold text-slate-800 px-2">Fechas Programadas de Cobro</h3>
-        
-//         <div className="grid grid-cols-1 gap-3">
-//           {fechasPago.map((fecha, index) => (
-//             <div 
-//               key={index} 
-//               className="bg-white p-5 rounded-3xl border border-slate-100 flex items-center justify-between hover:border-sky-200 transition-all group"
-//             >
-//               <div className="flex items-center gap-4">
-//                 <div className="w-12 h-12 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:border-sky-100">
-//                   <span className="text-[10px] font-bold text-slate-400 uppercase">
-//                     {fecha.toLocaleDateString('es-MX', { month: 'short' })}
-//                   </span>
-//                   <span className="text-lg font-black text-slate-700 leading-none">
-//                     {fecha.getDate()}
-//                   </span>
-//                 </div>
-//                 <div>
-//                   <p className="font-bold text-slate-800">Pago #{index + 1}</p>
-//                   <p className="text-xs text-slate-400">
-//                     {fecha.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric' })}
-//                   </p>
-//                 </div>
-//               </div>
-
-//               <div className="text-right">
-//                 <p className="text-lg font-black text-sky-500">${pagoPorCuota.toFixed(2)}</p>
-//                 <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg uppercase">
-//                   Proyectado
-//                 </span>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-
-//         {/* NOTA SOBRE SÁBADOS */}
-//         <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
-//           <div className="text-amber-500 mt-1 italic font-bold text-xs">i</div>
-//           <p className="text-xs text-amber-700">
-//             <strong>Nota de ingeniería:</strong> El sistema está configurado para incluir sábados como días hábiles de cobro. Si una fecha cae en domingo, el sistema puede ajustarse automáticamente al lunes siguiente (opcional).
-//           </p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
 "use client";
-import React, { useState } from 'react';
-import { Calendar as CalendarIcon, DollarSign, PieChart, Info, CheckCircle2 } from 'lucide-react';
-
-// --- COLORES INSTITUCIONALES ---
-const COLORS = {
-  azulRey: '#0047AB',
-  azulOscuro: '#050533',
-  verdeExito: '#10B981',
-  skyClaro: '#38bdf8'
-};
+import React, { useState, useEffect, useMemo } from 'react';
+import { generarPDFSimulacion } from '@/lib/generateSimulation';
+import { Calendar as CalendarIcon, DollarSign, PieChart, Info, CheckCircle2, Percent, Printer } from 'lucide-react';
 
 export default function ProyeccionPage() {
+  const [nombreCliente, setNombreCliente] = useState('');
+const [nombreAval, setNombreAval] = useState('');
+  const exportarPlan = () => {
+  const datosSimulacion = {
+    monto,
+    modalidad,
+    cuotas,
+    interes,
+    pagoPorCuota,
+    montoTotal,
+    nombreCliente: nombreCliente || "Cliente General", // Valor por defecto
+    nombreAval: nombreAval || "No especificado"
+  };
+  generarPDFSimulacion(datosSimulacion, fechasPago);
+};
   const [monto, setMonto] = useState(1000);
   const [modalidad, setModalidad] = useState('semanal');
   const [cuotas, setCuotas] = useState(4);
-  const [interes, setInteres] = useState(10); // 10%
+  const [interes, setInteres] = useState(2.5); // Valor inicial para semanal
+  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
 
-  // Cálculo de montos
-  const montoTotal = monto + (monto * (interes / 100));
-  const pagoPorCuota = montoTotal / cuotas;
-
-  const calcularProyeccion = (fechaInicio: string, modalidad: string, cuotas: number) => {
-    let fechas = [];
-    let fechaActual = new Date(fechaInicio);
-
-    for (let i = 1; i <= cuotas; i++) {
-      if (modalidad === 'semanal') {
-        fechaActual.setDate(fechaActual.getDate() + 7);
-      } else if (modalidad === 'quincenal') {
-        fechaActual.setDate(fechaActual.getDate() + 15);
-      } else if (modalidad === 'mensual') {
-        fechaActual.setMonth(fechaActual.getMonth() + 1);
-      }
-      // Ajuste de Domingo a Lunes (Ingeniería de Negocio)
-      if (fechaActual.getDay() === 0) {
-        fechaActual.setDate(fechaActual.getDate() + 1);
-      }
-      fechas.push(new Date(fechaActual));
+  // --- LÓGICA DE TASAS AUTOMÁTICAS ---
+  useEffect(() => {
+    if (modalidad === 'semanal') {
+      setInteres(2.5);
+      setCuotas(12); // Sugerencia estándar para semanal, Alexander puede cambiarlo
+    } else if (modalidad === 'quincenal') {
+      setInteres(7.5);
+      setCuotas(6);
+    } else if (modalidad === 'mensual') {
+      setInteres(20);
+      setCuotas(3);
     }
-    return fechas;
-  };
+  }, [modalidad]);
 
-  const fechasPago = calcularProyeccion('2026-02-23', modalidad, cuotas);
+  // --- CÁLCULOS FINANCIEROS ---
+  const { montoTotal, pagoPorCuota, interesMontoTotal } = useMemo(() => {
+  // 1. Calculamos el interés por cada cuota
+  const interesPorCuota = monto * (interes / 100); 
+  
+  // 2. Calculamos la base de capital por cuota
+  const capitalPorCuota = monto / (cuotas || 1);
+  
+  // 3. El pago final es la suma de ambos
+  const pagoFinalCuota = capitalPorCuota + interesPorCuota;
+  
+  // 4. El monto total que Alexander recibirá al final
+  const total = pagoFinalCuota * cuotas;
+
+  return {
+    interesMontoTotal: interesPorCuota * cuotas,
+    montoTotal: total,
+    pagoPorCuota: pagoFinalCuota
+  };
+}, [monto, interes, cuotas]);
+
+  const fechasPago = useMemo(() => {
+  let fechas = [];
+  let fechaReferencia = new Date(fechaInicio);
+
+  for (let i = 1; i <= cuotas; i++) {
+    // 1. Siempre sumamos los días exactos según la modalidad
+    if (modalidad === 'semanal') {
+      fechaReferencia.setDate(fechaReferencia.getDate() + 7);
+    } else if (modalidad === 'quincenal') {
+      fechaReferencia.setDate(fechaReferencia.getDate() + 15);
+    } else if (modalidad === 'mensual') {
+      fechaReferencia.setMonth(fechaReferencia.getMonth() + 1);
+    }
+    
+    // 2. Creamos una copia para mostrar al cliente
+    let fechaMostrar = new Date(fechaReferencia);
+
+    // 3. Ajuste visual: Si cae en domingo (0), Alexander cobra el lunes (1)
+    // Pero la 'fechaReferencia' sigue siendo el domingo original para no desfasar la siguiente semana
+    if (fechaMostrar.getDay() === 0) {
+      fechaMostrar.setDate(fechaMostrar.getDate() + 1);
+    }
+    
+    fechas.push({
+      fechaReal: new Date(fechaReferencia), // Para el sistema
+      fechaCobro: fechaMostrar             // Para Alexander y el cliente
+    });
+  }
+  return fechas;
+}, [fechaInicio, modalidad, cuotas]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
@@ -175,9 +101,30 @@ export default function ProyeccionPage() {
             <div className="p-3 bg-blue-50 text-[#0047AB] rounded-2xl">
               <PieChart size={24} />
             </div>
-            <h3 className="font-black text-slate-800 text-xl tracking-tighter italic uppercase">Simulador</h3>
+            <h3 className="font-black text-slate-800 text-xl tracking-tighter italic uppercase">Simulador Pro</h3>
           </div>
-          
+          <div className="space-y-4 border-b border-slate-100 pb-6 mb-6">
+  <div className="space-y-2">
+    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nombre del Cliente</label>
+    <input 
+      type="text" 
+      placeholder="Ej. Juan Pérez"
+      value={nombreCliente}
+      onChange={(e) => setNombreCliente(e.target.value)}
+      className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 shadow-inner"
+    />
+  </div>
+  <div className="space-y-2">
+    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nombre del Aval</label>
+    <input 
+      type="text" 
+      placeholder="Ej. María García"
+      value={nombreAval}
+      onChange={(e) => setNombreAval(e.target.value)}
+      className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 shadow-inner"
+    />
+  </div>
+</div>
           <div className="space-y-5">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Capital Solicitado</label>
@@ -187,42 +134,72 @@ export default function ProyeccionPage() {
                   type="number" 
                   value={monto} 
                   onChange={(e) => setMonto(Number(e.target.value))}
-                  className="w-full p-4 pl-10 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-black text-slate-700 transition-all shadow-inner"
+                  className="w-full p-4 pl-10 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-black text-slate-700 shadow-inner"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Periodo de Cobro</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Modalidad de Pago</label>
               <select 
                 value={modalidad} 
                 onChange={(e) => setModalidad(e.target.value)}
                 className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-600 appearance-none shadow-inner cursor-pointer"
               >
-                <option value="semanal">Cada Semana</option>
-                <option value="quincenal">Cada Quincena</option>
-                <option value="mensual">Cada Mes</option>
+                <option value="semanal">Semanal (2.5%)</option>
+                <option value="quincenal">Quincenal (7.5%)</option>
+                <option value="mensual">Mensual (20%)</option>
               </select>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Interés (%)</label>
+                <div className="relative">
+                  <Percent className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <input 
+                    type="number" 
+                    value={interes} 
+                    readOnly // Bloqueado para seguir la regla de negocio
+                    className="w-full p-4 pl-10 bg-slate-100 rounded-2xl font-black text-[#0047AB] cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nº de Pagos</label>
+                <input 
+                  type="number" 
+                  value={cuotas} 
+                  onChange={(e) => setCuotas(Number(e.target.value))}
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 shadow-inner"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Número de Pagos</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Fecha de Inicio</label>
               <input 
-                type="number" 
-                value={cuotas} 
-                onChange={(e) => setCuotas(Number(e.target.value))}
-                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 shadow-inner"
+                type="date" 
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-600 shadow-inner"
               />
             </div>
           </div>
 
-          <div className="p-8 bg-[#050533] rounded-[2rem] text-white relative overflow-hidden group shadow-xl shadow-blue-900/20">
-            <CheckCircle2 className="absolute -right-4 -bottom-4 text-white opacity-5 group-hover:scale-110 transition-transform" size={120} />
-            <p className="text-[10px] uppercase font-black text-sky-400 mb-3 tracking-[0.2em]">Cuota Calculada</p>
+          <div className="p-8 bg-[#050533] rounded-[2rem] text-white relative overflow-hidden shadow-xl">
+            <p className="text-[10px] uppercase font-black text-sky-400 mb-3 tracking-[0.2em]">Abono {modalidad}</p>
             <p className="text-4xl font-black tracking-tighter">${pagoPorCuota.toFixed(2)}</p>
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <p className="text-xs text-slate-400 font-medium italic">Retorno total esperado:</p>
-              <p className="text-sm font-bold text-emerald-400">${montoTotal.toFixed(2)}</p>
+            <div className="mt-4 pt-4 border-t border-white/10 flex justify-between">
+              <div>
+                <p className="text-[9px] text-slate-400 uppercase">Interés total:</p>
+                <p className="text-sm font-bold text-sky-200">${interesMontoTotal.toFixed(2)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] text-slate-400 uppercase">Total a pagar:</p>
+                <p className="text-sm font-bold text-emerald-400">${montoTotal.toFixed(2)}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -230,58 +207,41 @@ export default function ProyeccionPage() {
 
       {/* VISTA DE PROYECCIÓN */}
       <div className="lg:col-span-2 space-y-6">
-        <div className="flex justify-between items-center px-4">
-          <h3 className="font-black text-slate-800 text-lg uppercase tracking-tighter italic">Proyección de Pagos</h3>
-          <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full uppercase tracking-widest border border-blue-100">
-            {cuotas} Exhibiciones
-          </span>
-        </div>
+       <div className="flex gap-2">
+      <button 
+        onClick={exportarPlan} // <--- NUEVA FUNCIÓN
+        className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200"
+      >
+        Descargar PDF
+      </button>
+      <button onClick={() => window.print()} className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-2xl border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all">
+        <Printer size={16} /> Imprimir
+      </button>
+    </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fechasPago.map((fecha, index) => (
-            <div 
-              key={index} 
-              className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:border-[#0047AB]/30 transition-all group hover:shadow-lg hover:shadow-blue-900/5"
-            >
+          {fechasPago.map((item, index) => (
+            <div key={index} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:border-[#0047AB]/30 transition-all shadow-sm">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 group-hover:bg-blue-50 group-hover:border-[#0047AB]/20 transition-colors">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
-                    {fecha.toLocaleDateString('es-MX', { month: 'short' })}
-                  </span>
-                  <span className="text-xl font-black text-slate-800 leading-none">
-                    {fecha.getDate()}
-                  </span>
+                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">{item.fechaCobro.toLocaleDateString('es-MX', { month: 'short' })}</span>
+                  <span className="text-xl font-black text-slate-800 leading-none">{item.fechaCobro.getDate()}</span>
                 </div>
                 <div>
-                  <p className="font-black text-slate-800 text-sm leading-none">Abono #{index + 1}</p>
-                  <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-wider">
-                    {fecha.toLocaleDateString('es-MX', { weekday: 'long' })}
-                  </p>
+                  <p className="font-black text-slate-800 text-sm leading-none">Pago #{index + 1}</p>
+                  <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase">{item.fechaCobro.toLocaleDateString('es-MX', { weekday: 'long' })}</p>
                 </div>
               </div>
-
-              <div className="text-right">
-                <p className="text-xl font-black text-[#0047AB] tracking-tighter">${pagoPorCuota.toFixed(2)}</p>
-                <div className="flex items-center justify-end gap-1.5 mt-1">
-                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                   <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Activo</span>
-                </div>
-              </div>
+              <p className="text-xl font-black text-[#0047AB] tracking-tighter">${pagoPorCuota.toFixed(2)}</p>
             </div>
           ))}
         </div>
 
-        {/* NOTA INSTITUCIONAL */}
-        <div className="p-6 bg-blue-50 rounded-[2rem] border border-blue-100 flex items-start gap-4 shadow-sm shadow-blue-100/50">
-          <div className="p-2 bg-white rounded-xl text-[#0047AB] shadow-sm">
-            <Info size={20} />
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs font-black text-[#0047AB] uppercase tracking-widest">Política de Cobranza Sábado/Domingo</p>
-            <p className="text-xs text-blue-700/70 font-medium leading-relaxed italic">
-              El simulador incluye los sábados como días hábiles. Si una proyección coincide con un domingo, la fecha se recorre automáticamente al lunes inmediato superior.
-            </p>
-          </div>
+        <div className="p-6 bg-blue-50 rounded-[2rem] border border-blue-100 flex items-start gap-4">
+          <Info size={20} className="text-[#0047AB] shrink-0 mt-1" />
+          <p className="text-[11px] text-blue-700/70 font-medium leading-relaxed italic">
+            Tasas aplicadas según política de riesgo: Semanal (2.5%), Quincenal (7.5%) y Mensual (20%). Los domingos se recorren automáticamente al lunes.
+          </p>
         </div>
       </div>
     </div>
