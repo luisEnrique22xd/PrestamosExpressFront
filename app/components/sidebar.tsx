@@ -167,19 +167,7 @@ export default function Sidebar() {
 
       {/* FOOTER - REPORTES */}
       <div className="mt-auto pt-8 border-t border-white/5 space-y-6 shrink-0">
-        <div className="bg-white/5 p-5 rounded-[2rem] border border-white/10 relative overflow-hidden group">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText size={16} className="text-sky-400" />
-              <p className="text-[10px] font-black text-white uppercase tracking-widest">Reporte PDF</p>
-            </div>
-            <p className="text-[9px] mb-4 text-slate-500 leading-relaxed font-medium">Generar resumen de cobranza diaria.</p>
-            <button className="w-full bg-[#0047AB] hover:bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2">
-              Descargar <span>↓</span>
-            </button>
-          </div>
-          <FileText className="absolute -right-4 -bottom-4 text-white opacity-[0.03]" size={80} />
-        </div>
+        
 
         {/* CERRAR SESIÓN */}
         <button 
