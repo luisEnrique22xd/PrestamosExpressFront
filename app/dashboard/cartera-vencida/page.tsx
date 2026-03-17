@@ -1,179 +1,196 @@
-
 'use client';
-import React, { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from 'react';
+import { 
+  Users, ChevronDown, ChevronRight, ChevronLeft, ExternalLink, 
+  User, Phone, MapPin, Search, ShieldCheck, Loader2, AlertCircle 
+} from 'lucide-react';
+import React from 'react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronRight, ChevronLeft, Phone, MapPin, UserCheck, ExternalLink, Search } from 'lucide-react';
-
-const COLORS = {
-  azulRey: '#0047AB',
-  rojoMora: '#DC2626',
-  verdeOk: '#10B981',
-  fondoGris: '#F8FAFE'
-};
 
 export default function CarteraVencidaPage() {
   const router = useRouter();
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const clientesPorPagina = 5;
+  const [entidades, setEntidades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPorPagina = 6;
 
-  const toggleRow = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
-
-  // 1. CARGA DE DATOS UNIFICADA
-  const fetchClientes = async () => {
+  // 1. CARGA DE DATOS DESDE EL ENDPOINT HÍBRIDO
+  const fetchCartera = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/clientes/');
-      // Verificamos si la respuesta es un array directo
-      const data = Array.isArray(response.data) ? response.data : [];
-      setClientes(data);
+      // 🔥 IMPORTANTE: Usamos el directorio híbrido para ver Grupos y Clientes
+      const response = await api.get('/clientes/directorio-hibrido/');
+      setEntidades(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error('Error al obtener clientes:', error);
-      setClientes([]); // Evita que el map falle
+      console.error('Error al obtener cartera:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchClientes();
-  }, []);
+  useEffect(() => { fetchCartera(); }, []);
 
-  // 2. FILTRADO DE CARTERA VENCIDA
-  const clientesFiltrados = (clientes || []).filter(c => {
-    // CRITERIO DE CARTERA VENCIDA: 
-    // 1. Debe tener un préstamo activo.
-    // 2. El saldo debe ser mayor a 0.
-    // 3. (OPCIONAL) Podrías filtrar solo los que tienen recargos > 0
-    const tieneDeudaReal = c.tiene_prestamo_activo && parseFloat(c.saldo_actual) > 0;
-    const tieneRecargos = parseFloat(c.total_penalizaciones) > 0;
-
-    const search = searchTerm.toLowerCase().trim();
-    const coincideBusqueda = !search || (
-      c.nombre?.toLowerCase().includes(search) ||
-      c.id?.toString().includes(search)
-    );
-
-    return tieneDeudaReal && tieneRecargos && coincideBusqueda;
+  // 2. FILTRADO PARA MOSTRAR SOLO DEUDORES (Saldo > 0)
+  const deudoresFiltrados = entidades.filter(e => {
+    const nombre = (e.nombre || e.nombre_grupo || '').toLowerCase();
+    const matchesSearch = nombre.includes(searchTerm.toLowerCase()) || e.id.toString().includes(searchTerm);
+    
+    // CRITERIO DE MOROSIDAD:
+    // A) Ya tiene recargos aplicados por el script (total_penalizaciones > 0)
+    // B) O tiene un préstamo activo con saldo pendiente (Alexander decide a quién presionar)
+    const tieneRecargos = parseFloat(e.total_penalizaciones || '0') > 0;
+  const saldoPendiente = parseFloat(e.saldo_actual || '0') > 0;
+  
+  // Condición estricta: Préstamo activo + Deuda real + Multa aplicada
+  return e.tiene_prestamo_activo && saldoPendiente && tieneRecargos;
   });
 
-  // 3. PAGINACIÓN
-  const totalPaginas = Math.ceil(clientesFiltrados.length / clientesPorPagina);
-  const indiceUltimo = currentPage * clientesPorPagina;
-  const indicePrimero = indiceUltimo - clientesPorPagina;
-  const clientesActuales = clientesFiltrados.slice(indicePrimero, indiceUltimo);
+  // 2. ORDENAMIENTO (Prioridad a los que tienen más dinero en mora)
+  const deudoresOrdenados = [...deudoresFiltrados].sort((a, b) => 
+    parseFloat(b.total_penalizaciones || '0') - parseFloat(a.total_penalizaciones || '0')
+  );
+
+  const totalPaginas = Math.ceil(deudoresFiltrados.length / itemsPorPagina);
+  const deudoresActuales = deudoresFiltrados.slice((currentPage - 1) * itemsPorPagina, currentPage * itemsPorPagina);
+
+  const condonarMora = async (idPenalizacion: number, nombre: string) => {
+    const motivo = window.prompt(`¿Por qué condonas la deuda de ${nombre}? (Mín. 10 carac.)`);
+    if (!motivo || motivo.length < 10) return alert("❌ Motivo inválido.");
+    try {
+      await api.post(`/condonar-mora/${idPenalizacion}/`, { motivo });
+      alert("✅ Condonación exitosa.");
+      fetchCartera();
+    } catch (e) { alert("❌ Error en servidor."); }
+  };
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center h-screen text-slate-400">
+      <Loader2 className="animate-spin mb-4" size={40} color="#DC2626" />
+      <p className="font-black uppercase tracking-widest text-xs italic text-red-500">Escaneando Cartera Vencida Tlaxcala...</p>
+    </div>
+  );
 
   return (
-    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-      {/* HEADER DE LA TABLA */}
-      <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tighter italic">Cartera Vencida</h2>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Directorio de Recuperación</p>
+    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-500">
+      
+      {/* HEADER ROJO DE ALERTA */}
+      <div className="p-8 border-b border-red-50 bg-red-50/20 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-red-200">
+            <AlertCircle size={24} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 italic">Cartera en Mora</h2>
+            <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">Recuperación Urgente: {deudoresFiltrados.length} Cuentas</p>
+          </div>
         </div>
 
-        <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0047AB] transition-colors" size={18} />
-          <input
-            type="text"
+        <div className="relative w-full md:w-80 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-600" size={18} />
+          <input 
+            type="text" 
+            placeholder="Buscar deudor moroso..." 
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            placeholder="Buscar por ID o Nombre..."
-            className="bg-slate-50 border-none rounded-2xl px-12 py-3 text-sm w-80 focus:ring-2 focus:ring-[#0047AB] outline-none transition-all shadow-inner"
+            onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-600 outline-none transition-all shadow-sm" 
           />
         </div>
       </div>
 
-      {/* TABLA DE CLIENTES */}
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
+          <thead className="bg-slate-50 text-slate-400 text-[9px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
             <tr>
-              <th className="px-8 py-5">Identidad / ID</th>
-              <th className="px-8 py-5">Contacto</th>
-              <th className="px-8 py-5 text-center">Saldo</th>
-              <th className="px-8 py-5 text-center">Estatus</th>
+              <th className="px-8 py-5">Socio / Grupo</th>
+              <th className="px-8 py-5">Tipo</th>
+              <th className="px-8 py-5 text-center">Deuda Total</th>
+              <th className="px-8 py-5 text-center">Atraso</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {clientesActuales.length > 0 ? (
-              clientesActuales.map((c) => (
-                <React.Fragment key={c.id}>
-                  <tr
-                    onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
-                    className={`transition-all cursor-pointer ${expandedId === c.id ? 'bg-blue-50/30' : 'hover:bg-slate-50/40'}`}
+            {deudoresActuales.length > 0 ? deudoresActuales.map((e) => {
+              const uniqueKey = `${e.es_grupo ? 'G' : 'I'}-${e.id}`;
+              const isExpanded = expandedId === uniqueKey;
+              const tieneMora = parseFloat(e.total_penalizaciones || '0') > 0;
+
+              return (
+                <React.Fragment key={uniqueKey}>
+                  <tr 
+                    onClick={() => setExpandedId(isExpanded ? null : uniqueKey)} 
+                    className={`transition-all cursor-pointer ${isExpanded ? 'bg-red-50/50' : 'hover:bg-slate-50/50'}`}
                   >
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-xl ${expandedId === c.id ? 'bg-[#0047AB] text-white' : 'bg-slate-100 text-slate-400'}`}>
-                          {expandedId === c.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md ${e.es_grupo ? 'bg-purple-600' : 'bg-[#0047AB]'}`}>
+                          {e.es_grupo ? <Users size={18} /> : <User size={18} />}
                         </div>
                         <div>
-                          <p className="font-black text-slate-800 text-base">{c.nombre}</p>
-                          <p className="text-[10px] text-[#0047AB] font-bold uppercase">ID: {c.id}</p>
+                          <p className="font-black text-slate-800 text-sm tracking-tight capitalize">{e.nombre || e.nombre_grupo}</p>
+                          <p className="text-[9px] text-slate-400 font-bold italic">REF: {e.id}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6 text-sm text-slate-500 font-medium">{c.telefono}</td>
-                    <td className="px-8 py-6 text-center font-black text-[#DC2626]">
-                      ${c.saldo_actual || '0.00'}
+                    <td className="px-8 py-6">
+                      {/* Badge dinámico de tipo */}
+                      <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md border ${e.es_grupo ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                        {e.es_grupo ? 'Grupal Solidario' : 'Individual'}
+                      </span>
                     </td>
                     <td className="px-8 py-6 text-center">
-
-                      <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
-                        <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Desglose de Mora</p>
-                        <div className="flex justify-between mt-2">
-                          <span className="text-xs text-slate-500 font-bold">Recargos Acumulados:</span>
-                          <span className="text-xs text-red-600 font-black">+ ${c.total_penalizaciones}</span>
-                        </div>
-                        <p className="text-[9px] text-red-400 italic mt-2">* Aplicando 1.5% diario sobre capital inicial</p>
-                      </div>
+                      <span className="font-black text-sm text-red-600">
+                        ${parseFloat(e.saldo_actual).toLocaleString('es-MX')}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                       <div className="flex flex-col items-center">
+                         {tieneMora ? (
+                           <>
+                             <span className="text-[10px] font-black text-red-500 uppercase flex items-center gap-1">
+                               <AlertCircle size={10} /> Mora Activa
+                             </span>
+                             <span className="text-[9px] text-slate-400 font-bold">+ ${e.total_penalizaciones} recargos</span>
+                           </>
+                         ) : (
+                           <span className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Pendiente de Pago</span>
+                         )}
+                       </div>
                     </td>
                   </tr>
-
-                  {expandedId === c.id && (
-                    <tr className="bg-slate-50/50">
-                      <td colSpan={4} className="px-16 py-10 animate-in slide-in-from-top-4 duration-500">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 border-l-4 border-red-600 pl-8 bg-white p-6 rounded-r-3xl shadow-inner">
-                          <div className="space-y-3">
-                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Domicilio Localizado</p>
-                            <div className="text-sm text-slate-600 font-bold flex items-start gap-2">
-                              <MapPin size={16} className="text-red-500 shrink-0" />
-                              <span>{c.direccion}</span>
-                            </div>
+                  {isExpanded && (
+                    <tr className="bg-red-50/20">
+                      <td colSpan={4} className="px-16 py-8 animate-in slide-in-from-top-2 duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 bg-white p-6 rounded-[2rem] border border-red-100 shadow-xl shadow-red-900/5">
+                          <div className="space-y-1">
+                            <p className="text-[9px] font-black text-slate-300 uppercase">Domicilio</p>
+                            <p className="text-xs text-slate-600 font-bold leading-tight flex items-center gap-2">
+                               <MapPin size={12} className="text-red-500" /> {e.direccion}
+                            </p>
                           </div>
-
-                          <div className="space-y-3">
-                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Garantía / Aval</p>
-                            <div className="text-sm text-slate-700 font-black">{c.datos_ultimo_aval?.nombre_aval || 'S/N'}</div>
-                            <p className="text-[11px] text-slate-400 font-medium">Tel: {c.datos_ultimo_aval?.telefono_aval || 'N/A'}</p>
+                          <div className="space-y-1">
+                            <p className="text-[9px] font-black text-slate-300 uppercase">Responsable / Aval</p>
+                            <p className="text-xs text-slate-800 font-black">
+                               {e.es_grupo ? (e.nombre_aval || 'S/N') : (e.datos_ultimo_aval?.nombre_aval || 'Ninguno')}
+                            </p>
                           </div>
-
-                          <div className="flex flex-col gap-3 justify-center">
-                            <button
-                              onClick={() => {
-                                const msg = encodeURIComponent(`Hola ${c.nombre}, te recordamos tu saldo pendiente de $${c.saldo_actual} en Préstamos Express. Evita más recargos.`);
-                                window.open(`https://wa.me/52${c.telefono}?text=${msg}`, '_blank');
-                              }}
-                              className="flex items-center justify-center gap-2 bg-[#10B981] text-white text-[10px] font-black uppercase py-3 rounded-xl hover:bg-emerald-600"
+                          <div className="flex gap-2 col-span-2 justify-end">
+                            
+                            <button 
+                              onClick={(event) => { event.stopPropagation(); condonarMora(e.id_mora_activa, e.nombre || e.nombre_grupo); }}
+                              className="flex items-center gap-2 bg-amber-500 text-white text-[9px] font-black uppercase px-4 py-3 rounded-xl hover:bg-amber-600 transition-all"
                             >
-                              <Phone size={14} /> Contactar Cliente
+                              <ShieldCheck size={14}/> Condonar
                             </button>
-                          </div>
-
-                          <div className="flex flex-col gap-3 justify-center">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/${c.id}`); }}
-                              className="flex items-center justify-center gap-2 bg-[#050533] text-white text-[10px] font-black uppercase py-3 rounded-xl hover:bg-[#0047AB]"
+                            <button 
+                              onClick={(event) => { 
+                                event.stopPropagation(); 
+                                router.push('/dashboard/pagos'); 
+                              }} 
+                              className={`flex items-center gap-2 text-white text-[9px] font-black uppercase px-6 py-3 rounded-xl shadow-lg transition-all ${e.es_grupo ? 'bg-purple-700 hover:bg-purple-800' : 'bg-red-700 hover:bg-red-800'}`}
                             >
-                              Ver Expediente <ExternalLink size={14} />
+                              Gestionar Cobro <ExternalLink size={14}/>
                             </button>
                           </div>
                         </div>
@@ -181,30 +198,28 @@ export default function CarteraVencidaPage() {
                     </tr>
                   )}
                 </React.Fragment>
-              ))
-            ) : (
+              );
+            }) : (
               <tr>
-                <td colSpan={4} className="p-20 text-center text-slate-400 italic">No se encontraron clientes</td>
+                <td colSpan={4} className="p-20 text-center">
+                   <div className="flex flex-col items-center opacity-20">
+                      <ShieldCheck size={80} />
+                      <p className="font-black italic uppercase text-xs mt-4">No se detectaron deudas vencidas</p>
+                   </div>
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* PAGINACIÓN INSTITUCIONAL */}
-      <div className="p-8 bg-slate-50/30 border-t border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6">
-        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-          Mostrando <span className="text-[#0047AB] font-black">{indicePrimero + 1} - {Math.min(indiceUltimo, clientesFiltrados.length)}</span> de {clientesFiltrados.length}
-        </p>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-[#0047AB] disabled:opacity-30"><ChevronLeft size={20} /></button>
-          <div className="flex gap-2">
-            {Array.from({ length: totalPaginas }, (_, i) => (
-              <button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-10 h-10 text-xs font-black rounded-2xl transition-all ${currentPage === i + 1 ? 'bg-[#0047AB] text-white shadow-lg' : 'bg-white text-slate-400 hover:bg-slate-50'}`}>{i + 1}</button>
-            ))}
-          </div>
-          <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPaginas))} disabled={currentPage === totalPaginas} className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-[#0047AB] disabled:opacity-30"><ChevronRight size={20} /></button>
-        </div>
+      {/* PAGINACIÓN */}
+      <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+         <p className="text-[10px] text-slate-400 font-black uppercase italic">Página {currentPage} de {totalPaginas || 1}</p>
+         <div className="flex gap-2">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} className="p-2 bg-white rounded-lg border border-slate-200"><ChevronLeft size={16}/></button>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPaginas, p+1))} className="p-2 bg-white rounded-lg border border-slate-200"><ChevronRight size={16}/></button>
+         </div>
       </div>
     </div>
   );

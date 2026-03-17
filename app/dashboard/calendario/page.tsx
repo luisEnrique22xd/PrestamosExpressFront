@@ -1,39 +1,27 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ChevronLeft, ChevronRight, User, X, Phone,
-  DollarSign, Calendar as CalendarIcon, Loader2, CheckCircle2
+  DollarSign, Calendar as CalendarIcon, Loader2, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
-// --- COLORES INSTITUCIONALES ---
-const COLORS = {
-  azulRey: '#0047AB',
-  azulOscuro: '#050533',
-  verdeExito: '#10B981',
-  rojoAlerta: '#DC2626',
-};
-
 export default function CalendarioCobranza() {
-  const router = useRouter(); // <--- CORREGIDO: router inicializado
+  const router = useRouter();
   const hoy = new Date();
   
-  // Estados de fecha actual
   const [mesActual, setMesActual] = useState(hoy.getMonth());
   const [anioActual, setAnioActual] = useState(hoy.getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-
   const [proyecciones, setProyecciones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // --- CORREGIDO: Función contactarCliente dentro del componente ---
-  const contactarCliente = (tel: string, nombre: string) => {
-    const msg = encodeURIComponent(`Hola *${nombre}*, te recordamos tu abono de hoy en *Préstamos Express*. 🏦 ¿A qué hora podríamos pasar?`);
-    window.open(`https://wa.me/52${tel.replace(/\D/g, '')}?text=${msg}`, '_blank');
+  // Formateador de fecha manual para evitar desfases de zona horaria (UTC)
+  const getFechaISO = (y: number, m: number, d: number) => {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   };
 
-  // Obtener nombre del mes y días
   const nombreMes = new Intl.DateTimeFormat('es-MX', { month: 'long' }).format(new Date(anioActual, mesActual));
   const primerDiaMes = new Date(anioActual, mesActual, 1).getDay();
   const diasEnMes = new Date(anioActual, mesActual + 1, 0).getDate();
@@ -42,11 +30,10 @@ export default function CalendarioCobranza() {
     const fetchProyecciones = async () => {
       try {
         setLoading(true);
-        // Consumimos el endpoint de Django con los filtros de fecha
         const res = await api.get(`/calendario-pagos/?mes=${mesActual + 1}&anio=${anioActual}`);
         setProyecciones(res.data);
       } catch (error) {
-        console.error("Error cargando calendario:", error);
+        console.error("Error:", error);
       } finally {
         setLoading(false);
       }
@@ -54,193 +41,168 @@ export default function CalendarioCobranza() {
     fetchProyecciones();
   }, [mesActual, anioActual]);
 
-  const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const contactarCliente = (tel: string, nombre: string) => {
+    const msg = encodeURIComponent(`Hola *${nombre}*, te recordamos tu abono de hoy en *Préstamos Express*. 🏦 ¿A qué hora podríamos pasar?`);
+    window.open(`https://wa.me/52${tel.replace(/\D/g, '')}?text=${msg}`, '_blank');
+  };
 
+  const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   const celdas = [];
   for (let i = 0; i < primerDiaMes; i++) celdas.push(null);
   for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
 
-  // --- CORREGIDO: cobrosDelDiaSeleccionado definido antes de ser usado ---
-  const cobrosDelDiaSeleccionado = proyecciones.filter(p => p.fecha === selectedDate);
-  const totalMontoDia = cobrosDelDiaSeleccionado.reduce((acc, cobro) => acc + Number(cobro.monto), 0);
+  const cobrosDelDiaSeleccionado = useMemo(() => 
+    proyecciones.filter(p => p.fecha === selectedDate), 
+  [selectedDate, proyecciones]);
+
+  const totalMontoDia = cobrosDelDiaSeleccionado.reduce((acc, c) => acc + Number(c.monto), 0);
+
   if (loading && proyecciones.length === 0) return (
-    <div className="h-96 flex flex-col items-center justify-center text-slate-400 gap-4">
-      <Loader2 className="animate-spin" size={40} />
-      <p className="font-black italic uppercase tracking-widest text-xs">Sincronizando agenda...</p>
+    <div className="h-screen flex flex-col items-center justify-center text-slate-400 gap-4">
+      <Loader2 className="animate-spin" size={40} color="#0047AB" />
+      <p className="font-black italic uppercase tracking-widest text-xs">Sincronizando agenda Huamantla...</p>
     </div>
   );
 
   return (
-    <div className="relative flex gap-6 max-w-7xl mx-auto min-h-200 pb-10">
+    <div className="relative flex gap-8 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-700">
 
-      {/* CALENDARIO PRINCIPAL */}
-      <div className={`transition-all duration-500 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 ${selectedDate ? 'w-2/3' : 'w-full'}`}>
-        <div className="flex justify-between items-center mb-8">
+      {/* CALENDARIO */}
+      <div className={`transition-all duration-700 bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 ${selectedDate ? 'w-2/3' : 'w-full'}`}>
+        <div className="flex justify-between items-center mb-10">
           <div>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tighter italic uppercase">Cobranza {nombreMes}</h2>
-            <p className="text-sm text-slate-400 font-medium">Gestión de abonos programados para {anioActual}</p>
+            <h2 className="text-4xl font-black text-slate-800 tracking-tighter italic uppercase">Cobranza {nombreMes}</h2>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Gestión de Abonos Programados</p>
           </div>
 
-          <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-            <button onClick={() => setMesActual(m => m - 1)} className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-[#0047AB]"><ChevronLeft size={20} /></button>
-            <span className="font-black text-slate-700 self-center px-6 text-xs uppercase tracking-[0.2em]">{nombreMes} {anioActual}</span>
-            <button onClick={() => setMesActual(m => m + 1)} className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-[#0047AB]"><ChevronRight size={20} /></button>
+          <div className="flex bg-slate-100 p-2 rounded-2xl border border-slate-200 shadow-inner">
+            <button onClick={() => setMesActual(m => m - 1)} className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-[#0047AB] transition-all"><ChevronLeft size={22} /></button>
+            <span className="font-black text-slate-700 self-center px-8 text-[10px] uppercase tracking-[0.3em]">{nombreMes} {anioActual}</span>
+            <button onClick={() => setMesActual(m => m + 1)} className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-[#0047AB] transition-all"><ChevronRight size={22} /></button>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-4 mb-6">
+        <div className="grid grid-cols-7 gap-6 mb-8">
           {diasSemana.map(dia => (
-            <div key={dia} className="text-center text-[10px] font-black uppercase tracking-[0.25em] text-slate-300">{dia}</div>
+            <div key={dia} className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 italic">{dia}</div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-6">
           {celdas.map((dia, index) => {
-            if (dia === null) return <div key={`empty-${index}`} className="h-28" />;
+            if (dia === null) return <div key={`empty-${index}`} className="h-32" />;
 
-            const fechaActual = new Date(anioActual, mesActual, dia).toDateString();
-
-            // --- DENTRO DEL MAP DE CELDAS ---
-            const dObj = new Date(anioActual, mesActual, dia);
-            // Formato YYYY-MM-DD (Ej: 2026-03-11)
-            const fechaISO = dObj.toISOString().split('T')[0];
-
-            // Comparamos con el formato que viene de Django
+            const fechaISO = getFechaISO(anioActual, mesActual, dia);
             const cobros = proyecciones.filter(p => p.fecha === fechaISO);
             const esHoy = dia === hoy.getDate() && mesActual === hoy.getMonth() && anioActual === hoy.getFullYear();
             const isSelected = selectedDate === fechaISO;
+            const tienePendientes = cobros.some(c => c.estatus !== 'pagado');
+
             return (
               <button
-
                 key={dia}
-                onClick={() => {
-                  // Creamos la fecha asegurando que sea el formato YYYY-MM-DD
-                  const d = new Date(anioActual, mesActual, dia);
-                  const yyyy = d.getFullYear();
-                  const mm = String(d.getMonth() + 1).padStart(2, '0');
-                  const dd = String(d.getDate()).padStart(2, '0');
-                  const fechaISO = `${yyyy}-${mm}-${dd}`;
-
-                  setSelectedDate(fechaISO); // <--- Guardamos "2026-03-26"
-                }}
+                onClick={() => setSelectedDate(fechaISO)}
+                className={`relative h-32 p-6 rounded-[2.5rem] border-2 transition-all flex flex-col items-center justify-between group
+                  ${isSelected ? 'bg-blue-50 border-[#0047AB] shadow-lg scale-105 z-10' : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'}`}
               >
-                <span className={`text-sm font-black ${isSelected ? `text-[${COLORS.azulRey}]` : 'text-slate-400'}`}>{dia}</span>
-                {cobros.length > 0 && (
-                  <div className="flex -space-x-1 mb-1">
-                    {cobros.slice(0, 3).map((c: any, i: number) => (
-                      <div
-                        key={i}
-                        className={`w-5 h-5 rounded-lg border border-white ${c.estatus === 'pagado' ? 'bg-emerald-500' :
-                          c.estatus === 'vencido' ? 'bg-red-500' : 'bg-[#0047AB]'
-                          }`}
-                      />
-                    ))}
+                {esHoy && (
+                  <div className="absolute top-4 right-4 flex flex-col items-center gap-1">
+                    <span className="text-[7px] font-black text-red-500 uppercase tracking-tighter">Hoy</span>
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
                   </div>
                 )}
-                {esHoy && <div className={`absolute top-4 right-4 w-2 h-2 bg-[${COLORS.rojoAlerta}] rounded-full animate-pulse`}></div>}
+
+                <span className={`text-lg font-black ${isSelected ? 'text-[#0047AB]' : 'text-slate-700'}`}>{dia}</span>
+                
+                {cobros.length > 0 && (
+                  <div className={`flex gap-1.5 p-2 rounded-xl ${tienePendientes ? 'bg-blue-100/50' : 'bg-emerald-100/50'}`}>
+                    {cobros.slice(0, 3).map((c, i) => (
+                      <div key={i} className={`w-2 h-2 rounded-full ${c.estatus === 'pagado' ? 'bg-emerald-500' : 'bg-[#0047AB]'}`} />
+                    ))}
+                    {cobros.length > 3 && <span className="text-[8px] font-black text-blue-600">+{cobros.length - 3}</span>}
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* PANEL LATERAL: DETALLE DEL DÍA */}
+      {/* PANEL DETALLE (SIDEBAR) */}
       {selectedDate && (
-        <div className={`w-1/3 bg-[${COLORS.azulOscuro}] rounded-[2.5rem] p-8 text-white shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col border border-white/5`}>
-          <div className="flex justify-between items-center mb-10">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-white/10 rounded-2xl text-sky-400">
-                <CalendarIcon size={24} />
-              </div>
-              <h3 className="text-xl font-black italic tracking-tighter">Cobros del Día</h3>
-            </div>
-            <button onClick={() => setSelectedDate(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all text-slate-400 hover:text-white">
-              <X size={24} />
+        <div className="w-1/3 bg-[#050533] rounded-[3rem] p-10 text-white shadow-2xl animate-in slide-in-from-right duration-700 flex flex-col border border-white/5 relative overflow-hidden">
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl" />
+          
+          <div className="flex justify-between items-center mb-12 relative z-10">
+            <h3 className="text-2xl font-black italic tracking-tighter flex items-center gap-3">
+              <CalendarIcon className="text-sky-400" /> Cobros del Día
+            </h3>
+            <button onClick={() => setSelectedDate(null)} className="p-3 hover:bg-white/10 rounded-2xl transition-all text-slate-400 hover:text-white">
+              <X size={28} />
             </button>
           </div>
 
-          <div className="bg-white/5 p-5 rounded-3xl border border-white/10 mb-8 backdrop-blur-sm text-center">
-  <p className="text-[10px] text-sky-400 uppercase font-black tracking-[0.2em] mb-1">Fecha Seleccionada</p>
-  <p className="text-lg font-bold text-white tracking-tight capitalize">
-    {/* Convertimos el ISO a algo elegante como "Jueves, 26 de marzo" */}
-    {selectedDate ? new Date(selectedDate + "T00:00:00").toLocaleDateString('es-MX', { 
-      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' 
-    }) : ''}
-  </p>
-</div>
-<div className="grid grid-cols-2 gap-3 mb-8">
-      <div className="bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-sm">
-        <p className="text-[9px] text-sky-400 uppercase font-black tracking-widest mb-1">Cobros</p>
-        <p className="text-xl font-black text-white">{cobrosDelDiaSeleccionado.length}</p>
-      </div>
-      <div className="bg-emerald-500/10 p-4 rounded-3xl border border-emerald-500/20 backdrop-blur-sm">
-        <p className="text-[9px] text-emerald-400 uppercase font-black tracking-widest mb-1">Total Día</p>
-        <p className="text-xl font-black text-emerald-400">
-          ${totalMontoDia.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-        </p>
-      </div>
-    </div>
-
-          <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            {cobrosDelDiaSeleccionado.length > 0 ? (
-              // --- CORREGIDO: cobro ahora tiene tipo explícito ---
-              cobrosDelDiaSeleccionado.map((cobro: any) => (
-                <div key={cobro.id} className="bg-white/5 p-6 rounded-[2rem] border border-white/5 hover:bg-white/10 transition-all group">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 bg-[${COLORS.azulRey}] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                        <User size={22} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="font-black text-base leading-none tracking-tight">{cobro.cliente}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-2 tracking-widest">ID: {cobro.idCliente}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${cobro.estatus === 'pagado' ? 'bg-emerald-500/20 text-emerald-400' :
-                        cobro.estatus === 'vencido' ? 'bg-red-500/20 text-red-400' : 'bg-sky-500/20 text-sky-400'
-                        }`}>
-                        {cobro.estatus}
-                      </span>
-                      <span className="text-sm font-black text-white block mt-1">${cobro.monto}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => contactarCliente(cobro.tel, cobro.cliente)}
-                      className="flex items-center justify-center gap-2 py-3 bg-white/5 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-green-600/20 transition-all border border-white/5"
-                    >
-                      <Phone size={14} className="text-green-400" /> WhatsApp
-                    </button>
-                    <button 
-  onClick={() => router.push(`/dashboard/${cobro.idCliente}`)}
-  disabled={cobro.estatus === 'pagado'} // <--- BLOQUEAR SI YA PAGÓ
-  className={`flex items-center justify-center gap-2 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all shadow-lg ${
-    cobro.estatus === 'pagado'
-      ? 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50' 
-      : 'bg-[#10B981] text-white hover:bg-emerald-600 shadow-emerald-900/40'
-  }`}
->
-  {cobro.estatus === 'pagado' ? (
-    <> <CheckCircle2 size={14} /> Liquidado </>
-  ) : (
-    <> <DollarSign size={14} /> Cobrar </>
-  )}
-</button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center">
-                <CalendarIcon size={64} className="mb-4" />
-                <p className="text-sm font-bold uppercase tracking-widest italic">Sin actividades</p>
-              </div>
-            )}
+          <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 mb-8 text-center backdrop-blur-md">
+            <p className="text-[9px] text-sky-400 uppercase font-black tracking-[0.3em] mb-2 italic">Fecha Seleccionada</p>
+            <p className="text-xl font-bold text-white tracking-tight capitalize">
+              {new Date(selectedDate + "T00:00:00").toLocaleDateString('es-MX', { 
+                weekday: 'long', day: 'numeric', month: 'long' 
+              })}
+            </p>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-white/10 text-center text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">
-            Express Huamantla
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="bg-white/5 p-5 rounded-[2rem] border border-white/10">
+              <p className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-1">Citas</p>
+              <p className="text-2xl font-black">{cobrosDelDiaSeleccionado.length}</p>
+            </div>
+            <div className="bg-emerald-500/10 p-5 rounded-[2rem] border border-emerald-500/20">
+              <p className="text-[8px] text-emerald-400 uppercase font-black tracking-widest mb-1">Monto Total</p>
+              <p className="text-2xl font-black text-emerald-400">${totalMontoDia.toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar relative z-10">
+            {cobrosDelDiaSeleccionado.map((cobro: any) => (
+              <div key={cobro.id} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/5 hover:bg-white/10 transition-all group">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#0047AB] rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg shadow-blue-900/50">
+                      <User size={22} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="font-black text-base tracking-tight leading-none">{cobro.cliente}</p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase mt-2 tracking-widest italic">ID: {cobro.idCliente}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-[8px] font-black uppercase px-2 py-1 rounded-md mb-2 w-fit ml-auto ${
+                      cobro.estatus === 'pagado' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-sky-500/20 text-sky-400'
+                    }`}>{cobro.estatus}</p>
+                    <p className="text-lg font-black">${cobro.monto}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => contactarCliente(cobro.tel, cobro.cliente)} className="flex items-center justify-center gap-2 py-3 bg-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-green-600/20 transition-all border border-white/5">
+                    <Phone size={14} className="text-green-400" /> WhatsApp
+                  </button>
+                  <button 
+                    onClick={() => router.push(`/dashboard/${cobro.idCliente}`)}
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] font-black uppercase transition-all shadow-xl ${
+                      cobro.estatus === 'pagado' ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-[#10B981] text-white hover:bg-emerald-600 shadow-emerald-900/40'
+                    }`}
+                  >
+                    {cobro.estatus === 'pagado' ? <CheckCircle2 size={14} /> : <DollarSign size={14} />}
+                    {cobro.estatus === 'pagado' ? 'Pagado' : 'Cobrar'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-white/10 text-center text-[9px] text-slate-600 font-black uppercase tracking-[0.4em] italic">
+            Management V1.0 • Huamantla
           </div>
         </div>
       )}

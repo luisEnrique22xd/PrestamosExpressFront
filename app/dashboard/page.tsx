@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { 
   DollarSign, ArrowRight, Search, TrendingUp, 
-  Users, Wallet, Calendar, ArrowUpRight, Loader2 
+  Users, Wallet, Calendar, ArrowUpRight, Loader2,
+  TrendingDown, Activity,
+  AlertCircle
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -11,6 +13,8 @@ import {
 } from 'recharts';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import StatCard from '../components/statscard';
+
 
 export default function GlobalDashboard() {
   const [resumen, setResumen] = useState<any>(null);
@@ -19,25 +23,23 @@ export default function GlobalDashboard() {
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const router = useRouter();
 
+  // 1. Carga de datos globales
   useEffect(() => {
     const fetchGlobalData = async () => {
       try {
         setLoading(true);
         const res = await api.get('/estadisticas-globales/');
         setResumen(res.data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
     };
     fetchGlobalData();
   }, []);
 
-  // Lógica de búsqueda rápida
+  // 2. Buscador en tiempo real
   const handleSearch = async (val: string) => {
     setBusqueda(val);
-    if (val.length > 2) {
+    if (val.length > 1) {
       try {
         const res = await api.get(`/clientes/?search=${val}`);
         setSugerencias(res.data.slice(0, 5));
@@ -47,53 +49,62 @@ export default function GlobalDashboard() {
     }
   };
 
-  const capitalEnCalle = resumen?.rangos?.reduce((acc: number, r: any) => {
-    const valor = parseFloat(r.total.replace(/[^0-9.-]+/g, ""));
-    return acc + valor;
-  }, 0) || 0;
+  // 3. Cálculo dinámico de Inversión (Limpiando strings de pesos)
+  const capitalEnCalle = useMemo(() => {
+    if (!resumen?.rangos) return 0;
+    return resumen.rangos.reduce((acc: number, r: any) => {
+      const valor = typeof r.total === 'string' 
+        ? parseFloat(r.total.replace(/[^0-9.-]+/g, "")) 
+        : (r.total || 0);
+      return acc + (isNaN(valor) ? 0 : valor);
+    }, 0);
+  }, [resumen]);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
-      <Loader2 className="animate-spin mb-4" size={40} />
-      <p className="font-black uppercase tracking-widest text-xs italic">Cargando Inteligencia Financiera...</p>
+    <div className="flex flex-col items-center justify-center h-[70vh] text-slate-400">
+      <Loader2 className="animate-spin mb-4" size={40} color="#0047AB" />
+      <p className="font-black uppercase tracking-[0.3em] text-[10px] italic">
+        Sincronizando con Servidor Railway...
+      </p>
     </div>
   );
 
   return (
-    <div className="space-y-8 pb-10 animate-in fade-in duration-700">
+    <div className="space-y-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* HEADER CON BUSCADOR INTEGRADO */}
+      {/* HEADER */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
             Sistema <span className="text-[#0047AB]">Express</span>
           </h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
-            Control Central • 
-Santa Maria Acuitlapilco
-
-, Tlaxcala
+            Control Central • Santa Maria Acuitlapilco, Tlaxcala
           </p>
         </div>
 
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        {/* BUSCADOR */}
+        <div className="relative w-full md:w-96 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0047AB] transition-colors" size={18} />
           <input
             type="text"
-            placeholder="Buscar cliente rápido..."
+            placeholder="Buscar cliente (Nombre o ID)..."
             value={busqueda}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-2 focus:ring-[#0047AB] outline-none font-bold text-sm"
+            className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-2 focus:ring-[#0047AB] outline-none font-bold text-sm transition-all"
           />
           {sugerencias.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-slate-50 overflow-hidden">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-slate-50 overflow-hidden animate-in zoom-in-95 duration-200">
               {sugerencias.map((c) => (
                 <button 
                   key={c.id}
                   onClick={() => router.push(`/dashboard/${c.id}`)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-blue-50 transition-colors border-b last:border-none"
+                  className="w-full p-4 flex items-center justify-between hover:bg-blue-50 transition-colors border-b border-slate-50 last:border-none"
                 >
-                  <span className="font-black text-slate-700 text-xs uppercase">{c.nombre}</span>
+                  <div className="text-left">
+                    <span className="font-black text-slate-700 text-xs uppercase block">{c.nombre}</span>
+                    <span className="text-[9px] text-slate-400 font-bold">ID: {c.id}</span>
+                  </div>
                   <ArrowUpRight size={14} className="text-[#0047AB]" />
                 </button>
               ))}
@@ -102,20 +113,19 @@ Santa Maria Acuitlapilco
         </div>
       </header>
 
-      {/* METRICAS PRINCIPALES */}
+      {/* MÉTRICAS (TARJETAS) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-        <div className="bg-[#050533] p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+        <div className="bg-[#050533] p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group border border-white/5">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <TrendingUp size={80} />
           </div>
-          <p className="text-sky-400 text-[10px] font-black uppercase tracking-widest relative z-10">Total Recuperado</p>
+          <p className="text-sky-400 text-[10px] font-black uppercase tracking-widest relative z-10 italic">Total Recuperado</p>
           <h2 className="text-4xl font-black mt-2 relative z-10 tracking-tighter italic">
             {resumen?.total_recuperado || "$0.00"}
           </h2>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group transition-all hover:shadow-md">
           <div className="absolute top-0 right-0 p-4 opacity-5 text-[#0047AB]">
             <Users size={80} />
           </div>
@@ -125,92 +135,101 @@ Santa Maria Acuitlapilco
           </h2>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative transition-all hover:shadow-md">
+          <div className="absolute top-0 right-0 p-4 opacity-5 text-red-600">
+            <Activity size={80} />
+          </div>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Inversión en Calle</p>
           <h2 className="text-4xl font-black text-red-600 mt-2 tracking-tighter italic">
-            ${capitalEnCalle.toLocaleString('es-MX')}
+            ${capitalEnCalle.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </h2>
         </div>
 
-        <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100">
+        <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 relative group transition-all hover:bg-emerald-100">
           <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest">Cobranza del Día</p>
-          <h2 className="text-4xl font-black text-emerald-700 mt-2 tracking-tighter">
+          <h2 className="text-4xl font-black text-emerald-700 mt-2 tracking-tighter italic">
             {resumen?.cobrado_hoy || "$0.00"}
           </h2>
         </div>
-
+        <StatCard 
+          title="Moras por Recuperar" 
+          value={`${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} 
+          icon={AlertCircle} 
+          color="#DC2626" 
+        />
       </div>
 
-      {/* SECCIÓN INTERMEDIA: GRÁFICA Y DESGLOSE */}
+      {/* GRÁFICA Y CONCENTRACIÓN */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* GRÁFICA DE TENDENCIA */}
+        {/* ÁREA DE GRÁFICA */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="font-black text-slate-800 uppercase italic flex items-center gap-2">
+            <h3 className="font-black text-slate-800 uppercase italic flex items-center gap-2 text-sm tracking-tight">
               <Calendar size={18} className="text-[#0047AB]" />
               Rendimiento Semanal
             </h3>
-            <span className="text-[10px] font-black bg-blue-50 text-[#0047AB] px-3 py-1 rounded-full uppercase">Flujo de Caja</span>
+            <span className="text-[9px] font-black bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full uppercase tracking-widest">Historial de Flujo</span>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full pr-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={resumen?.grafica_semanal || []}>
                 <defs>
                   <linearGradient id="colorRecup" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0047AB" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#0047AB" stopOpacity={0.2}/>
                     <stop offset="95%" stopColor="#0047AB" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} tickFormatter={(v) => `$${v}`} />
                 <Tooltip 
-                   contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}}
-                   itemStyle={{color: '#0047AB', fontWeight: 'bold'}}
+                   contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '15px'}}
+                   itemStyle={{color: '#0047AB', fontWeight: '900', fontSize: '12px'}}
+                   formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Recuperado']}
                 />
-                <Area type="monotone" dataKey="monto" stroke="#0047AB" strokeWidth={4} fillOpacity={1} fill="url(#colorRecup)" />
+                <Area type="monotone" dataKey="monto" stroke="#0047AB" strokeWidth={4} fillOpacity={1} fill="url(#colorRecup)" animationDuration={1500} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* DESGLOSE POR RANGOS */}
-        <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden relative">
-          <h3 className="font-black text-slate-800 uppercase italic mb-8 flex items-center gap-2">
+        {/* LISTA DE CONCENTRACIÓN */}
+        <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col">
+          <h3 className="font-black text-slate-800 uppercase italic mb-8 flex items-center gap-2 text-sm">
             <Wallet size={18} className="text-[#0047AB]" />
-            Concentración
+            Concentración de Carteras
           </h3>
           <div className="space-y-3 overflow-y-auto max-h-[320px] pr-2 custom-scrollbar">
             {resumen?.rangos?.filter((r: any) => r.cant > 0).map((r: any, i: number) => (
-              <div key={i} className="flex justify-between items-center p-5 bg-slate-50 rounded-[1.8rem] border border-transparent hover:border-blue-100 transition-all group">
+              <div key={i} className="flex justify-between items-center p-5 bg-slate-50 rounded-[1.8rem] border border-transparent hover:border-blue-100 hover:bg-white transition-all group">
                 <div>
-                  <p className="text-xs font-black text-slate-700 group-hover:text-[#0047AB] transition-colors">{r.label}</p>
+                  <p className="text-[11px] font-black text-slate-700 group-hover:text-[#0047AB] transition-colors uppercase tracking-tight">{r.label}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-                    <p className="text-[9px] text-slate-400 uppercase font-black">{r.cant} Casos</p>
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
+                    <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">{r.cant} Créditos</p>
                   </div>
                 </div>
-                <p className="text-sm font-black text-slate-800">{r.total}</p>
+                <p className="text-xs font-black text-slate-800 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100">{r.total}</p>
               </div>
             ))}
           </div>
         </div>
-
       </div>
 
-      {/* BANNER DE ACCIÓN */}
-      <div className="bg-gradient-to-r from-[#0047AB] to-[#050533] p-10 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-blue-900/30">
-        <div className="text-center md:text-left">
-          <h4 className="text-2xl font-black italic uppercase tracking-tighter">Expansión de Cartera</h4>
-          <p className="text-blue-200 text-sm mt-1 font-medium">Gestiona nuevos créditos y contratos legales desde el módulo central.</p>
+      {/* BANNER DE ACCIÓN (FOOTER) */}
+      <div className="bg-gradient-to-br from-[#0047AB] to-[#050533] p-10 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-blue-900/40 relative overflow-hidden group">
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
+        <div className="text-center md:text-left relative z-10">
+          <h4 className="text-2xl font-black italic uppercase tracking-tighter">Expansión de Negocio</h4>
+          <p className="text-blue-200 text-xs mt-2 font-medium tracking-wide uppercase">Genera nuevos contratos y emite pagarés legales al instante.</p>
         </div>
         <button
           onClick={() => router.push('/dashboard/prestamos')}
-          className="bg-white text-[#050533] px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl flex items-center gap-3"
+          className="bg-white text-[#050533] px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3 relative z-10"
         >
-          Módulo de Préstamos
-          <ArrowRight size={18} />
+          Nuevo Préstamo
+          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
 

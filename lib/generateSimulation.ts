@@ -8,61 +8,56 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     orientation: 'p',
     unit: 'mm',
     format: 'a4',
-    compress: true, // <--- ACTIVA LA COMPRESIÓN AQUÍ
+    compress: true,
   });
-  const { monto, modalidad, cuotas, interes, pagoPorCuota, montoTotal, nombreCliente, nombreAval } = datos;
 
-  
-  
-  try {
+  const { 
+    monto, modalidad, cuotas, interes, pagoPorCuota, 
+    montoTotal, nombreCliente, nombreAval, esGrupal, 
+    numIntegrantes, cuotaPorSocio 
+  } = datos;
+
+   try {
     doc.addImage(LOGO_DATA, 'PNG', 15, 10, 20, 30, undefined, 'FAST');// x, y, ancho, alto
   } catch (e) {
     console.warn("Logo no encontrado, continuando sin él.");
   }
-
-  // --- 2. ENCABEZADO Y DATOS ---
-  doc.setFontSize(20);
+  // --- 2. ENCABEZADO ---
+   doc.setFontSize(20);
   doc.setTextColor(0, 71, 171); // Azul Rey
   doc.text("PRÉSTAMOS EXPRESS", 50, 25);
   doc.setFontSize(10);
   doc.setTextColor(100);
   doc.text("GENTE QUE AYUDA A LA GENTE", 50, 32);
 
-  // Información del Cliente
+  // --- CUADRO DE INFORMACIÓN ---
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 45, 180, 25, 'F');
+  doc.rect(15, 45, 180, 35, 'F');
   doc.setFont("helvetica", "bold");
   doc.setTextColor(40);
-  doc.text(`CLIENTE: ${nombreCliente.toUpperCase()}`, 20, 55);
-  doc.text(`AVAL: ${nombreAval.toUpperCase()}`, 20, 62);
+  
+  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'} ${nombreCliente.toUpperCase()}`, 20, 55);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'} ${nombreAval.toUpperCase()}`, 20, 62);
+  doc.text(`DOMICILIO: ${datos.direccion.toUpperCase()}`, 20, 69);
+  
   doc.text(`MONTO: $${monto.toLocaleString()}`, 130, 55);
   doc.text(`PLAZO: ${cuotas} ${modalidad}(s)`, 130, 62);
 
- // --- DENTRO DE generarPDFSimulacion (lib/generateSimulationPDF.ts) ---
+  // --- BANNER SOLIDARIO (Solo Grupos) ---
+  if (esGrupal) {
+    doc.setFillColor(124, 58, 237); // Púrpura
+    doc.rect(15, 85, 180, 10, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(9);
+    doc.text(`ESTA CUOTA SE DIVIDE ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 91, { align: 'center' });
+  }
 
-// --- DENTRO DE generarPDFSimulacion (lib/generateSimulationPDF.ts) ---
-
-// --- DENTRO DE generarPDFSimulacion (lib/generateSimulationPDF.ts) ---
-
-const body = fechas.map((item, index) => {
-    // 1. Cálculos base
+  const body = fechas.map((item, index) => {
     const capitalCuota = monto / cuotas;
     const interesCuota = monto * (interes / 100);
     const saldoCapitalInsoluto = Math.max(0, monto - (capitalCuota * (index + 1)));
-
-    // 2. Función interna para formatear a 2 decimales exactos con comas
-    const f = (num: number) => 
-        num.toLocaleString('es-MX', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
-
-    const fechaFinal = item && item.fechaCobro instanceof Date ? item.fechaCobro : new Date();
-    const fechaFormateada = fechaFinal.toLocaleDateString('es-MX', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
+    const f = (num: number) => num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fechaFormateada = item.fechaCobro.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     return [
       index + 1,
@@ -70,23 +65,24 @@ const body = fechas.map((item, index) => {
       `$${f(capitalCuota)}`,
       `$${f(interesCuota)}`,
       `$${f(pagoPorCuota)}`,
-      `$${f(saldoCapitalInsoluto)}` // <--- Ahora siempre tendrá 2 decimales
+      `$${f(saldoCapitalInsoluto)}`,
+      "" 
     ];
-});
+  });
 
   autoTable(doc, {
-    startY: 80,
-    head: [['SEM', 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO']],
+    startY: esGrupal ? 100 : 90,
+    head: [['SEM', 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA RECIBIDO']],
     body: body,
     theme: 'grid',
-    headStyles: { fillColor: [5, 5, 51], textColor: [255, 255, 255], fontStyle: 'bold' },
-    styles: { fontSize: 9, halign: 'center' },
+    headStyles: { fillColor: [5, 5, 51], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+    styles: { fontSize: 8, halign: 'center', cellPadding: 2 },
     columnStyles: {
-      1: { halign: 'left' },
-      4: { fontStyle: 'bold', textColor: [0, 71, 171] },
-      5: { textColor: [16, 185, 129] }
+      4: { fontStyle: 'bold', textColor: [0, 71, 171] }, 
+      5: { textColor: [16, 185, 129] },
+      6: { cellWidth: 35 }
     }
   });
 
-  doc.save(`Cotizacion_${nombreCliente.replace(/\s/g, '_')}.pdf`);
+  doc.save(`Cotizacion_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
 };
