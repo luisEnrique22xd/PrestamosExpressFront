@@ -1,8 +1,8 @@
 // lib/api.ts
 import axios from 'axios'; // <--- IMPORTANTE: Importamos la librería real
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api', // Tu URL de Django
+  baseURL: API_URL, // Tu URL de Django
 });
 
 // INTERCEPTOR DE PETICIÓN: Pega el token a la fuerza
