@@ -179,7 +179,7 @@ export default function PrestamosPage() {
     handleReset();
     } catch (error: any) {
       const msg = error.response?.data?.error || "Error al guardar el préstamo.";
-    // ❌ USAMOS TU ALERTA BONITA AQUÍ TAMBIÉN
+    
     lanzarAlerta('error', msg);
     } finally {
       setLoading(false);

@@ -15,7 +15,7 @@ export const generarPagare = (data: any) => {
   const semanas = parseInt(data.cuotas || 0);
   const pago = parseFloat(data.pagoPorCuota || 0);
   const folioRaw = data.folio_consecutivo || 1;
-  const folioFormateado = folioRaw.toString().padStart(3, '0');
+  const folioFormateado = folioRaw.toString().padStart(5, '0');
   
   const venci = data.fechaVencimiento ? new Date(data.fechaVencimiento) : new Date();
   const fVenci = {

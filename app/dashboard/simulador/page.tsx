@@ -177,6 +177,7 @@ const exportarDocumentacion = () => {
   // 5. Generamos los archivos
   generarPDFSimulacion(datosFinales, fechasPago);
   generarPagare(datosFinales);
+  setFolioConsecutivo(prevFolio => prevFolio + 1);
 
   // 6. Feedback para Alexander
   alert(`✅ Documentos generados con Folio: ${folioReal.toString().padStart(3, '0')}`);

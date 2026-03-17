@@ -16,6 +16,10 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     montoTotal, nombreCliente, nombreAval, esGrupal, 
     numIntegrantes, cuotaPorSocio 
   } = datos;
+  const etiquetaPeriodo = 
+  modalidad === 'semanal' ? 'SEM' : 
+  modalidad === 'quincenal' ? 'QUIN' : 
+  modalidad === 'mensual' ? 'MES' : 'PER';
 
    try {
     doc.addImage(LOGO_DATA, 'PNG', 15, 10, 20, 30, undefined, 'FAST');// x, y, ancho, alto
@@ -72,7 +76,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
 
   autoTable(doc, {
     startY: esGrupal ? 100 : 90,
-    head: [['SEM', 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA RECIBIDO']],
+    head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA RECIBIDO']],
     body: body,
     theme: 'grid',
     headStyles: { fillColor: [5, 5, 51], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },

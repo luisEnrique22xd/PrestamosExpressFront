@@ -1,15 +1,24 @@
 import jsPDF from 'jspdf';
 
 export const generarPDFRecibo = (datos: any) => {
-  // 1. Extraemos las variables (Aseguramos que nuevoSaldo venga de datos.nuevoSaldo)
-  const { cliente, monto, fecha, folio, saldoAnterior, nuevoSaldo, semana, modalidad } = datos;
+  // 1. Extraemos las variables
+  const { cliente, monto, folio, saldoAnterior, nuevoSaldo, semana, modalidad } = datos;
 
-  const ahora = new Date();
-  const horaFormateada = ahora.toLocaleTimeString('es-MX', { 
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
+  // --- LÓGICA DE FECHA Y HORA UNIFICADA ---
+  // Si datos.fecha existe (reimpresión), la usamos. Si no, creamos la actual en formato ES-MX.
+  const fechaTicket = datos.fecha || new Date().toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
   });
 
-  const horaTicket = datos.hora || new Date().toLocaleTimeString();
+  // Si datos.hora existe, la usamos. Si no, generamos 24h.
+  const horaTicket = datos.hora || new Date().toLocaleTimeString('es-MX', { 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit', 
+    hour12: false 
+  });
 
   const doc = new jsPDF({
     orientation: 'p',
@@ -41,7 +50,7 @@ export const generarPDFRecibo = (datos: any) => {
   
   doc.setFont("courier", "normal");
   y += 5;
-  doc.text(`Fecha: ${fecha}`, 10, y);
+  doc.text(`Fecha: ${fechaTicket}`, 10, y);
   y += 5;
   doc.text(`Hora:  ${horaTicket}`, 10, y);
   y += 5;
@@ -73,14 +82,13 @@ export const generarPDFRecibo = (datos: any) => {
   doc.setFont("courier", "normal");
   doc.text(`( PAGO A CAPITAL E INTERÉS CORRESPONDIENTE )`, 40, y, { align: "center" });
 
-  // --- CUADRO DE SALDOS CORREGIDO ---
+  // --- CUADRO DE SALDOS ---
   y += 10;
-  doc.rect(8, y, 64, 22); // Dibujamos el cuadro
+  doc.rect(8, y, 64, 22); 
   doc.text(`SALDO ANTERIOR:   $${saldoAnterior}`, 12, y + 6);
   doc.text(`ABONO ACTUAL:     $${monto}`, 12, y + 12);
   
   doc.setFont("courier", "bold");
-  // Usamos 'y' dinámica para que el nuevo saldo se mueva con el cuadro
   doc.text(`NUEVO SALDO:     $${nuevoSaldo}`, 12, y + 18); 
 
   // Leyendas finales
@@ -94,7 +102,7 @@ export const generarPDFRecibo = (datos: any) => {
   y += 4;
   doc.text("GRACIAS POR SU PREFERENCIA.", 40, y, { align: "center" });
 
-  // Firmas al final
+  // Firmas
   y = 165; 
   doc.line(10, y, 35, y); 
   doc.line(45, y, 70, y); 

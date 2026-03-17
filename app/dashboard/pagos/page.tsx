@@ -65,8 +65,8 @@ export default function PagosPage() {
         semana: semanaSeleccionada,
         saldoAnterior: res.data.saldo_anterior, // Ya no es el estado local, es la DB
         nuevoSaldo: res.data.nuevo_saldo,      // Ya no es el proyectado, es el real
-        fecha: new Date().toLocaleDateString(),
-        hora: new Date().toLocaleTimeString()
+       fecha: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+  hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
       });
 
       alert("✅ Pago aplicado");
