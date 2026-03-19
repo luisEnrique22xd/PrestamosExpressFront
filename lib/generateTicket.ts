@@ -34,14 +34,14 @@ export const generarPDFRecibo = (datos: any) => {
   doc.setFontSize(7);
   doc.text("GENTE QUE AYUDA A LA GENTE", 40, 14, { align: "center" });
   doc.text("Acuitlapilco, TLAXCALA", 40, 18, { align: "center" });
-  doc.text("TEL: 247-123-4567", 40, 22, { align: "center" });
+  doc.text("TEL: 246-468-2344", 40, 22, { align: "center" });
   
   doc.text("------------------------------------------", 40, 26, { align: "center" });
   doc.setFontSize(9);
   doc.text("COMPROBANTE DE OPERACIÓN", 40, 31, { align: "center" });
   doc.text("------------------------------------------", 40, 35, { align: "center" });
 
-  // Datos del Socio
+  // Datos del CLIENTE
   doc.setFontSize(8);
   doc.setFont("courier", "normal");
   let y = 42;
@@ -54,7 +54,7 @@ export const generarPDFRecibo = (datos: any) => {
   y += 5;
   doc.text(`Hora:  ${horaTicket}`, 10, y);
   y += 5;
-  doc.text(`Socio: ${cliente.toUpperCase()}`, 10, y);
+  doc.text(`Cliente: ${cliente.toUpperCase()}`, 10, y);
   y += 10;
 
   // Tabla de Conceptos
@@ -98,7 +98,7 @@ export const generarPDFRecibo = (datos: any) => {
   doc.text("TE INVITAMOS A MANTENERTE AL CORRIENTE", 40, y, { align: "center" });
   y += 4;
   doc.setFont("courier", "normal");
-  doc.text("PARA EVITAR RECARGOS MORATORIOS.", 40, y, { align: "center" });
+  doc.text("PARA EVITAR PAGO DE PENALIZACIONES.", 40, y, { align: "center" });
   y += 4;
   doc.text("GRACIAS POR SU PREFERENCIA.", 40, y, { align: "center" });
 
@@ -109,7 +109,7 @@ export const generarPDFRecibo = (datos: any) => {
   
   y += 4;
   doc.setFontSize(6);
-  doc.text("FIRMA DEL SOCIO", 22, y, { align: "center" });
+  doc.text("FIRMA DEL CLIENTE", 22, y, { align: "center" });
   doc.text("FIRMA EJECUTIVO", 57, y, { align: "center" });
 
   doc.save(`Ticket_Abono_${folio}.pdf`);

@@ -68,8 +68,8 @@ export const generarPagare = (data: any) => {
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   const textoDebo = esGrupal 
-    ? `Debemos y pagaremos solidaria e incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas...`
-    : `Debo(emos) y pagaré(mos) incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas...`;
+    ? `Debemos y pagaremos solidaria e incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas donde elija el tenedor el dia de su vencimiento`
+    : `Debo(emos) y pagaré(mos) incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas donde elija el tenedor el dia de su vencimiento`;
   doc.text(textoDebo, 7, 28);
   doc.text(`a la orden de: PLACIDO FLORES GUERRERO y/o DULCE MARIA FELIX TLAPA HARO`, 7, 34);
   
@@ -93,7 +93,7 @@ export const generarPagare = (data: any) => {
 
   doc.setFontSize(6);
   doc.setFont("helvetica", "normal");
-  const clausulas = `VALOR RECIBIDO A NUESTRA ENTERA SATISFACCION BAJO REGIMEN DE RESPONSABILIDAD SOLIDARIA. ESTE PAGARE FORMA PARTE DE UNA SERIE NUMERADA Y TODOS ESTAN SUJETOS A LA CONDICION DE QUE DE NO PAGARSE CUALQUIERA DE ELLOS A SU VENCIMIENTO... CAUSARAN PENALIZACION DEL 1.5% DIARIO SOBRE EL SALDO INSOLUTO.`;
+  const clausulas = `VALOR RECIBIDO A NUESTRA ENTERA SATISFACCION BAJO REGIMEN DE RESPONSABILIDAD SOLIDARIA. ESTE PAGARE FORMA PARTE DE UNA SERIE NUMERADA Y TODOS ESTAN SUJETOS A LA CONDICION DE QUE DE NO PAGARSE CUALQUIERA DE ELLOS A SU VENCIMIENTO, CAUSARAN PENALIZACION DEL 1.5% DIARIO SOBRE EL SALDO INICIAL.`;
   doc.text(doc.splitTextToSize(clausulas, 195), 7, 56);
 
   let yF = 85;
