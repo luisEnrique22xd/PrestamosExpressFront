@@ -24,6 +24,7 @@ export default function ProyeccionPage() {
   // --- ESTADOS DE DATOS DEL CLIENTE / GRUPO ---
   const [nombreCliente, setNombreCliente] = useState('');
   const [direccion, setDireccion] = useState('');
+  const [poblacion, setPoblacion] = useState('');
   const [curp, setCurp] = useState('');
   const [telefono, setTelefono] = useState('');
   const [nombreAval, setNombreAval] = useState('');
@@ -156,6 +157,7 @@ const exportarDocumentacion = () => {
   const datosFinales = {
     nombreCliente, 
     direccion, 
+    poblacion: poblacion || "HUAMANTLA, TLAXCALA",
     curp, 
     telefono,
     nombreAval, 
@@ -171,7 +173,7 @@ const exportarDocumentacion = () => {
     cuotaPorSocio,
     fechaVencimiento: ultimaFecha,
     folio_consecutivo: folioReal, // Usamos el estado del contador
-    poblacion: "HUAMANTLA, TLAXCALA"
+   
   };
 
   // 5. Generamos los archivos
@@ -240,6 +242,10 @@ const exportarDocumentacion = () => {
             <div className="relative">
               <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
               <input placeholder="Domicilio / Ubicación" value={direccion} onChange={e => setDireccion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
+            </div>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
+              <input placeholder="Población" value={poblacion} onChange={e => setPoblacion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
             </div>
             <div className="grid grid-cols-2 gap-2 border-t border-slate-50 pt-4">
               <input placeholder="Presidente / Aval" value={nombreAval} onChange={e => setNombreAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs uppercase" />
