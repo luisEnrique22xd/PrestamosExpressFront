@@ -18,6 +18,7 @@ export const generarPagare = (data: any) => {
   const pago = parseFloat(data.pago_cuota || data.pagoPorCuota || 0);
   // Priorizamos la población que viene de data, si no, usamos la de Tlaxcala por defecto
   const poblacion = (data.poblacion || "SANTA MARIA ACUITLAPILCO, TLAXCALA").toUpperCase();
+  const lugarExpedicion = poblacion.split('SANTA MARIA ACUITLAPILCO, TLAXCALA')[0]; // Extraemos solo el nombre del lugar sin el estado
   const folioRaw = data.folio_consecutivo || 1;
   const folioFormateado = folioRaw.toString().padStart(5, '0');
   
@@ -59,7 +60,7 @@ export const generarPagare = (data: any) => {
   doc.setTextColor(0);
   doc.setFontSize(8);
   // Controlamos que el texto de población no se salga
-  doc.text(doc.splitTextToSize(poblacion, 80), 39, 14.5);
+  doc.text(doc.splitTextToSize(lugarExpedicion, 80), 39, 14.5);
 
   // Celdas DIA / MES / AÑO
   const labelsFecha = ["DIA", "MES", "AÑO"];
@@ -93,10 +94,18 @@ export const generarPagare = (data: any) => {
   doc.text(`No. ${folioFormateado}`, 7, 27);
 
   // --- CUERPO ---
-  doc.setFontSize(9.5);
+  // --- CUERPO: DEBO Y PAGARÉ (CON SALTO DE LÍNEA CORREGIDO) ---
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Debo(emos) y pagaré(mos) incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas donde elija el tenedor el día de su vencimiento`, 7, 33);
+  
+  // Definimos el texto completo
+  const textoDebo = `Debo(emos) y pagaré(mos) incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas donde elija el tenedor el día de su vencimiento`;
+  
+  // Lo dividimos para que quepa en un ancho de 195mm (casi todo el pagaré)
+  const splitDebo = doc.splitTextToSize(textoDebo, 195);
+  doc.text(splitDebo, 7, 31); // Subimos un poco a Y=31 porque ahora ocupa dos líneas
 
+  // --- BENEFICIARIOS Y VENCIMIENTO ---
   doc.text(`a la orden de:`, 7, 40);
   doc.line(28, 40, 132, 40); 
   doc.setFont("helvetica", "bold");
