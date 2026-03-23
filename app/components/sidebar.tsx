@@ -12,7 +12,8 @@ import {
   AlertCircle, 
   Users, 
   HandCoins, 
-  Receipt, 
+  Receipt,
+  Calendar, 
   Calculator, 
   LogOut,
   User, // <--- Este es para el Perfil
@@ -35,7 +36,7 @@ export default function Sidebar() {
     { name: 'Clientes', path: '/dashboard/clientes', icon: Users, roles: ['admin', 'cobrador'] },
     { name: 'Préstamos', path: '/dashboard/prestamos', icon: HandCoins, roles: ['admin', 'cobrador'] },
     { name: 'Pagos', path: '/dashboard/pagos', icon: Receipt, roles: ['admin', 'cobrador'] },
-    { name: 'Calendario', path: '/dashboard/calendario', icon: Receipt, roles: ['admin', 'cobrador'] },
+    { name: 'Calendario', path: '/dashboard/calendario', icon: Calendar, roles: ['admin', 'cobrador'] },
     { name: 'Simulador', path: '/dashboard/simulador', icon: Calculator, roles: ['admin', 'cobrador'] },
     // 🔥 REINTEGRADO: Perfil de Usuario (Acceso para todos)
     { name: 'Mi Perfil', path: '/dashboard/usuario', icon: User, roles: ['admin', 'cobrador'] },

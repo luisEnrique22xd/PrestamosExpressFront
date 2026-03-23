@@ -7,13 +7,14 @@ export const generarPagare = (data: any) => {
     format: 'a5'
   });
 
-  const { esGrupal, numIntegrantes, cuotaPorSocio } = data; // Extraemos nuevos datos
+  const { esGrupal, numIntegrantes, cuotaPorSocio, modalidad = 'semanal' } = data; // Extraemos nuevos datos
   const cliente = (data.nombreCliente || "").toUpperCase();
   const direccion = (data.direccion || "").toUpperCase();
   const avalNombre = (data.nombreAval || "________________________").toUpperCase();
   const capital = parseFloat(data.monto || 0);
   const semanas = parseInt(data.cuotas || 0);
   const pago = parseFloat(data.pagoPorCuota || 0);
+  const poblacion = "SANTA MARIA ACUITLAPILCO, TLAXCALA";
   const folioRaw = data.folio_consecutivo || 1;
   const folioFormateado = folioRaw.toString().padStart(5, '0');
   
@@ -24,6 +25,9 @@ export const generarPagare = (data: any) => {
     año: venci.getFullYear().toString()
   };
 
+  const textoModalidad = 
+    modalidad.toLowerCase().includes('quin') ? 'QUINCENAS' :
+    modalidad.toLowerCase().includes('men')  ? 'MESES' : 'SEMANAS';
   const hoy = new Date();
   const fExp = {
     dia: hoy.getDate().toString(),
@@ -32,104 +36,156 @@ export const generarPagare = (data: any) => {
   };
 
   const verde = [34, 139, 34];
-  doc.setDrawColor(verde[0], verde[1], verde[2]);
-  doc.setLineWidth(0.4);
+  const grisClaro = [240, 245, 240];
+  doc.setDrawColor(80);
+  doc.setLineWidth(0.6);
   doc.rect(5, 5, 200, 138); 
 
+  // --- ENCABEZADO: PAGARE / LUGAR / FECHA / BUENO POR ---
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(verde[0], verde[1], verde[2]);
+  
+  // Celda PAGARE
   doc.setFillColor(verde[0], verde[1], verde[2]);
-  doc.rect(7, 7, 30, 8, 'F');
+  doc.rect(7, 7, 30, 6, 'F');
   doc.setTextColor(255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text(esGrupal ? "PAGARE GRUPAL" : "PAGARE", 10, 12);
+  doc.setFontSize(11);
+  doc.text("PAGARE", 10, 11.5);
 
+  // Celda LUGAR DE EXPEDICION
+  doc.setFillColor(grisClaro[0], grisClaro[1], grisClaro[2]);
+  doc.rect(37, 7, 85, 6, 'F');
+  doc.rect(37, 7, 85, 15);
   doc.setTextColor(verde[0], verde[1], verde[2]);
-  doc.rect(37, 7, 60, 8);
   doc.setFontSize(7);
-  doc.text("LUGAR DE EXPEDICION", 50, 10);
+  doc.text("LUGAR DE EXPEDICION", 79, 10, { align: 'center' });
   doc.setTextColor(0);
-  doc.text("Santa Maria Acuitlapilco, TLAXCALA", 39, 14);
-
-  doc.rect(97, 7, 12, 8); doc.text(fExp.dia, 103, 13, { align: 'center' });
-  doc.rect(109, 7, 35, 8); doc.text(fExp.mes, 126, 13, { align: 'center' });
-  doc.rect(144, 7, 15, 8); doc.text(fExp.año, 151, 13, { align: 'center' });
-
-  doc.rect(159, 7, 44, 8);
   doc.setFontSize(8);
+  doc.text(poblacion, 39, 17);
+
+  // Celdas DIA / MES / AÑO
+  const labelsFecha = ["DIA", "MES", "AÑO"];
+  const xFechas = [122, 135, 163];
+  const wFechas = [13, 28, 15];
+  
+  labelsFecha.forEach((label, i) => {
+    doc.setFillColor(grisClaro[0], grisClaro[1], grisClaro[2]);
+    doc.rect(xFechas[i], 7, wFechas[i], 6, 'F');
+    doc.rect(xFechas[i], 7, wFechas[i], 15);
+    doc.setTextColor(verde[0], verde[1], verde[2]);
+    doc.text(label, xFechas[i] + wFechas[i]/2, 10, { align: 'center' });
+  });
+
+  doc.setTextColor(0);
+  doc.text(hoy.getDate().toString(), 128.5, 17, { align: 'center' });
+  doc.text(hoy.toLocaleString('es-MX', { month: 'short' }).toUpperCase(), 149, 17, { align: 'center' });
+  doc.text(hoy.getFullYear().toString(), 170.5, 17, { align: 'center' });
+
+  // Celda BUENO POR $
+  doc.setFillColor(grisClaro[0], grisClaro[1], grisClaro[2]);
+  doc.rect(178, 7, 25, 6, 'F');
+  doc.rect(178, 7, 25, 15);
   doc.setTextColor(verde[0], verde[1], verde[2]);
-  doc.text("BUENO POR", 162, 10);
+  doc.text("BUENO POR", 190.5, 10, { align: 'center' });
   doc.setTextColor(0);
   doc.setFontSize(10);
-  doc.text(`$ ${capital.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, 181, 14, { align: 'center' });
+  doc.text(`$ ${capital.toLocaleString()}`, 180, 17);
 
-  doc.setFontSize(8);
-  doc.text(`No. PR-${folioFormateado}`, 7, 20);
-
+  // No. de pagare
   doc.setFontSize(9);
+  doc.text(`No. ${folioFormateado}`, 7, 27);
+
+  // --- TEXTO PRINCIPAL (CUERPO) ---
+  doc.setFontSize(9.5);
   doc.setFont("helvetica", "normal");
-  const textoDebo = esGrupal 
-    ? `Debemos y pagaremos solidaria e incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas donde elija el tenedor el dia de su vencimiento`
-    : `Debo(emos) y pagaré(mos) incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas donde elija el tenedor el dia de su vencimiento`;
-  doc.text(textoDebo, 7, 28);
-  doc.text(`a la orden de: PLACIDO FLORES GUERRERO y/o DULCE MARIA FELIX TLAPA HARO`, 7, 34);
-  
-  doc.text(`el día`, 140, 34);
-  doc.setFont("helvetica", "bold");
-  doc.text(`${fVenci.dia}`, 152, 34); 
-  doc.text(`${fVenci.mes}`, 165, 34);
-  doc.text(`${fVenci.año}`, 194, 34);
+  const textoPrincipal = `Debo(emos) y pagaré(mos) incondicionalmente sin pretexto este pagaré en el lugar y fechas citadas donde elija el tenedor el día de su vencimiento`;
+  doc.text(textoPrincipal, 7, 33);
 
-  doc.rect(32, 42, 171, 10);
+  doc.text(`a la orden de:`, 7, 40);
+  doc.line(28, 40, 135, 40); // Linea para nombre del beneficiario
   doc.setFont("helvetica", "bold");
-  doc.text(`PAGO DE $${pago.toLocaleString('es-MX', { minimumFractionDigits: 2 })} PESOS DURANTE ${semanas} SEMANAS`, 117, 47, { align: 'center' });
+  doc.text("PLACIDO FLORES GUERRERO y/o DULCE MARIA FELIX TLAPA HARO ", 30, 39);
   
-  if(esGrupal) {
-      doc.setFontSize(6);
-      doc.text(`( CADA INTEGRANTE APORTARÁ: $${parseFloat(cuotaPorSocio).toFixed(2)} )`, 117, 50, { align: 'center' });
-  } else {
-      doc.setFontSize(7);
-      doc.text("( CANTIDAD CORRESPONDIENTE AL ABONO SEMANAL Y PLAZO )", 117, 50, { align: 'center' });
-  }
+  doc.setFont("helvetica", "normal");
+  doc.text(`el día`, 137, 40);
+  doc.line(147, 40, 157, 40); // Dia venci
+  doc.text(`de`, 159, 40);
+  doc.line(164, 40, 191, 40); // Mes venci
+  doc.text(`de`, 193, 40);
+  doc.line(198, 40, 203, 40); // Año venci
 
+  doc.setFont("helvetica", "bold");
+  doc.text(venci.getDate().toString(), 152, 39, { align: 'center' });
+  doc.text(venci.toLocaleString('es-MX', { month: 'long' }).toUpperCase(), 177.5, 39, { align: 'center' });
+  doc.text(venci.getFullYear().toString().slice(-2), 200.5, 39, { align: 'center' });
+
+  // --- CANTIDAD (RECUADRO GRANDE) ---
+  doc.setFont("helvetica", "bold");
+  doc.text("La cantidad de:", 7, 50);
+  doc.setFillColor(grisClaro[0], grisClaro[1], grisClaro[2]);
+  doc.rect(32, 45, 171, 10, 'F');
+  doc.rect(32, 45, 171, 10);
+  doc.setFontSize(8.5);
+  doc.text(`PAGO DE $${pago.toLocaleString()} PESOS DURANTE ${semanas} ${textoModalidad}`, 117.5, 51.5, { align: 'center' });
+
+  // --- LETRA CHIQUITA (CLAUSULAS) ---
   doc.setFontSize(6);
   doc.setFont("helvetica", "normal");
-  const clausulas = `VALOR RECIBIDO A NUESTRA ENTERA SATISFACCION BAJO REGIMEN DE RESPONSABILIDAD SOLIDARIA. ESTE PAGARE FORMA PARTE DE UNA SERIE NUMERADA Y TODOS ESTAN SUJETOS A LA CONDICION DE QUE DE NO PAGARSE CUALQUIERA DE ELLOS A SU VENCIMIENTO, CAUSARAN PENALIZACION DEL 1.5% DIARIO SOBRE EL SALDO INICIAL.`;
-  doc.text(doc.splitTextToSize(clausulas, 195), 7, 56);
+  doc.setTextColor(60);
+  const clausulas = `VALOR RECIBIDO A MI (NUESTRA) ENTERA SATISFACCION, ESTE PAGARE FORMA PARTE DE UNA SERIE NUMERADA DEL 01 AL ${semanas} Y TODOS ESTAN SUJETOS A LA CONDICION DE QUE DE NO PAGARSE CUALQUIERA DE ELLOS A SU VENCIMIENTO, SERAN EXIGIBLES TODOS LOS QUE LE SIGUEN EN NUMERO, ADEMAS DE LOS YA VENCIDOS DE ACUERDO AL ART. 79 DE LA LEY GENERAL DE TITULOS Y OPERACIONES DE CREDITO. CAUSARAN INTERESES MORATORIOS DEL 1.5% POR CADA MES O FRACCION PAGADERO JUNTAMENTE CON EL PRINCIPAL. DICHOS INTERESES SE CAUSARAN SOBRE EL CAPITAL INSOLUTO CONFORME A LO DISPUESTO POR EL ART. 152 INCISO I, II, III, IV DE LA LEY GENERAL DE TITULOS Y OPERACIONES DE CREDITO.`;
+  const splitClausulas = doc.splitTextToSize(clausulas, 195);
+  doc.text(splitClausulas, 7, 60);
 
-  let yF = 85;
-  doc.rect(7, yF, 95, 45); 
-  doc.rect(102, yF, 52, 45);
-  doc.rect(154, yF, 49, 45);
+  // --- BLOQUES INFERIORES: NOMBRE DEUDOR / AVAL / FIRMA DEUDOR ---
+  const yBase = 78;
+  const hBase = 40;
+
+  // Encabezados de bloques
+  doc.setLineWidth(0.3);
+  const headers = ["NOMBRE Y DATOS DEL DEUDOR", "AVAL", "DEUDOR"];
+  const xHeaders = [7, 112, 160];
+  const wHeaders = [105, 48, 43];
+
+  headers.forEach((h, i) => {
+    doc.setFillColor(grisClaro[0], grisClaro[1], grisClaro[2]);
+    doc.rect(xHeaders[i], yBase, wHeaders[i], 6, 'F');
+    doc.rect(xHeaders[i], yBase, wHeaders[i], hBase);
+    doc.setTextColor(verde[0], verde[1], verde[2]);
+    doc.setFontSize(7.5);
+    doc.text(h, xHeaders[i] + wHeaders[i]/2, yBase + 4.5, { align: 'center' });
+  });
+
+  // Datos Deudor
+  doc.setTextColor(0);
+  doc.setFontSize(8);
+  doc.text("NOMBRE", 9, yBase + 12);
+  doc.line(22, yBase + 12, 108, yBase + 12);
+  doc.text(cliente, 24, yBase + 11.5);
+
+  doc.text("DOMICILIO", 9, yBase + 22);
+  doc.line(24, yBase + 22, 108, yBase + 22);
+  doc.setFontSize(7);
+  doc.text(direccion, 26, yBase + 21.5);
 
   doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.text(esGrupal ? "DATOS DEL GRUPO" : "DATOS DEL DEUDOR", 54, yF + 5, { align: "center" });
-  doc.text(esGrupal ? "PRESIDENTE" : "AVAL", 128, yF + 5, { align: "center" });
-  doc.text("FIRMA", 178, yF + 5, { align: "center" });
+  doc.text("POBLACION", 9, yBase + 32);
+  doc.line(26, yBase + 32, 108, yBase + 32);
+  doc.text(poblacion, 28, yBase + 31.5);
 
-  let currentY = yF + 12;
-  const drawWrappedText = (label: string, value: string, x: number, y: number, maxWidth: number) => {
-    doc.setFont("helvetica", "bold");
-    doc.text(label, x, y);
-    doc.setFont("helvetica", "normal");
-    const labelWidth = doc.getTextWidth(label) + 2;
-    const splitText = doc.splitTextToSize((value || "________________________").toUpperCase(), maxWidth - labelWidth);
-    doc.text(splitText, x + labelWidth, y);
-    return y + (Array.isArray(splitText) ? splitText.length : 1) * 3.5;
-  };
-
+  // Area de Firmas
   doc.setFontSize(7);
-  currentY = drawWrappedText(esGrupal ? "GRUPO:" : "NOMBRE:", cliente, 10, currentY, 90);
-  currentY = drawWrappedText("DOMICILIO:", direccion, 10, currentY, 90);
-  currentY = drawWrappedText("TEL:", (data.telefono || ""), 10, currentY, 90);
-  if(esGrupal) doc.text(`SOCIOS: ${numIntegrantes}`, 10, currentY);
-
-  const avalSplit = doc.splitTextToSize(avalNombre, 48);
-  doc.text(avalSplit, 105, yF + 12);
-  doc.text(`TEL: ${data.telefonoAval || ""}`, 105, yF + 25);
-  doc.line(105, yF + 38, 150, yF + 38);
+  doc.text("FIRMA (S)", 136, yBase + 38, { align: 'center' });
+  doc.text("FIRMA (S)", 181.5, yBase + 38, { align: 'center' });
   
-  doc.line(158, yF + 38, 199, yF + 38);
+  // Nombre del Aval en su cuadro
+  doc.setFont("helvetica", "bold");
+  doc.text(avalNombre, 136, yBase + 15, { align: 'center', maxWidth: 45 });
+
+  // Sello Formitec lateral (Detalle estético)
+  doc.setTextColor(150);
+  doc.setFontSize(10);
+  doc.text("Formitec  P  01", 12, 135, { angle: 90 });
 
   doc.save(`Pagare_${cliente.replace(/\s+/g, '_')}.pdf`);
 };

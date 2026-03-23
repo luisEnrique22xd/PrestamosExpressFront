@@ -33,7 +33,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.text("PRÉSTAMOS EXPRESS", pageWidth / 2, 22, { align: 'center' });
   doc.setFontSize(10);
   doc.setTextColor(100);
-  doc.text("GENTE QUE AYUDA A LA GENTE", 50, 32);
+  doc.text("GENTE QUE AYUDA A LA GENTE", pageWidth / 2, 22, { align: 'center' });
 
   // --- CUADRO DE INFORMACIÓN ---
   doc.setFillColor(245, 247, 250);
