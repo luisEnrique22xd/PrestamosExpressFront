@@ -16,6 +16,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     montoTotal, nombreCliente, nombreAval, esGrupal, 
     numIntegrantes, cuotaPorSocio 
   } = datos;
+  const pageWidth = doc.internal.pageSize.getWidth();
   const etiquetaPeriodo = 
   modalidad === 'semanal' ? 'SEM' : 
   modalidad === 'quincenal' ? 'QUIN' : 
@@ -29,7 +30,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   // --- 2. ENCABEZADO ---
    doc.setFontSize(20);
   doc.setTextColor(0, 71, 171); // Azul Rey
-  doc.text("PRÉSTAMOS EXPRESS", 50, 25);
+  doc.text("PRÉSTAMOS EXPRESS", pageWidth / 2, 22, { align: 'center' });
   doc.setFontSize(10);
   doc.setTextColor(100);
   doc.text("GENTE QUE AYUDA A LA GENTE", 50, 32);
@@ -41,9 +42,9 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setTextColor(40);
   
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'} ${nombreCliente.toUpperCase()}`, 20, 55);
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'} ${nombreAval.toUpperCase()}`, 20, 62);
-  doc.text(`DOMICILIO: ${datos.direccion.toUpperCase()}`, 20, 69);
-  
+   doc.text(`DOMICILIO: ${datos.direccion.toUpperCase()}`, 20, 62);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'} ${nombreAval.toUpperCase()}`, 20, 69);
+ 
   doc.text(`MONTO: $${monto.toLocaleString()}`, 130, 55);
   doc.text(`PLAZO: ${cuotas} ${modalidad}(s)`, 130, 62);
 
@@ -75,15 +76,28 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   });
 
   autoTable(doc, {
-    startY: esGrupal ? 100 : 90,
+    startY: esGrupal ? 95 : 85,
     head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA RECIBIDO']],
     body: body,
     theme: 'grid',
-    headStyles: { fillColor: [5, 5, 51], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-    styles: { fontSize: 8, halign: 'center', cellPadding: 2 },
+    headStyles: { 
+      fillColor: [5, 5, 51], 
+      textColor: [255, 255, 255], 
+      fontStyle: 'bold', 
+      halign: 'center' 
+    },
+    styles: { 
+      fontSize: 8, 
+      halign: 'center', 
+      cellPadding: 2,
+      textColor: [60, 60, 60] // Gris oscuro neutro para todo el texto
+    },
     columnStyles: {
-      4: { fontStyle: 'bold', textColor: [0, 71, 171] }, 
-      5: { textColor: [16, 185, 129] },
+      4: { fontStyle: 'bold' }, // Pago en negrita pero sin color
+      5: { 
+        textColor: [16, 185, 129], // Verde (Único con color)
+        fontStyle: 'bold' 
+      }, 
       6: { cellWidth: 35 }
     }
   });
