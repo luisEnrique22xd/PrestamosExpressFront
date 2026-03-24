@@ -196,10 +196,7 @@ export const generarPagare = (data: any) => {
   doc.setFont("helvetica", "bold");
   doc.text(avalNombre, 136, yBase + 20, { align: 'center', maxWidth: 45 }); // Nombre a +20
 
-  // Sello Formitec (opcional)
-  doc.setTextColor(150);
-  doc.setFontSize(10);
-  doc.text("Formitec  P  01", 12, 135, { angle: 90 });
+
 
   doc.save(`Pagare_${cliente.replace(/\s+/g, '_')}.pdf`);
 };

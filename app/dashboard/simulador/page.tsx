@@ -143,12 +143,14 @@ useEffect(() => {
 }, []);
 
 // 6. EXPORTAR (Simulación y Pagaré sin guardar en DB)
-const exportarDocumentacion = () => {
+const exportarDocumentacion = async () => {
   // 1. Ya no usamos async/await porque no llamamos a la API aquí
   setLoading(true); 
+  try {
 
   // 2. Usamos el folio que cargamos con el useEffect al inicio (folioConsecutivo)
-  const folioReal = folioConsecutivo;
+  const res = await api.post('/proximo-folio/');
+  const folioOficial = res.data.folio;
 
   // 3. Calculamos la fecha final
   const ultimaFecha = fechasPago[fechasPago.length - 1]?.fechaCobro;
@@ -172,19 +174,24 @@ const exportarDocumentacion = () => {
     numIntegrantes, 
     cuotaPorSocio,
     fechaVencimiento: ultimaFecha,
-    folio_consecutivo: folioReal, // Usamos el estado del contador
+    folio_consecutivo: folioOficial, // Usamos el estado del contador
    
   };
 
   // 5. Generamos los archivos
   generarPDFSimulacion(datosFinales, fechasPago);
   generarPagare(datosFinales);
-  setFolioConsecutivo(prevFolio => prevFolio + 1);
+  setFolioConsecutivo(folioOficial + 1);
 
   // 6. Feedback para Alexander
-  alert(`✅ Documentos generados con Folio: ${folioReal.toString().padStart(3, '0')}`);
+  alert(`✅ Documentos generados con Folio: ${folioOficial.toString().padStart(3, '0')}`);
   
   setLoading(false);
+}catch (error) {
+    alert("Error al conectar con el servidor de folios");
+  } finally {
+    setLoading(false);
+  }
 };
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
