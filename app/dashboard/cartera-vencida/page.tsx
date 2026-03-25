@@ -140,24 +140,28 @@ export default function CarteraVencidaPage() {
                       </span>
                     </td>
                     <td className="px-8 py-6 text-center">
-                      <span className="font-black text-sm text-red-600">
-                        ${parseFloat(e.saldo_actual).toLocaleString('es-MX')}
-                      </span>
-                    </td>
+  <span className="font-black text-sm text-red-600">
+    {/* Sumamos saldo_actual (capital) + total_penalizaciones */}
+    ${(parseFloat(e.saldo_actual || '0') + parseFloat(e.total_penalizaciones || '0')).toLocaleString('es-MX')}
+  </span>
+</td>
                     <td className="px-8 py-6 text-center">
-                       <div className="flex flex-col items-center">
-                         {tieneMora ? (
-                           <>
-                             <span className="text-[10px] font-black text-red-500 uppercase flex items-center gap-1">
-                               <AlertCircle size={10} /> Mora Activa
-                             </span>
-                             <span className="text-[9px] text-slate-400 font-bold">+ ${e.total_penalizaciones} recargos</span>
-                           </>
-                         ) : (
-                           <span className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Pendiente de Pago</span>
-                         )}
-                       </div>
-                    </td>
+    <div className="flex flex-col items-center">
+      {tieneMora ? (
+        <>
+          <span className="text-[10px] font-black text-red-500 uppercase flex items-center gap-1">
+            <AlertCircle size={10} /> Mora Activa
+          </span>
+          {/* Mostramos el desglose para que Alexander sepa de dónde salen los $45 */}
+          <span className="text-[9px] text-slate-400 font-bold italic">
+             Cap: ${parseFloat(e.saldo_actual).toLocaleString()} + Mora: ${e.total_penalizaciones}
+          </span>
+        </>
+      ) : (
+        <span className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Pendiente de Pago</span>
+      )}
+    </div>
+</td>
                   </tr>
                   {isExpanded && (
                     <tr className="bg-red-50/20">

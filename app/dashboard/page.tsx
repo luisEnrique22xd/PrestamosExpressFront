@@ -139,7 +139,7 @@ export default function GlobalDashboard() {
           <div className="absolute top-0 right-0 p-4 opacity-5 text-red-600">
             <Activity size={80} />
           </div>
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Inversión en Calle</p>
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Inversión</p>
           <h2 className="text-4xl font-black text-red-600 mt-2 tracking-tighter italic">
             ${capitalEnCalle.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </h2>

@@ -216,10 +216,14 @@ export default function ClientesPage() {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-center">
-                    <span className={`font-black text-sm ${parseFloat(c.saldo_actual) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                      ${parseFloat(c.saldo_actual || '0').toLocaleString('es-MX')}
-                    </span>
-                  </td>
+  <span className={`font-black text-sm ${parseFloat(c.saldo_actual) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+    {/* Sumamos capital + penalizaciones para mostrar la deuda REAL */}
+    ${(parseFloat(c.saldo_actual || '0') + parseFloat(c.total_penalizaciones || '0')).toLocaleString('es-MX')}
+  </span>
+  {parseFloat(c.total_penalizaciones) > 0 && (
+    <p className="text-[8px] text-red-400 font-bold uppercase italic">+ Mora Incluida</p>
+  )}
+</td>
                   <td className="px-8 py-6 text-center">
                     <div className={`mx-auto w-fit px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border-2 ${c.tiene_prestamo_activo ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                       }`}>
