@@ -20,13 +20,10 @@ export default function PagosPage() {
   // --- LÓGICA DINÁMICA DE PENALIZACIONES ---
   useEffect(() => {
     if (clienteSel) {
-      // Verificamos si el cliente trae penalizaciones activas en su objeto
-      // Nota: Asegúrate que tu serializador de 'directorio-hibrido' incluya el campo penalizaciones
       const penalizacionesActivas = clienteSel.penalizaciones?.filter((p: any) => p.activa) || [];
       
       if (penalizacionesActivas.length > 0) {
         setTienePenalizaciones(true);
-        // Calculamos el total de multas pendientes para sugerirlo en el input
         const totalMultas = penalizacionesActivas.reduce((acc: number, p: any) => acc + Number(p.monto_penalizado), 0);
         setMontoPenalizacion(totalMultas);
       } else {
@@ -51,11 +48,20 @@ export default function PagosPage() {
     } else { setSugerencias([]); }
   };
 
-  // 2. Cálculos de Saldo Proyectado
+  // --- 2. CÁLCULOS DE SALDO PROYECTADO ACTUALIZADOS ---
+  
+  // Saldo que incluye capital + mora actual detectada
+  const saldoTotalAnterior = useMemo(() => {
+    const capital = Number(clienteSel?.saldo_actual) || 0;
+    const mora = Number(montoPenalizacion) || 0;
+    return capital + mora;
+  }, [clienteSel, montoPenalizacion]);
+
+  // Nuevo saldo después de aplicar el abono (la mora se asume liquidada con el pago)
   const nuevoSaldoCalculado = useMemo(() => {
-    const actual = Number(clienteSel?.saldo_actual) || 0;
+    const capitalActual = Number(clienteSel?.saldo_actual) || 0;
     const abono = Number(montoAbono) || 0;
-    return Math.max(0, actual - abono);
+    return Math.max(0, capitalActual - abono);
   }, [clienteSel, montoAbono]);
 
   // 3. Selección de Entidad
@@ -77,7 +83,7 @@ export default function PagosPage() {
         prestamo: clienteSel.ultimo_prestamo_id,
         monto: Number(montoAbono),
         semana_numero: Number(semanaSeleccionada),
-        monto_penalizacion: Number(montoPenalizacion), // Enviamos el valor (0 o más)
+        monto_penalizacion: Number(montoPenalizacion),
       });
 
       generarPDFRecibo({
@@ -87,7 +93,7 @@ export default function PagosPage() {
         semana: semanaSeleccionada,
         saldoAnterior: res.data.saldo_anterior,
         nuevoSaldo: res.data.nuevo_saldo,
-        penalizacion: res.data.penalizaciones_pagadas || montoPenalizacion, // Dato para el ticket
+        penalizacion: res.data.penalizaciones_pagadas || montoPenalizacion,
         fecha: res.data.fecha,
         hora: res.data.hora
       });
@@ -159,7 +165,6 @@ export default function PagosPage() {
               </select>
             </div>
 
-            {/* MONTO Y PENALIZACIÓN */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Monto Recibido ($)</label>
@@ -191,16 +196,27 @@ export default function PagosPage() {
               </div>
             </div>
 
-            {/* RESUMEN */}
+            {/* RESUMEN ACTUALIZADO CON DESGLOSE */}
             {clienteSel && (
               <div className={`p-8 rounded-[2.5rem] border animate-in slide-in-from-bottom-2 duration-500 ${clienteSel.es_grupo ? 'bg-purple-50 border-purple-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                <div className="flex justify-between text-slate-500 font-bold text-xs mb-3">
-                  <span>SALDO ANTERIOR:</span>
-                  <span className="text-slate-700 font-black">${Number(clienteSel.saldo_actual).toLocaleString()}</span>
-                </div>
-                <div className={`flex justify-between pt-4 border-t ${clienteSel.es_grupo ? 'border-purple-200' : 'border-emerald-200'}`}>
-                  <span className="text-xs font-black uppercase">NUEVO SALDO PENDIENTE:</span>
-                  <span className={`text-2xl font-black tracking-tighter ${clienteSel.es_grupo ? 'text-purple-900' : 'text-emerald-900'}`}>${nuevoSaldoCalculado.toLocaleString()}</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-slate-500 font-bold text-xs">
+                    <span>SALDO TOTAL (CON MORA):</span>
+                    <span className="text-slate-700 font-black">${saldoTotalAnterior.toLocaleString('es-MX')}</span>
+                  </div>
+
+                  {/* Detalle informativo para Alexander */}
+                  <div className="flex justify-between text-slate-400 text-[10px] italic font-medium px-1">
+                    <span>Capital: ${Number(clienteSel.saldo_actual).toLocaleString()}</span>
+                    <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
+                  </div>
+
+                  <div className={`flex justify-between pt-4 border-t ${clienteSel.es_grupo ? 'border-purple-200' : 'border-emerald-200'}`}>
+                    <span className="text-xs font-black uppercase">NUEVO SALDO CAPITAL:</span>
+                    <span className={`text-2xl font-black tracking-tighter ${clienteSel.es_grupo ? 'text-purple-900' : 'text-emerald-900'}`}>
+                      ${nuevoSaldoCalculado.toLocaleString('es-MX')}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
