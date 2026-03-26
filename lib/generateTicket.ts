@@ -21,15 +21,13 @@ export const generarPDFRecibo = (datos: any) => {
     format: [80, 210] 
   });
 
-  // --- 1. LOGO CON PROPORCIÓN CORREGIDA ---
-  // Ajustamos a 40mm de ancho y 10mm de alto para evitar que se vea "aplastado"
-  const logoW = 40;
-  const logoH = 10;
-  const centerX = (80 - logoW) / 2;
-  doc.addImage(LOGO_BASE64, 'PNG', centerX, 5, logoW, logoH);
+  // --- 1. LOGO CORREGIDO (CUADRADO PARA EVITAR ESTIRAMIENTO) ---
+  const logoSize = 25; // Tamaño del logo en mm
+  const logoX = (80 - logoSize) / 2; // Centrado exacto
+  doc.addImage(LOGO_BASE64, 'PNG', logoX, 5, logoSize, logoSize);
 
-  // --- ENCABEZADO ---
-  let headerY = 22; // Subimos un poco el texto ya que el logo es menos alto ahora
+  // --- ENCABEZADO (AJUSTADO PARA EL LOGO CUADRADO) ---
+  let headerY = logoSize + 10; // Empieza después del logo cuadrado
   doc.setFont("courier", "bold");
   doc.setFontSize(10);
   doc.text("PRÉSTAMOS EXPRESS", 40, headerY, { align: "center" });
@@ -60,7 +58,7 @@ export const generarPDFRecibo = (datos: any) => {
   doc.text(`Cliente: ${cliente.toUpperCase()}`, 10, y);
   y += 10;
 
-  // --- 2. TABLA DE CONCEPTOS (ALINEACIÓN MEJORADA) ---
+  // --- 2. TABLA DE CONCEPTOS (ALINEACIÓN DECIMAL PERFECTA) ---
   doc.setFont("courier", "bold");
   doc.text("CONCEPTO", 10, y);
   doc.text("MONTO", 70, y, { align: "right" });
@@ -71,33 +69,43 @@ export const generarPDFRecibo = (datos: any) => {
   const modTxt = modalidad?.toUpperCase() === 'QUINCENAL' ? 'QUINCENA' : modalidad?.toUpperCase() === 'MENSUAL' ? 'MES' : 'SEMANA';
   
   doc.text(`PAGO ${modTxt} ${semana}`, 10, y);
-  doc.text(`$${abonoNum.toFixed(2).padStart(10, ' ')}`, 70, y, { align: "right" });
+  // Usamos padding para que los números se alineen a la derecha sobre el mismo eje
+  const abonoFormatted = `$${abonoNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  doc.text(abonoFormatted, 70, y, { align: "right" });
 
   y += 5;
   doc.text(`PENALIZACIONES`, 10, y);
-  doc.text(`$${multaNum.toFixed(2).padStart(10, ' ')}`, 70, y, { align: "right" });
+  const multaFormatted = `$${multaNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  doc.text(multaFormatted, 70, y, { align: "right" });
 
   y += 10;
   doc.line(10, y, 70, y);
   y += 6;
   doc.setFont("courier", "bold");
   doc.text("TOTAL COBRADO:", 10, y);
-  doc.text(`$${totalCobrado.toFixed(2).padStart(10, ' ')}`, 70, y, { align: "right" });
+  const totalFormatted = `$${totalCobrado.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  doc.text(totalFormatted, 70, y, { align: "right" });
 
   y += 8;
   doc.setFontSize(7);
   doc.setFont("courier", "normal");
   doc.text(`( PAGO A CAPITAL E INTERÉS CORRESPONDIENTE )`, 40, y, { align: "center" });
 
-  // --- CUADRO DE SALDOS ---
+  // --- CUADRO DE SALDOS (RECUADRO ALINEADO) ---
   y += 10;
   doc.rect(8, y, 64, 28);
-  doc.text(`SALDO ANTERIOR:   $${Number(saldoAnterior).toFixed(2).padStart(8, ' ')}`, 12, y + 6);
-  doc.text(`ABONO A CUOTA:    $${abonoNum.toFixed(2).padStart(8, ' ')}`, 12, y + 12);
-  doc.text(`PAGO MULTAS:      $${multaNum.toFixed(2).padStart(8, ' ')}`, 12, y + 18);
+  doc.text(`SALDO ANTERIOR: `, 12, y + 6);
+  doc.text(`$${Number(saldoAnterior).toFixed(2).padStart(10, ' ')}`, 68, y + 6, { align: "right" });
+  
+  doc.text(`ABONO A CUOTA:  `, 12, y + 12);
+  doc.text(`$${abonoNum.toFixed(2).padStart(10, ' ')}`, 68, y + 12, { align: "right" });
+
+  doc.text(`PAGO MULTAS:    `, 12, y + 18);
+  doc.text(`$${multaNum.toFixed(2).padStart(10, ' ')}`, 68, y + 18, { align: "right" });
   
   doc.setFont("courier", "bold");
-  doc.text(`NUEVO SALDO:      $${Number(nuevoSaldo).toFixed(2).padStart(8, ' ')}`, 12, y + 24); 
+  doc.text(`NUEVO SALDO:    `, 12, y + 24);
+  doc.text(`$${Number(nuevoSaldo).toFixed(2).padStart(10, ' ')}`, 68, y + 24, { align: "right" }); 
 
   // --- LEYENDAS ---
   y += 38;
