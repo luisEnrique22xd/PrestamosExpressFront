@@ -60,7 +60,7 @@ export default function CalendarioCobranza() {
   if (loading && proyecciones.length === 0) return (
     <div className="h-screen flex flex-col items-center justify-center text-slate-400 gap-4">
       <Loader2 className="animate-spin" size={40} color="#0047AB" />
-      <p className="font-black italic uppercase tracking-widest text-xs">Sincronizando agenda Huamantla...</p>
+      <p className="font-black italic uppercase tracking-widest text-xs">Sincronizando agenda Acuitlapilco...</p>
     </div>
   );
 
@@ -202,7 +202,7 @@ export default function CalendarioCobranza() {
           </div>
 
           <div className="mt-8 pt-8 border-t border-white/10 text-center text-[9px] text-slate-600 font-black uppercase tracking-[0.4em] italic">
-            Management V1.0 • Huamantla
+            Management V1.0 • Acuitlapilco
           </div>
         </div>
       )}

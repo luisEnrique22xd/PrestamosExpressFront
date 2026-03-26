@@ -164,7 +164,7 @@ export default function UsuarioPage() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `backup_huamantla_${new Date().toLocaleDateString()}.json`);
+      link.setAttribute('download', `backup_acuitlapilco_${new Date().toLocaleDateString()}.json`);
       document.body.appendChild(link);
       link.click();
       mostrarAlerta('success', 'Copia de seguridad descargada');
