@@ -317,7 +317,7 @@ export default function ProyeccionPage() {
           <p className={`text-xs font-medium leading-relaxed italic ${esGrupal ? 'text-purple-700' : 'text-blue-700/80'}`}>
             <strong>Proyección Solidaria:</strong> {esGrupal 
               ? `Este cálculo divide la cuota total entre los ${numIntegrantes} clientes responsables. En caso de que un integrante no aporte, el grupo deberá cubrir su parte solidariamente.` 
-              : `Este cálculo es individual. Los domingos se recorren al lunes para asegurar la efectividad del cobro en Huamantla.`}
+              : `Este cálculo es individual. Los domingos se recorren al lunes para asegurar la efectividad del cobro en Acuitlapilco.`}
           </p>
         </div>
       </div>
