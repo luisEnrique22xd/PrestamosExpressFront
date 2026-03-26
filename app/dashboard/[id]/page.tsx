@@ -223,7 +223,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
           <div className="relative w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
-              type="text" placeholder="Buscar socio o grupo..."
+              type="text" placeholder="Buscar cliente o grupo..."
               value={busqueda} onChange={handleInputChange}
               className="w-full pl-12 pr-4 py-3 bg-white shadow-sm rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold"
             />
@@ -296,7 +296,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
           <StatCard title="Contratado" value={`$${(data.progreso_pagos?.monto_capital || 0).toLocaleString()}`} icon={TrendingUp} color={COLORS.azulRey} />
           <StatCard 
             title={data.tipo === 'G' ? "Integrantes" : "Teléfono"} 
-            value={data.tipo === 'G' ? `${data.integrantes_detalle?.length || 0} Socios` : (data.telefono !== 'N/A' ? data.telefono : data.datos_ultimo_aval?.telefono_aval || 'S/N')} 
+            value={data.tipo === 'G' ? `${data.integrantes_detalle?.length || 0} Clientes` : (data.telefono !== 'N/A' ? data.telefono : data.datos_ultimo_aval?.telefono_aval || 'S/N')} 
             icon={data.tipo === 'G' ? Users : Phone} 
             color={data.tipo === 'G' ? '#7C3AED' : COLORS.amarilloCuidado} 
           />

@@ -201,7 +201,7 @@ export default function PrestamosPage() {
 
       <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 relative">
         <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter mb-10 uppercase">
-          {tipoPrestamo === 'I' ? 'Nuevo Préstamo Socio' : 'Apertura de Crédito Grupal'}
+          {tipoPrestamo === 'I' ? 'Nuevo Préstamo Cliente' : 'Apertura de Crédito Grupal'}
         </h2>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -245,10 +245,10 @@ export default function PrestamosPage() {
 
               {/* BUSCADOR DE INTEGRANTES */}
               <div className="relative">
-                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Agregar Integrantes (Socios)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Agregar Integrantes (Clientes)</label>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <input type="text" value={busquedaSocio} onChange={(e) => buscarSocios(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none" placeholder="Buscar socio por nombre..." />
+                  <input type="text" value={busquedaSocio} onChange={(e) => buscarSocios(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none" placeholder="Buscar cliente por nombre..." />
                 </div>
                 {sugerenciasSocios.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 overflow-hidden">
@@ -273,7 +273,7 @@ export default function PrestamosPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">ID Socio</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">ID Cliente</label>
               <input type="number" value={formData.cliente} onChange={(e) => setFormData({ ...formData, cliente: e.target.value })} onBlur={(e) => buscarCliente(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" placeholder="Ej. 102" />
               {clienteEncontrado && <p className="text-[10px] text-emerald-500 font-black uppercase ml-2 italic">✅ {clienteEncontrado.nombre}</p>}
             </div>
@@ -349,7 +349,7 @@ export default function PrestamosPage() {
               <div className="flex-1">
                 <h4 className="text-red-800 font-black uppercase text-xs tracking-tighter italic">Acceso Restringido a Crédito</h4>
                 <p className="text-red-500 text-[11px] font-bold leading-tight">
-                  El socio presenta **recargos pendientes** de pago. El sistema ha bloqueado la emisión de nuevos folios hasta que la cuenta esté al corriente.
+                  El cliente presenta **recargos pendientes** de pago. El sistema ha bloqueado la emisión de nuevos folios hasta que la cuenta esté al corriente.
                 </p>
               </div>
               <div className="text-[8px] font-black bg-white text-red-500 px-3 py-1 rounded-full border border-red-100 uppercase">
@@ -375,7 +375,7 @@ export default function PrestamosPage() {
             ) : tieneBloqueo ? (
               <>
                 <X size={18} className="text-red-400" />
-                <span>Socio Bloqueado por Moras</span>
+                <span>Cliente Bloqueado por Moras</span>
               </>
             ) : (
               <>

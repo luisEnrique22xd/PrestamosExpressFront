@@ -211,7 +211,7 @@ const exportarDocumentacion = async () => {
 
           {/* BUSCADOR AUTOCOMPLETADO HÍBRIDO */}
           <div className="relative" ref={searchRef}>
-            <label className={`text-[10px] font-black uppercase ml-2 tracking-widest block mb-2 italic ${esGrupal ? 'text-purple-600' : 'text-[#0047AB]'}`}>Buscador de Socio o Grupo</label>
+            <label className={`text-[10px] font-black uppercase ml-2 tracking-widest block mb-2 italic ${esGrupal ? 'text-purple-600' : 'text-[#0047AB]'}`}>Buscador de Cliente o Grupo</label>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
               <input 
@@ -343,7 +343,7 @@ const exportarDocumentacion = async () => {
           <Info size={24} className={`${esGrupal ? 'text-purple-600' : 'text-[#0047AB]'} shrink-0 mt-1`} />
           <p className={`text-xs font-medium leading-relaxed italic ${esGrupal ? 'text-purple-700' : 'text-blue-700/80'}`}>
             <strong>Proyección Solidaria:</strong> {esGrupal 
-              ? `Este cálculo divide la cuota total entre los ${numIntegrantes} socios responsables. En caso de que un integrante no aporte, el grupo deberá cubrir su parte solidariamente.` 
+              ? `Este cálculo divide la cuota total entre los ${numIntegrantes} clientes responsables. En caso de que un integrante no aporte, el grupo deberá cubrir su parte solidariamente.` 
               : `Este cálculo es individual. Los domingos se recorren al lunes para asegurar la efectividad del cobro en Huamantla.`}
           </p>
         </div>

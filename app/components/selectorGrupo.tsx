@@ -98,7 +98,7 @@ export default function SelectorGrupo({ onSeleccionar, onNuevoNombre }: Selector
                 </div>
                 <div>
                   <p className="text-sm font-black text-slate-800">{g.nombre}</p>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase">ID: {g.id} • {g.num_integrantes} Socios</p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">ID: {g.id} • {g.num_integrantes} Clientes</p>
                 </div>
               </div>
               <div className="text-[8px] bg-emerald-100 text-emerald-600 px-2 py-1 rounded font-black uppercase">Existente</div>

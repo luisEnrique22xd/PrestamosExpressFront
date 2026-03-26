@@ -126,7 +126,7 @@ export default function ClientesPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0047AB]" size={18} />
             <input
               type="text"
-              placeholder="Buscar socio por nombre o ID..."
+              placeholder="Buscar cliente por nombre o ID..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-[#0047AB] outline-none transition-all"
@@ -147,7 +147,7 @@ export default function ClientesPage() {
           <div className="bg-white w-full max-w-lg p-10 rounded-[2.5rem] shadow-2xl relative">
             <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 transition-colors"><X size={24} /></button>
             <h2 className="text-2xl font-black text-slate-800 mb-6 italic">
-              {isEditing ? 'Actualizar Expediente' : 'Nuevo Registro de Socio'}
+              {isEditing ? 'Actualizar Expediente' : 'Nuevo Registro de Cliente'}
             </h2>
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
               <div className="col-span-2 space-y-1">
@@ -206,7 +206,7 @@ export default function ClientesPage() {
                       </div>
                       <div>
                         <p className="font-black text-slate-800 text-sm tracking-tight capitalize">{c.nombre || c.nombre_grupo}</p>
-                        <p className="text-[9px] text-slate-400 font-black uppercase italic">{c.es_grupo ? 'Ref Grupal:' : 'ID Socio:'} {c.id}</p>
+                        <p className="text-[9px] text-slate-400 font-black uppercase italic">{c.es_grupo ? 'Ref Grupal:' : 'ID Cliente:'} {c.id}</p>
                       </div>
                     </div>
                   </td>
@@ -276,7 +276,7 @@ export default function ClientesPage() {
       {/* PAGINACIÓN */}
       <div className="p-8 bg-slate-50/20 border-t border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6">
         <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
-          Socio <span className="text-[#0047AB]">{indicePrimero + 1}</span> a <span className="text-[#0047AB]">{Math.min(indiceUltimo, clientesFiltrados.length)}</span> de {clientesFiltrados.length}
+          Cliente <span className="text-[#0047AB]">{indicePrimero + 1}</span> a <span className="text-[#0047AB]">{Math.min(indiceUltimo, clientesFiltrados.length)}</span> de {clientesFiltrados.length}
         </p>
         <div className="flex items-center gap-3">
           <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-[#0047AB] disabled:opacity-20"><ChevronLeft size={18} /></button>

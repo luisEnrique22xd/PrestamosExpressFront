@@ -104,7 +104,7 @@ export default function CarteraVencidaPage() {
         <table className="w-full text-left">
           <thead className="bg-slate-50 text-slate-400 text-[9px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
             <tr>
-              <th className="px-8 py-5">Socio / Grupo</th>
+              <th className="px-8 py-5">Cliente / Grupo</th>
               <th className="px-8 py-5">Tipo</th>
               <th className="px-8 py-5 text-center">Deuda Total</th>
               <th className="px-8 py-5 text-center">Atraso</th>
