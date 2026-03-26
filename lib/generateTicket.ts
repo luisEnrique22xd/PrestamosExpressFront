@@ -18,20 +18,18 @@ export const generarPDFRecibo = (datos: any) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
-    format: [80, 210] // Aumentamos un poco el largo total por el logo
+    format: [80, 210] 
   });
 
-  // --- LOGO CENTRADO ---
-  // addImage(data, format, x, y, width, height)
-  // 40mm es el centro del ticket de 80mm. Si el logo mide 20mm de ancho, empezamos en 30mm.
-  const logoWidth = 20;
-  const logoHeight = 20;
-  const centerX = (80 - logoWidth) / 2;
-  
-  doc.addImage(LOGO_BASE64, 'PNG', centerX, 5, logoWidth, logoHeight);
+  // --- 1. LOGO CON PROPORCIÓN CORREGIDA ---
+  // Ajustamos a 40mm de ancho y 10mm de alto para evitar que se vea "aplastado"
+  const logoW = 40;
+  const logoH = 10;
+  const centerX = (80 - logoW) / 2;
+  doc.addImage(LOGO_BASE64, 'PNG', centerX, 5, logoW, logoH);
 
-  // --- ENCABEZADO (Ajustado en Y para que empiece después del logo) ---
-  let headerY = 30; 
+  // --- ENCABEZADO ---
+  let headerY = 22; // Subimos un poco el texto ya que el logo es menos alto ahora
   doc.setFont("courier", "bold");
   doc.setFontSize(10);
   doc.text("PRÉSTAMOS EXPRESS", 40, headerY, { align: "center" });
@@ -46,11 +44,10 @@ export const generarPDFRecibo = (datos: any) => {
   doc.text("COMPROBANTE DE OPERACIÓN", 40, headerY + 21, { align: "center" });
   doc.text("------------------------------------------", 40, headerY + 25, { align: "center" });
 
-  // --- DATOS DEL CLIENTE (Ajustado Y) ---
+  // --- DATOS DEL CLIENTE ---
   doc.setFontSize(8);
   doc.setFont("courier", "normal");
   let y = headerY + 32;
-  
   doc.setFont("courier", "bold");
   doc.text(`Folio: ${folio}`, 10, y);
   
@@ -63,7 +60,7 @@ export const generarPDFRecibo = (datos: any) => {
   doc.text(`Cliente: ${cliente.toUpperCase()}`, 10, y);
   y += 10;
 
-  // --- TABLA DE CONCEPTOS ---
+  // --- 2. TABLA DE CONCEPTOS (ALINEACIÓN MEJORADA) ---
   doc.setFont("courier", "bold");
   doc.text("CONCEPTO", 10, y);
   doc.text("MONTO", 70, y, { align: "right" });
@@ -74,18 +71,18 @@ export const generarPDFRecibo = (datos: any) => {
   const modTxt = modalidad?.toUpperCase() === 'QUINCENAL' ? 'QUINCENA' : modalidad?.toUpperCase() === 'MENSUAL' ? 'MES' : 'SEMANA';
   
   doc.text(`PAGO ${modTxt} ${semana}`, 10, y);
-  doc.text(`$${abonoNum.toFixed(2)}`, 70, y, { align: "right" });
+  doc.text(`$${abonoNum.toFixed(2).padStart(10, ' ')}`, 70, y, { align: "right" });
 
   y += 5;
   doc.text(`PENALIZACIONES`, 10, y);
-  doc.text(`$${multaNum.toFixed(2)}`, 70, y, { align: "right" });
+  doc.text(`$${multaNum.toFixed(2).padStart(10, ' ')}`, 70, y, { align: "right" });
 
   y += 10;
   doc.line(10, y, 70, y);
   y += 6;
   doc.setFont("courier", "bold");
   doc.text("TOTAL COBRADO:", 10, y);
-  doc.text(`$${totalCobrado.toFixed(2)}`, 70, y, { align: "right" });
+  doc.text(`$${totalCobrado.toFixed(2).padStart(10, ' ')}`, 70, y, { align: "right" });
 
   y += 8;
   doc.setFontSize(7);
@@ -95,14 +92,14 @@ export const generarPDFRecibo = (datos: any) => {
   // --- CUADRO DE SALDOS ---
   y += 10;
   doc.rect(8, y, 64, 28);
-  doc.text(`SALDO ANTERIOR:   $${Number(saldoAnterior).toFixed(2)}`, 12, y + 6);
-  doc.text(`ABONO A CUOTA:    $${abonoNum.toFixed(2)}`, 12, y + 12);
-  doc.text(`PAGO PENALIZACIONES:      $${multaNum.toFixed(2)}`, 12, y + 18);
+  doc.text(`SALDO ANTERIOR:   $${Number(saldoAnterior).toFixed(2).padStart(8, ' ')}`, 12, y + 6);
+  doc.text(`ABONO A CUOTA:    $${abonoNum.toFixed(2).padStart(8, ' ')}`, 12, y + 12);
+  doc.text(`PAGO MULTAS:      $${multaNum.toFixed(2).padStart(8, ' ')}`, 12, y + 18);
   
   doc.setFont("courier", "bold");
-  doc.text(`NUEVO SALDO:      $${Number(nuevoSaldo).toFixed(2)}`, 12, y + 24); 
+  doc.text(`NUEVO SALDO:      $${Number(nuevoSaldo).toFixed(2).padStart(8, ' ')}`, 12, y + 24); 
 
-  // --- LEYENDAS FINALES ---
+  // --- LEYENDAS ---
   y += 38;
   doc.setFontSize(7);
   doc.setFont("courier", "bold");
@@ -113,11 +110,10 @@ export const generarPDFRecibo = (datos: any) => {
   y += 4;
   doc.text("GRACIAS POR SU PREFERENCIA.", 40, y, { align: "center" });
 
-  // --- FIRMAS (Ajustadas al final del ticket largo) ---
+  // --- FIRMAS ---
   y = 195; 
   doc.line(10, y, 35, y); 
   doc.line(45, y, 70, y); 
-  
   y += 4;
   doc.setFontSize(6);
   doc.text("FIRMA DEL CLIENTE", 22, y, { align: "center" });
