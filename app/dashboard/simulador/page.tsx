@@ -35,8 +35,10 @@ export default function ProyeccionPage() {
   const [interes, setInteres] = useState(2.5);
   
   // Fecha de inicio forzada a hoy sin desfase
-  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
-
+  const [fechaInicio, setFechaInicio] = useState(() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+});
   // 1. Cargar Folio Inicial
   useEffect(() => {
     const fetchFolio = async () => {
@@ -101,35 +103,32 @@ export default function ProyeccionPage() {
   // 🔥 5. FECHAS DE PAGO CORREGIDAS (EL TRUCO DE LAS 12:00 PM)
   // --- 5. FECHAS DE PAGO BLINDADAS (Miércoles es Miércoles) ---
   const fechasPago = useMemo(() => {
-    let fechas = [];
-    const [year, month, day] = fechaInicio.split('-').map(Number);
-    
-    // Creamos la fecha base usando Date.UTC para que no haya desfases de zona horaria
-    // month - 1 porque en JS los meses van de 0 a 11
-    let fechaReferencia = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  let fechas = [];
+  const [year, month, day] = fechaInicio.split('-').map(Number);
+  
+  // Base inamovible al mediodía UTC
+  let fechaReferencia = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
-    for (let i = 1; i <= cuotas; i++) {
-      let nuevaFecha = new Date(fechaReferencia.getTime());
+  for (let i = 1; i <= cuotas; i++) {
+    let nuevaFecha = new Date(fechaReferencia.getTime());
 
-      if (modalidad === 'semanal') {
-        // Sumamos exactamente 7 días multiplicados por el número de cuota
-        nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + (7 * i));
-      } else if (modalidad === 'quincenal') {
-        nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + (15 * i));
-      } else if (modalidad === 'mensual') {
-        nuevaFecha.setUTCMonth(nuevaFecha.getUTCMonth() + i);
-      }
-      
-      // REGLA DE DOMINGOS (Usando UTC para consistencia)
-      // 0 es Domingo en getUTCDay()
-      if (nuevaFecha.getUTCDay() === 0) {
-        nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + 1);
-      }
-      
-      fechas.push({ fechaCobro: nuevaFecha });
+    if (modalidad === 'semanal') {
+      nuevaFecha.setUTCDate(fechaReferencia.getUTCDate() + (7 * i));
+    } else if (modalidad === 'quincenal') {
+      nuevaFecha.setUTCDate(fechaReferencia.getUTCDate() + (15 * i));
+    } else if (modalidad === 'mensual') {
+      nuevaFecha.setUTCMonth(fechaReferencia.getUTCMonth() + i);
     }
-    return fechas;
-  }, [fechaInicio, modalidad, cuotas]);
+    
+    // Si cae en Domingo (0), se pasa a Lunes (sumar 1 día UTC)
+    if (nuevaFecha.getUTCDay() === 0) {
+      nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + 1);
+    }
+    
+    fechas.push({ fechaCobro: nuevaFecha });
+  }
+  return fechas;
+}, [fechaInicio, modalidad, cuotas]);
 
   // 6. Exportación de Documentos
   const exportarDocumentacion = async () => {
@@ -263,7 +262,7 @@ export default function ProyeccionPage() {
       <div className="lg:col-span-2 space-y-6">
         <div className={`p-10 rounded-[3rem] text-white shadow-2xl flex flex-col md:flex-row justify-between items-center gap-6 transition-colors duration-500 ${esGrupal ? 'bg-gradient-to-br from-purple-900 to-slate-900' : 'bg-[#050533]'}`}>
           <div className="text-center md:text-left">
-            <p className="text-sky-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2 italic">Pago por {esGrupal ? 'Grupo' : 'Socio'} ({modalidad})</p>
+            <p className="text-sky-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2 italic">Pago por {esGrupal ? 'Grupo' : 'Cliente'} ({modalidad})</p>
             <h2 className="text-6xl font-black tracking-tighter italic text-white">${pagoPorCuota.toFixed(2)}</h2>
             {esGrupal && (
                 <div className="mt-4 flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10">
@@ -285,8 +284,12 @@ export default function ProyeccionPage() {
             <div key={index} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between shadow-sm group hover:border-[#0047AB] transition-all">
               <div className="flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-slate-100 font-bold transition-colors ${esGrupal ? 'bg-purple-50 group-hover:bg-purple-100' : 'bg-slate-50 group-hover:bg-blue-50'}`}>
-                  <span className="text-[8px] text-slate-400 uppercase">{item.fechaCobro.toLocaleDateString('es-MX', { month: 'short' })}</span>
-                  <span className="text-xl text-slate-800">{item.fechaCobro.getDate()}</span>
+                  <span className="text-[8px] text-slate-400 uppercase">
+    {item.fechaCobro.toLocaleDateString('es-MX', { month: 'short', timeZone: 'UTC' })}
+  </span>
+  <span className="text-xl text-slate-800">
+    {item.fechaCobro.getUTCDate()} 
+  </span>
                 </div>
                 <div>
                   <p className="font-black text-slate-800 text-sm">Pago #{index + 1}</p>
