@@ -4,27 +4,17 @@ import { generarPDFSimulacion } from '@/lib/generateSimulation';
 import { generarPagare } from '@/lib/generatePagare';
 import api from '@/lib/api';
 import { 
-  Calendar as CalendarIcon, 
-  DollarSign, 
-  PieChart, 
-  Info, 
-  Search, 
-  ArrowRight, 
-  User, 
-  MapPin, 
-  Phone, 
-  Fingerprint,
-  Printer,
-  ChevronRight,
-  Users // Icono para grupos
+  Search, PieChart, Info, User, MapPin, 
+  ChevronRight, Users, Printer, DollarSign
 } from 'lucide-react';
 
 export default function ProyeccionPage() {
   const [loading, setLoading] = useState(false);
-  // --- ESTADOS DE DATOS DEL CLIENTE / GRUPO ---
+  
+  // --- ESTADOS DE DATOS ---
   const [nombreCliente, setNombreCliente] = useState('');
   const [direccion, setDireccion] = useState('');
-  const [poblacion, setPoblacion] = useState('');
+  const [poblacion, setPoblacion] = useState('HUAMANTLA, TLAXCALA');
   const [curp, setCurp] = useState('');
   const [telefono, setTelefono] = useState('');
   const [nombreAval, setNombreAval] = useState('');
@@ -32,7 +22,6 @@ export default function ProyeccionPage() {
   const [esGrupal, setEsGrupal] = useState(false);
   const [numIntegrantes, setNumIntegrantes] = useState(1);
 
-  // --- ESTADOS PARA AUTOCOMPLETADO Y FOLIO ---
   const [busqueda, setBusqueda] = useState('');
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
@@ -44,32 +33,31 @@ export default function ProyeccionPage() {
   const [modalidad, setModalidad] = useState('semanal');
   const [cuotas, setCuotas] = useState(8);
   const [interes, setInteres] = useState(2.5);
+  
+  // Fecha de inicio forzada a hoy sin desfase
   const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
 
-  // --- 1. CARGAR FOLIO CONSECUTIVO ---
-  // useEffect(() => {
-  //   const fetchFolio = async () => {
-  //     try {
-  //       const res = await api.get('/proximo-folio/');
-  //       setFolioConsecutivo(res.data.proximo_folio);
-  //     } catch (e) { console.error("Error al obtener folio"); }
-  //   };
-  //   fetchFolio();
-  // }, []);
+  // 1. Cargar Folio Inicial
+  useEffect(() => {
+    const fetchFolio = async () => {
+      try {
+        const res = await api.get('/proximo-folio/');
+        setFolioConsecutivo(res.data.proximo_folio);
+      } catch (e) { console.error("Error al obtener folio"); }
+    };
+    fetchFolio();
+  }, []);
 
-  // --- 2. BUSCADOR HÍBRIDO (CLIENTES Y GRUPOS) ---
+  // 2. Buscador Híbrido
   const buscarEntidades = async (query: string) => {
     setBusqueda(query);
     if (query.length > 1) {
       try {
-        // Usamos el directorio híbrido para que salgan grupos también
         const res = await api.get(`/clientes/directorio-hibrido/?search=${query}`);
         setSugerencias(res.data.slice(0, 5));
         setMostrarSugerencias(true);
       } catch (e) { console.error(e); }
-    } else {
-      setMostrarSugerencias(false);
-    }
+    } else { setMostrarSugerencias(false); }
   };
 
   const seleccionarEntidad = (c: any) => {
@@ -87,19 +75,18 @@ export default function ProyeccionPage() {
       setNombreAval(c.datos_ultimo_aval.nombre_aval || '');
       setTelefonoAval(c.datos_ultimo_aval.telefono_aval || '');
     }
-
     setMostrarSugerencias(false);
     setBusqueda('');
   };
 
-  // --- 3. TASAS AUTOMÁTICAS ---
+  // 3. Tasas Automáticas
   useEffect(() => {
     if (modalidad === 'semanal') setInteres(2.5);
     else if (modalidad === 'quincenal') setInteres(7.5);
     else if (modalidad === 'mensual') setInteres(20);
   }, [modalidad]);
 
-  // --- 4. CÁLCULOS FINANCIEROS HÍBRIDOS ---
+  // 4. Cálculos Financieros
   const { montoTotal, pagoPorCuota, cuotaPorSocio } = useMemo(() => {
     const interesPorCuota = monto * (interes / 100); 
     const capitalPorCuota = monto / (cuotas || 1);
@@ -111,14 +98,12 @@ export default function ProyeccionPage() {
     };
   }, [monto, interes, cuotas, esGrupal, numIntegrantes]);
 
-  // --- 5. FECHAS DE PAGO ---
-  // --- 5. FECHAS DE PAGO CORREGIDAS ---
+  // 🔥 5. FECHAS DE PAGO CORREGIDAS (EL TRUCO DE LAS 12:00 PM)
   const fechasPago = useMemo(() => {
     let fechas = [];
     const [year, month, day] = fechaInicio.split('-').map(Number);
     
-    // Seteamos a las 12:00 PM para evitar que la zona horaria 
-    // mueva el día hacia atrás o adelante por error.
+    // Forzamos 12:00 PM para que la zona horaria no reste/sume un día
     let fechaReferencia = new Date(year, month - 1, day, 12, 0, 0);
 
     for (let i = 1; i <= cuotas; i++) {
@@ -132,7 +117,7 @@ export default function ProyeccionPage() {
         nuevaFecha.setMonth(fechaReferencia.getMonth() + i);
       }
       
-      // REGLA DE DOMINGOS: Si cae en 0 (Domingo), sumamos 1 día para que sea Lunes
+      // Regla de domingos (Recorrido al Lunes)
       if (nuevaFecha.getDay() === 0) {
         nuevaFecha.setDate(nuevaFecha.getDate() + 1);
       }
@@ -142,70 +127,35 @@ export default function ProyeccionPage() {
     return fechas;
   }, [fechaInicio, modalidad, cuotas]);
 
-useEffect(() => {
-  const fetchFolio = async () => {
+  // 6. Exportación de Documentos
+  const exportarDocumentacion = async () => {
+    setLoading(true); 
     try {
-      const res = await api.get('/proximo-folio/');
-      // Guardamos el "2" en nuestro estado de React
-      setFolioConsecutivo(res.data.proximo_folio);
-    } catch (e) {
-      console.error("Error al obtener folio");
+      const res = await api.post('/proximo-folio/');
+      const folioOficial = res.data.folio;
+      const ultimaFecha = fechasPago[fechasPago.length - 1]?.fechaCobro;
+      
+      const datosFinales = {
+        nombreCliente, direccion, poblacion, curp, telefono,
+        nombreAval, telefonoAval, monto, modalidad, cuotas, 
+        interes, pagoPorCuota, montoTotal, esGrupal, 
+        numIntegrantes, cuotaPorSocio,
+        fechaVencimiento: ultimaFecha,
+        folio_consecutivo: folioOficial,
+      };
+
+      generarPDFSimulacion(datosFinales, fechasPago);
+      generarPagare(datosFinales);
+      setFolioConsecutivo(folioOficial + 1);
+
+      alert(`✅ Documentos generados con Folio: ${folioOficial.toString().padStart(3, '0')}`);
+    } catch (error) {
+      alert("Error al conectar con el servidor de folios");
+    } finally {
+      setLoading(false);
     }
   };
-  fetchFolio();
-}, []);
 
-// 6. EXPORTAR (Simulación y Pagaré sin guardar en DB)
-const exportarDocumentacion = async () => {
-  // 1. Ya no usamos async/await porque no llamamos a la API aquí
-  setLoading(true); 
-  try {
-
-  // 2. Usamos el folio que cargamos con el useEffect al inicio (folioConsecutivo)
-  const res = await api.post('/proximo-folio/');
-  const folioOficial = res.data.folio;
-
-  // 3. Calculamos la fecha final
-  const ultimaFecha = fechasPago[fechasPago.length - 1]?.fechaCobro;
-  
-  // 4. Preparamos el paquete de datos
-  const datosFinales = {
-    nombreCliente, 
-    direccion, 
-    poblacion: poblacion || "HUAMANTLA, TLAXCALA",
-    curp, 
-    telefono,
-    nombreAval, 
-    telefonoAval,
-    monto, 
-    modalidad, 
-    cuotas, 
-    interes, 
-    pagoPorCuota, 
-    montoTotal,
-    esGrupal, 
-    numIntegrantes, 
-    cuotaPorSocio,
-    fechaVencimiento: ultimaFecha,
-    folio_consecutivo: folioOficial, // Usamos el estado del contador
-   
-  };
-
-  // 5. Generamos los archivos
-  generarPDFSimulacion(datosFinales, fechasPago);
-  generarPagare(datosFinales);
-  setFolioConsecutivo(folioOficial + 1);
-
-  // 6. Feedback para Alexander
-  alert(`✅ Documentos generados con Folio: ${folioOficial.toString().padStart(3, '0')}`);
-  
-  setLoading(false);
-}catch (error) {
-    alert("Error al conectar con el servidor de folios");
-  } finally {
-    setLoading(false);
-  }
-};
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
       
@@ -222,7 +172,7 @@ const exportarDocumentacion = async () => {
             </h3>
           </div>
 
-          {/* BUSCADOR AUTOCOMPLETADO HÍBRIDO */}
+          {/* BUSCADOR */}
           <div className="relative" ref={searchRef}>
             <label className={`text-[10px] font-black uppercase ml-2 tracking-widest block mb-2 italic ${esGrupal ? 'text-purple-600' : 'text-[#0047AB]'}`}>Buscador de Cliente o Grupo</label>
             <div className="relative">
@@ -253,7 +203,6 @@ const exportarDocumentacion = async () => {
             )}
           </div>
 
-          {/* FORMULARIO DE DATOS */}
           <div className="space-y-3 pt-4 border-t border-slate-50">
             <div className="relative">
               <User className="absolute left-4 top-4 text-slate-300" size={16} />
@@ -263,17 +212,12 @@ const exportarDocumentacion = async () => {
               <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
               <input placeholder="Domicilio / Ubicación" value={direccion} onChange={e => setDireccion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
             </div>
-            <div className="relative">
-              <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
-              <input placeholder="Población" value={poblacion} onChange={e => setPoblacion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
-            </div>
             <div className="grid grid-cols-2 gap-2 border-t border-slate-50 pt-4">
               <input placeholder="Presidente / Aval" value={nombreAval} onChange={e => setNombreAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs uppercase" />
               <input placeholder="Tel. Contacto" value={telefonoAval} onChange={e => setTelefonoAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs" />
             </div>
           </div>
 
-          {/* CONFIGURACIÓN FINANCIERA */}
           <div className="space-y-4 pt-4 border-t border-slate-50">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -303,9 +247,10 @@ const exportarDocumentacion = async () => {
 
           <button 
             onClick={exportarDocumentacion}
-            className={`w-full py-5 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${esGrupal ? 'bg-purple-600 shadow-purple-900/20' : 'bg-[#0047AB] shadow-blue-900/20'}`}
+            disabled={loading}
+            className={`w-full py-5 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${esGrupal ? 'bg-purple-600 shadow-purple-900/20' : 'bg-[#0047AB] shadow-blue-900/20'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-             Generar Documentos #PR-{folioConsecutivo.toString().padStart(3, '0')}
+            {loading ? 'Generando...' : `Generar Documentos #PR-${folioConsecutivo.toString().padStart(3, '0')}`}
           </button>
         </div>
       </div>
@@ -314,7 +259,7 @@ const exportarDocumentacion = async () => {
       <div className="lg:col-span-2 space-y-6">
         <div className={`p-10 rounded-[3rem] text-white shadow-2xl flex flex-col md:flex-row justify-between items-center gap-6 transition-colors duration-500 ${esGrupal ? 'bg-gradient-to-br from-purple-900 to-slate-900' : 'bg-[#050533]'}`}>
           <div className="text-center md:text-left">
-            <p className="text-sky-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Pago por Grupo ({modalidad})</p>
+            <p className="text-sky-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2 italic">Pago por {esGrupal ? 'Grupo' : 'Socio'} ({modalidad})</p>
             <h2 className="text-6xl font-black tracking-tighter italic text-white">${pagoPorCuota.toFixed(2)}</h2>
             {esGrupal && (
                 <div className="mt-4 flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10">
@@ -333,7 +278,7 @@ const exportarDocumentacion = async () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fechasPago.map((item, index) => (
-            <div key={index} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between shadow-sm group">
+            <div key={index} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between shadow-sm group hover:border-[#0047AB] transition-all">
               <div className="flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-slate-100 font-bold transition-colors ${esGrupal ? 'bg-purple-50 group-hover:bg-purple-100' : 'bg-slate-50 group-hover:bg-blue-50'}`}>
                   <span className="text-[8px] text-slate-400 uppercase">{item.fechaCobro.toLocaleDateString('es-MX', { month: 'short' })}</span>
@@ -342,8 +287,13 @@ const exportarDocumentacion = async () => {
                 <div>
                   <p className="font-black text-slate-800 text-sm">Pago #{index + 1}</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">{item.fechaCobro.toLocaleDateString('es-MX', { weekday: 'long' })}</p>
-                    {item.fechaCobro.getDay() === 1 && <span className="text-[7px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black">RECORRIDO</span>}
+                    {/* Forzamos el nombre del día a local para que no cambie */}
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">
+                      {item.fechaCobro.toLocaleDateString('es-MX', { weekday: 'long' })}
+                    </p>
+                    {item.fechaCobro.getDay() === 1 && (index + 1) % 7 !== 0 && (
+                      <span className="text-[7px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black">RECORRIDO</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -363,8 +313,4 @@ const exportarDocumentacion = async () => {
       </div>
     </div>
   );
-}
-
-function setLoading(arg0: boolean) {
-  throw new Error('Function not implemented.');
 }
