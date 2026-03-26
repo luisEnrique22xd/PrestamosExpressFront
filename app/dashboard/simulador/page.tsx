@@ -112,19 +112,32 @@ export default function ProyeccionPage() {
   }, [monto, interes, cuotas, esGrupal, numIntegrantes]);
 
   // --- 5. FECHAS DE PAGO ---
+  // --- 5. FECHAS DE PAGO CORREGIDAS ---
   const fechasPago = useMemo(() => {
     let fechas = [];
     const [year, month, day] = fechaInicio.split('-').map(Number);
-    let fechaReferencia = new Date(year, month - 1, day);
+    
+    // Seteamos a las 12:00 PM para evitar que la zona horaria 
+    // mueva el día hacia atrás o adelante por error.
+    let fechaReferencia = new Date(year, month - 1, day, 12, 0, 0);
 
     for (let i = 1; i <= cuotas; i++) {
-      if (modalidad === 'semanal') fechaReferencia.setDate(fechaReferencia.getDate() + 7);
-      else if (modalidad === 'quincenal') fechaReferencia.setDate(fechaReferencia.getDate() + 15);
-      else if (modalidad === 'mensual') fechaReferencia.setMonth(fechaReferencia.getMonth() + 1);
+      let nuevaFecha = new Date(fechaReferencia);
+
+      if (modalidad === 'semanal') {
+        nuevaFecha.setDate(fechaReferencia.getDate() + (7 * i));
+      } else if (modalidad === 'quincenal') {
+        nuevaFecha.setDate(fechaReferencia.getDate() + (15 * i));
+      } else if (modalidad === 'mensual') {
+        nuevaFecha.setMonth(fechaReferencia.getMonth() + i);
+      }
       
-      let fechaMostrar = new Date(fechaReferencia);
-      if (fechaMostrar.getDay() === 0) fechaMostrar.setDate(fechaMostrar.getDate() + 1);
-      fechas.push({ fechaCobro: fechaMostrar });
+      // REGLA DE DOMINGOS: Si cae en 0 (Domingo), sumamos 1 día para que sea Lunes
+      if (nuevaFecha.getDay() === 0) {
+        nuevaFecha.setDate(nuevaFecha.getDate() + 1);
+      }
+      
+      fechas.push({ fechaCobro: nuevaFecha });
     }
     return fechas;
   }, [fechaInicio, modalidad, cuotas]);
