@@ -99,27 +99,31 @@ export default function ProyeccionPage() {
   }, [monto, interes, cuotas, esGrupal, numIntegrantes]);
 
   // 🔥 5. FECHAS DE PAGO CORREGIDAS (EL TRUCO DE LAS 12:00 PM)
+  // --- 5. FECHAS DE PAGO BLINDADAS (Miércoles es Miércoles) ---
   const fechasPago = useMemo(() => {
     let fechas = [];
     const [year, month, day] = fechaInicio.split('-').map(Number);
     
-    // Forzamos 12:00 PM para que la zona horaria no reste/sume un día
-    let fechaReferencia = new Date(year, month - 1, day, 12, 0, 0);
+    // Creamos la fecha base usando Date.UTC para que no haya desfases de zona horaria
+    // month - 1 porque en JS los meses van de 0 a 11
+    let fechaReferencia = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
     for (let i = 1; i <= cuotas; i++) {
-      let nuevaFecha = new Date(fechaReferencia);
+      let nuevaFecha = new Date(fechaReferencia.getTime());
 
       if (modalidad === 'semanal') {
-        nuevaFecha.setDate(fechaReferencia.getDate() + (7 * i));
+        // Sumamos exactamente 7 días multiplicados por el número de cuota
+        nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + (7 * i));
       } else if (modalidad === 'quincenal') {
-        nuevaFecha.setDate(fechaReferencia.getDate() + (15 * i));
+        nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + (15 * i));
       } else if (modalidad === 'mensual') {
-        nuevaFecha.setMonth(fechaReferencia.getMonth() + i);
+        nuevaFecha.setUTCMonth(nuevaFecha.getUTCMonth() + i);
       }
       
-      // Regla de domingos (Recorrido al Lunes)
-      if (nuevaFecha.getDay() === 0) {
-        nuevaFecha.setDate(nuevaFecha.getDate() + 1);
+      // REGLA DE DOMINGOS (Usando UTC para consistencia)
+      // 0 es Domingo en getUTCDay()
+      if (nuevaFecha.getUTCDay() === 0) {
+        nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + 1);
       }
       
       fechas.push({ fechaCobro: nuevaFecha });
@@ -289,8 +293,11 @@ export default function ProyeccionPage() {
                   <div className="flex items-center gap-2">
                     {/* Forzamos el nombre del día a local para que no cambie */}
                     <p className="text-[10px] text-slate-400 font-bold uppercase">
-                      {item.fechaCobro.toLocaleDateString('es-MX', { weekday: 'long' })}
-                    </p>
+  {item.fechaCobro.toLocaleDateString('es-MX', { 
+    weekday: 'long', 
+    timeZone: 'UTC' 
+  })}
+</p>
                     {item.fechaCobro.getDay() === 1 && (index + 1) % 7 !== 0 && (
                       <span className="text-[7px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black">RECORRIDO</span>
                     )}
