@@ -118,5 +118,5 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     }
   });
 
-  doc.save(`Simulacion_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
+  doc.save(`Calendario_de_Pagos_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
 };
