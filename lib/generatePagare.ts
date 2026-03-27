@@ -62,7 +62,7 @@ export const generarPagare = (data: any) => {
   doc.text("LUGAR DE EXPEDICION", 79, 10, { align: 'center' });
   doc.setTextColor(0);
   doc.setFontSize(8);
-  doc.text(doc.splitTextToSize(lugarExpedicion, 80), 39, 15);
+  doc.text(doc.splitTextToSize("ACUITLAPILCO, TLAXCALA", 80), 39, 15);
 
   // Celdas DIA / MES / AÑO
   const labelsFecha = ["DIA", "MES", "AÑO"];

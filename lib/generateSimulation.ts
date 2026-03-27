@@ -8,56 +8,76 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     orientation: 'p',
     unit: 'mm',
     format: 'a4',
-    compress: true,
   });
 
   const { 
     monto, modalidad, cuotas, interes, pagoPorCuota, 
-    montoTotal, nombreCliente, nombreAval, esGrupal, 
+    nombreCliente, nombreAval, esGrupal, 
     numIntegrantes, cuotaPorSocio 
   } = datos;
+
   const pageWidth = doc.internal.pageSize.getWidth();
-  const etiquetaPeriodo = 
-  modalidad === 'semanal' ? 'SEM' : 
-  modalidad === 'quincenal' ? 'QUIN' : 
-  modalidad === 'mensual' ? 'MES' : 'PER';
 
-   try {
-    doc.addImage(LOGO_DATA, 'PNG', 15, 10, 20, 30, undefined, 'FAST');// x, y, ancho, alto
+  // --- 1. LOGO CORREGIDO (30x38 para que no se vea aplastado) ---
+  try {
+    doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
   } catch (e) {
-    console.warn("Logo no encontrado, continuando sin él.");
+    console.warn("Logo no encontrado");
   }
-  // --- 2. ENCABEZADO ---
-   doc.setFontSize(20);
+
+  // --- 2. ENCABEZADO (Alineado a la derecha del logo) ---
+  doc.setFontSize(22);
   doc.setTextColor(0, 71, 171); // Azul Rey
-  doc.text("PRÉSTAMOS EXPRESS", pageWidth / 2, 22, { align: 'center' });
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text("GENTE QUE AYUDA A LA GENTE", pageWidth / 2, 22, { align: 'center' });
-
-  // --- CUADRO DE INFORMACIÓN ---
-  doc.setFillColor(245, 247, 250);
-  doc.rect(15, 45, 180, 35, 'F');
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(40);
+  doc.text("PRÉSTAMOS EXPRESS", 55, 25);
   
-  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'} ${nombreCliente.toUpperCase()}`, 20, 55);
-   doc.text(`DOMICILIO: ${datos.direccion.toUpperCase()}`, 20, 62);
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'} ${nombreAval.toUpperCase()}`, 20, 69);
- 
-  doc.text(`MONTO: $${monto.toLocaleString()}`, 130, 55);
-  doc.text(`PLAZO: ${cuotas} ${modalidad}(s)`, 130, 62);
+  doc.setFontSize(11);
+  doc.setTextColor(100);
+  doc.setFont("helvetica", "normal");
+  doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
 
-  // --- BANNER SOLIDARIO (Solo Grupos) ---
+  // --- 3. CUADRO DE INFORMACIÓN ---
+  // Fondo gris tenue
+  doc.setFillColor(245, 247, 250);
+  doc.rect(15, 55, 180, 35, 'F');
+  
+  doc.setFontSize(10);
+  doc.setTextColor(40);
+  doc.setFont("helvetica", "bold");
+  
+  // Columna Izquierda
+  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, 20, 65);
+  doc.text(`DOMICILIO:`, 20, 73);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, 20, 81);
+  
+  // Datos Izquierda (Valores)
+  doc.setFont("helvetica", "normal");
+  doc.text(`${nombreCliente.toUpperCase()}`, 50, 65);
+  doc.text(`${(datos.direccion || 'No proporcionada').toUpperCase()}`, 50, 73);
+  doc.text(`${nombreAval.toUpperCase()}`, 55, 81);
+
+  // Columna Derecha (Valores)
+  doc.setFont("helvetica", "bold");
+  doc.text(`MONTO:`, 135, 65);
+  doc.text(`PLAZO:`, 135, 73);
+  
+  doc.setFont("helvetica", "normal");
+  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, 155, 65);
+  doc.text(`${cuotas} ${modalidad}(s)`, 155, 73);
+
+  // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
   if (esGrupal) {
     doc.setFillColor(124, 58, 237); // Púrpura
-    doc.rect(15, 85, 180, 10, 'F');
+    doc.rect(15, 95, 180, 10, 'F');
     doc.setTextColor(255);
     doc.setFontSize(9);
-    doc.text(`ESTA CUOTA SE DIVIDE ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 91, { align: 'center' });
+    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} SOCIOS. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 101, { align: 'center' });
   }
 
-  const body = fechas.map((item, index) => {
+  // --- 5. TABLA DE AMORTIZACIÓN ---
+  const etiquetaPeriodo = modalidad === 'Semanal' ? 'SEM' : modalidad === 'Quincenal' ? 'QUIN' : 'MES';
+
+  const tableBody = fechas.map((item, index) => {
     const capitalCuota = monto / cuotas;
     const interesCuota = monto * (interes / 100);
     const saldoCapitalInsoluto = Math.max(0, monto - (capitalCuota * (index + 1)));
@@ -76,12 +96,12 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   });
 
   autoTable(doc, {
-    startY: esGrupal ? 95 : 85,
-    head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA RECIBIDO']],
-    body: body,
+    startY: esGrupal ? 110 : 100,
+    head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA']],
+    body: tableBody,
     theme: 'grid',
     headStyles: { 
-      fillColor: [5, 5, 51], 
+      fillColor: [0, 51, 102], // Azul Marino fuerte
       textColor: [255, 255, 255], 
       fontStyle: 'bold', 
       halign: 'center' 
@@ -89,18 +109,14 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     styles: { 
       fontSize: 8, 
       halign: 'center', 
-      cellPadding: 2,
-      textColor: [60, 60, 60] // Gris oscuro neutro para todo el texto
+      cellPadding: 2.5
     },
     columnStyles: {
-      4: { fontStyle: 'bold' }, // Pago en negrita pero sin color
-      5: { 
-        textColor: [16, 185, 129], // Verde (Único con color)
-        fontStyle: 'bold' 
-      }, 
-      6: { cellWidth: 35 }
+      4: { fontStyle: 'bold', textColor: [0, 0, 0] }, // Pago
+      5: { fontStyle: 'bold', textColor: [20, 150, 80] }, // Saldo en Verde
+      6: { cellWidth: 30 } // Espacio para firma
     }
   });
 
-  doc.save(`Cotizacion_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
+  doc.save(`Simulacion_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
 };

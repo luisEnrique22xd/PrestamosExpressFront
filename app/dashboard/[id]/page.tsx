@@ -184,7 +184,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
   }
 };
 
-  if (loading && !data) return <div className="p-10 flex items-center gap-3 font-black italic text-slate-400"><Loader2 className="animate-spin"/> Sincronizando Huamantla...</div>;
+  if (loading && !data) return <div className="p-10 flex items-center gap-3 font-black italic text-slate-400"><Loader2 className="animate-spin"/> Sincronizando Acuitlapilco...</div>;
   if (!data) return <div className="p-10 font-black italic text-red-400 text-center">⚠️ Error: Entidad no localizada en el sistema.</div>;
 
   const cumplimientoData = [

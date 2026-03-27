@@ -49,7 +49,7 @@ export default function AuditoriaPage() {
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-blue-500/20 px-4 py-1.5 rounded-full border border-blue-400/30 mb-4">
             <ShieldAlert size={14} className="text-blue-300" />
-            <span className="text-blue-200 text-[9px] font-black uppercase tracking-[0.2em]">Centro de Control de Huamantla</span>
+            <span className="text-blue-200 text-[9px] font-black uppercase tracking-[0.2em]">Centro de Control de Acuitlapilco</span>
           </div>
           <h1 className="text-4xl font-black italic uppercase tracking-tighter">Auditoría de Sistema</h1>
           <p className="text-slate-400 text-xs mt-2 font-medium max-w-md">
