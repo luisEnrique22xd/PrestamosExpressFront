@@ -243,7 +243,7 @@ export default function ClientesPage() {
                         <div className="space-y-1">
                           <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Responsable / Aval</p>
                           <p className="text-xs text-slate-800 font-black">
-  {c.es_grupo ? (c.nombre_aval || 'Sin Representante') : (c.datos_ultimo_aval?.nombre_aval || 'Ninguno')}
+  {c.es_grupo ? (c.datos_ultimo_aval?.nombre_aval || 'Sin Representante') : (c.datos_ultimo_aval?.nombre_aval || 'Ninguno')}
 </p>
                         </div>
                         <div className="flex gap-3 col-span-2 justify-end">
