@@ -18,15 +18,17 @@ export default function PrestamosPage() {
   const [loading, setLoading] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
 
-  // Estados para sugerencias y búsqueda de Grupos/Integrantes
+  // Estados para buscadores con sugerencias
   const [busquedaSocio, setBusquedaSocio] = useState('');
   const [sugerenciasSocios, setSugerenciasSocios] = useState<any[]>([]);
+  const [sugerenciasIndividual, setSugerenciasIndividual] = useState<any[]>([]);
+  
   const [integrantes, setIntegrantes] = useState<any[]>([]);
   const [gruposExistentes, setGruposExistentes] = useState<any[]>([]);
   const [mostrarSugerenciasGrupo, setMostrarSugerenciasGrupo] = useState(false);
 
   const [formData, setFormData] = useState({
-    cliente: '',
+    cliente: '', // Aquí guardaremos el ID final
     nombre_grupo: '',
     grupo_id: '',
     monto_capital: '',
@@ -48,10 +50,9 @@ export default function PrestamosPage() {
     setTimeout(() => setAlerta(null), 6000);
   };
 
-  // --- RESTRICCIÓN DE BLOQUEO ---
+  // REGLA DE BLOQUEO: Si el cliente seleccionado ya debe
   const tieneBloqueo = clienteEncontrado?.tiene_prestamo_activo || (clienteEncontrado?.total_penalizaciones > 0);
 
-  // Carga inicial de grupos existentes
   useEffect(() => {
     const fetchGrupos = async () => {
       try {
@@ -62,45 +63,39 @@ export default function PrestamosPage() {
     fetchGrupos();
   }, []);
 
-  // --- BUSCADOR DE CLIENTE INDIVIDUAL (Corregido para Directorio Híbrido) ---
-  const buscarClienteIndividual = async (id: string) => {
-    if (!id || id === "" || tipoPrestamo === 'G') {
-      setClienteEncontrado(null);
-      return;
-    }
-    try {
-      const response = await api.get(`/clientes/directorio-hibrido/?search=${id}`);
-      // Buscamos el match exacto del ID en el array
-      const cliente = response.data.find((c: any) => c.id === parseInt(id));
-
-      if (cliente) {
-        setClienteEncontrado(cliente);
-        
-        if (cliente.tiene_prestamo_activo) {
-          lanzarAlerta('error', `El cliente ${cliente.nombre} ya tiene un préstamo vigente.`);
-        }
-
-        // Auto-relleno de aval con datos históricos
-        if (cliente.datos_ultimo_aval) {
-          setFormData(prev => ({
-            ...prev,
-            cliente: id,
-            nombre_aval: cliente.datos_ultimo_aval.nombre_aval || '',
-            telefono_aval: cliente.datos_ultimo_aval.telefono_aval || '',
-            direccion_aval: cliente.datos_ultimo_aval.direccion_aval || '',
-            parentesco_aval: cliente.datos_ultimo_aval.parentesco_aval || '',
-            garantia_descripcion: cliente.datos_ultimo_aval.garantia_descripcion || '',
-          }));
-        }
-      } else {
-        setClienteEncontrado(null);
-      }
-    } catch (e) {
-      setClienteEncontrado(null);
+  // --- BUSCADOR POR NOMBRE (INDIVIDUAL) ---
+  const buscarClientePorNombre = async (val: string) => {
+    setFormData({ ...formData, cliente: val }); // val es el texto que escribe Alexander
+    if (val.length > 1) {
+      try {
+        const res = await api.get(`/clientes/directorio-hibrido/?search=${val}`);
+        // Solo mostramos personas, no grupos
+        setSugerenciasIndividual(res.data.filter((c: any) => !c.es_grupo).slice(0, 5));
+      } catch (e) { console.error(e); }
+    } else {
+      setSugerenciasIndividual([]);
     }
   };
 
-  // --- BUSCADOR DE SOCIOS (PARA INTEGRANTES DE GRUPO) ---
+  const seleccionarCliente = (cliente: any) => {
+    setClienteEncontrado(cliente);
+    setFormData({
+      ...formData,
+      cliente: cliente.id.toString(), // Guardamos el ID real para el backend
+      nombre_aval: cliente.datos_ultimo_aval?.nombre_aval || '',
+      telefono_aval: cliente.datos_ultimo_aval?.telefono_aval || '',
+      direccion_aval: cliente.datos_ultimo_aval?.direccion_aval || '',
+      parentesco_aval: cliente.datos_ultimo_aval?.parentesco_aval || '',
+      garantia_descripcion: cliente.datos_ultimo_aval?.garantia_descripcion || '',
+    });
+    setSugerenciasIndividual([]);
+    
+    if (cliente.tiene_prestamo_activo) {
+      lanzarAlerta('error', `BLOQUEO: ${cliente.nombre} ya tiene un préstamo activo.`);
+    }
+  };
+
+  // --- BUSCADOR DE INTEGRANTES (GRUPAL) ---
   const buscarSocios = async (val: string) => {
     setBusquedaSocio(val);
     if (val.length > 1) {
@@ -113,7 +108,7 @@ export default function PrestamosPage() {
 
   const agregarIntegrante = (socio: any) => {
     if (socio.tiene_prestamo_activo) {
-      lanzarAlerta('error', `No se puede agregar a ${socio.nombre}: tiene un crédito activo.`);
+      lanzarAlerta('error', `${socio.nombre} tiene deuda activa y no puede entrar al grupo.`);
       return;
     }
     if (!integrantes.find(i => i.id === socio.id)) {
@@ -129,8 +124,7 @@ export default function PrestamosPage() {
     const nCuotas = Number(formData.cuotas) || 1;
     const interesTotal = capital * tasa * nCuotas;
     const totalPagar = capital + interesTotal;
-    const pagoPorPeriodo = totalPagar / nCuotas;
-    return { interesTotal, totalPagar, pagoPorPeriodo };
+    return { interesTotal, totalPagar };
   }, [formData.monto_capital, formData.tasa_interes, formData.cuotas]);
 
   const ejecutarGuardado = async () => {
@@ -146,14 +140,11 @@ export default function PrestamosPage() {
         fecha_inicio: new Date().toISOString().split('T')[0],
       };
       await api.post('/prestamos/', payload);
-      lanzarAlerta('success', "Préstamo autorizado exitosamente.");
+      lanzarAlerta('success', "Préstamo autorizado correctamente.");
       handleReset();
     } catch (error: any) {
-      const msg = error.response?.data?.error || "Error al procesar el préstamo.";
-      lanzarAlerta('error', msg);
-    } finally {
-      setLoading(false);
-    }
+      lanzarAlerta('error', error.response?.data?.error || "Error al procesar crédito.");
+    } finally { setLoading(false); }
   };
 
   const handleReset = () => {
@@ -172,45 +163,61 @@ export default function PrestamosPage() {
       
       {/* SELECTOR TIPO */}
       <div className="flex bg-slate-100 p-2 rounded-[2.5rem] w-fit mx-auto shadow-inner">
-        <button onClick={() => { setTipoPrestamo('I'); handleReset(); }} className={`flex items-center gap-3 px-10 py-4 rounded-[2.2rem] text-xs font-black uppercase tracking-widest transition-all ${tipoPrestamo === 'I' ? 'bg-[#0047AB] text-white shadow-lg' : 'text-slate-400'}`}>
+        <button onClick={() => { setTipoPrestamo('I'); handleReset(); }} className={`flex items-center gap-3 px-10 py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'I' ? 'bg-[#0047AB] text-white shadow-lg' : 'text-slate-400'}`}>
           <User size={16} /> Individual
         </button>
-        <button onClick={() => { setTipoPrestamo('G'); handleReset(); }} className={`flex items-center gap-3 px-10 py-4 rounded-[2.2rem] text-xs font-black uppercase tracking-widest transition-all ${tipoPrestamo === 'G' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'}`}>
+        <button onClick={() => { setTipoPrestamo('G'); handleReset(); }} className={`flex items-center gap-3 px-10 py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'G' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'}`}>
           <Users size={16} /> Grupal Solidario
         </button>
       </div>
 
       <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 relative">
         <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter mb-10 uppercase">
-          {tipoPrestamo === 'I' ? 'Nuevo Préstamo Cliente' : 'Apertura de Crédito Grupal'}
+          {tipoPrestamo === 'I' ? 'Nuevo Préstamo Cliente' : 'Apertura Grupal'}
         </h2>
 
         <form onSubmit={(e) => { e.preventDefault(); setConfirmando(true); }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* IDENTIFICACIÓN */}
+          {/* IDENTIFICACIÓN INDIVIDUAL */}
           {tipoPrestamo === 'I' ? (
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">ID Cliente</label>
-              <input 
-                type="number" 
-                value={formData.cliente} 
-                onChange={(e) => {
-                   setFormData({ ...formData, cliente: e.target.value });
-                   buscarClienteIndividual(e.target.value);
-                }}
-                className={`w-full p-4 rounded-2xl outline-none font-bold transition-all ${tieneBloqueo ? 'bg-red-50 border-red-200 border' : 'bg-slate-50'}`} 
-                placeholder="Ej. 4" 
-                required
-              />
-              {/* NOMBRE DINÁMICO DEBAJO DEL INPUT */}
+            <div className="space-y-2 relative">
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Buscar Cliente por Nombre</label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                <input 
+                  type="text" 
+                  value={clienteEncontrado ? clienteEncontrado.nombre : formData.cliente} 
+                  onChange={(e) => {
+                    if(clienteEncontrado) setClienteEncontrado(null);
+                    buscarClientePorNombre(e.target.value);
+                  }}
+                  className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${tieneBloqueo ? 'bg-red-50 border-red-200 border' : 'bg-slate-50'}`} 
+                  placeholder="Ej. Luis Enrique..." 
+                  required
+                />
+              </div>
+
+              {/* SUGERENCIAS DE NOMBRE */}
+              {sugerenciasIndividual.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
+                  {sugerenciasIndividual.map(c => (
+                    <button key={c.id} type="button" onClick={() => seleccionarCliente(c)} className="w-full p-4 text-left hover:bg-blue-50 flex items-center justify-between border-b last:border-none">
+                      <span className="text-xs font-black uppercase">{c.nombre} <span className="text-[9px] text-slate-400 font-normal ml-2">ID: {c.id}</span></span>
+                      {c.tiene_prestamo_activo && <span className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black">DEUDA</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {clienteEncontrado && (
                 <p className={`text-[10px] font-black uppercase ml-2 italic flex items-center gap-1 ${tieneBloqueo ? 'text-red-500' : 'text-emerald-500'}`}>
                   {tieneBloqueo ? <X size={12}/> : <Check size={12}/>} 
-                  {tieneBloqueo ? 'RESTRINGIDO:' : ''} {clienteEncontrado.nombre}
+                  {tieneBloqueo ? 'RESTRINGIDO' : 'CLIENTE VALIDADO'}
                 </p>
               )}
             </div>
           ) : (
+            /* IDENTIFICACIÓN GRUPAL */
             <div className="col-span-1 md:col-span-2 space-y-6">
               <div className="relative">
                 <label className="text-[10px] font-black text-purple-600 uppercase ml-2 tracking-widest">Nombre del Grupo</label>
@@ -219,19 +226,19 @@ export default function PrestamosPage() {
                   value={formData.nombre_grupo}
                   onChange={(e) => { setFormData({ ...formData, nombre_grupo: e.target.value, grupo_id: '' }); setMostrarSugerenciasGrupo(true); }}
                   className="w-full p-4 bg-purple-50/30 rounded-2xl outline-none border-2 border-transparent focus:border-purple-600 font-bold"
-                  placeholder="Buscar o crear grupo..."
+                  placeholder="Nombre del grupo..."
                   required
                 />
                 {mostrarSugerenciasGrupo && formData.nombre_grupo.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 overflow-hidden">
                     {gruposExistentes.filter(g => g.nombre.toLowerCase().includes(formData.nombre_grupo.toLowerCase())).map(g => (
                       <button key={g.id} type="button" onClick={() => {
-                        if(g.tiene_prestamo_activo) return lanzarAlerta('error', 'El grupo seleccionado ya tiene deuda activa.');
+                        if(g.tiene_prestamo_activo) return lanzarAlerta('error', 'El grupo ya tiene deuda activa.');
                         setFormData({...formData, nombre_grupo: g.nombre, grupo_id: g.id});
                         setMostrarSugerenciasGrupo(false);
                       }} className="w-full p-4 text-left hover:bg-purple-50 flex justify-between border-b last:border-none">
                         <span className="text-xs font-bold uppercase">{g.nombre}</span>
-                        {g.tiene_prestamo_activo ? <span className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded">DEUDA</span> : <span className="text-[8px] bg-emerald-100 text-emerald-600 px-2 py-1 rounded">OK</span>}
+                        {g.tiene_prestamo_activo ? <span className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded">DEUDA</span> : <span className="text-[8px] bg-emerald-100 text-emerald-600 px-2 py-1 rounded font-black">OK</span>}
                       </button>
                     ))}
                   </div>
@@ -239,7 +246,7 @@ export default function PrestamosPage() {
               </div>
 
               <div className="relative">
-                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Añadir Integrantes</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Añadir Miembros</label>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                   <input type="text" value={busquedaSocio} onChange={(e) => buscarSocios(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none" placeholder="Buscar por nombre..." />
@@ -255,10 +262,10 @@ export default function PrestamosPage() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 {integrantes.map(i => (
-                  <div key={i.id} className="flex items-center gap-2 bg-[#0047AB] text-white px-4 py-2 rounded-full text-[10px] font-black uppercase italic">
-                    {i.nombre} <button type="button" onClick={() => setIntegrantes(integrantes.filter(it => it.id !== i.id))}><X size={14} /></button>
+                  <div key={i.id} className="bg-[#0047AB] text-white px-4 py-2 rounded-full text-[10px] font-black flex items-center gap-2">
+                    {i.nombre} <button type="button" onClick={() => setIntegrantes(integrantes.filter(it => it.id !== i.id))}><X size={14}/></button>
                   </div>
                 ))}
               </div>
@@ -267,7 +274,7 @@ export default function PrestamosPage() {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Capital Solicitado ($)</label>
-            <input type="number" value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-black text-xl text-[#0047AB]" placeholder="0.00" required />
+            <input type="number" value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-xl text-[#0047AB]" required />
           </div>
 
           {/* FORMULARIO DE AVAL */}
@@ -276,9 +283,9 @@ export default function PrestamosPage() {
               <ShieldCheck size={18} /> Información del Aval / Respaldo
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
-              <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
-              <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" required />
+              <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required/>
+              <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required/>
+              <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" />
               <input type="text" placeholder="Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
               <input type="text" placeholder="Garantía" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
             </div>
@@ -297,22 +304,11 @@ export default function PrestamosPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Plazo (Cuotas)</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Plazo</label>
             <select value={formData.cuotas} onChange={(e) => setFormData({ ...formData, cuotas: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
-              {[4, 8, 12, 16, 24].map((n) => (<option key={n} value={n}>{n} Periodos</option>))}
+              {[4, 8, 12, 16, 24].map(n => <option key={n} value={n}>{n} Periodos</option>)}
             </select>
           </div>
-
-          {/* BANNER DE RESTRICCIÓN */}
-          {tieneBloqueo && (
-            <div className="col-span-1 md:col-span-2 bg-red-50 border-2 border-red-200 p-6 rounded-[2.5rem] flex items-center gap-5">
-              <AlertCircle className="text-red-500" size={32} />
-              <div>
-                <h4 className="text-red-800 font-black uppercase text-xs tracking-tighter italic">Acceso Restringido</h4>
-                <p className="text-red-500 text-[11px] font-bold">No se pueden generar nuevos folios: El cliente ya tiene una cuenta abierta o penalizaciones.</p>
-              </div>
-            </div>
-          )}
 
           <button
             type="submit"
@@ -327,31 +323,26 @@ export default function PrestamosPage() {
         </form>
       </div>
 
-      {/* --- MODAL DE CONFIRMACIÓN FINAL --- */}
+      {/* MODAL DE CONFIRMACIÓN */}
       {confirmando && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#050533]/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#050533]/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-lg rounded-[3rem] p-10 space-y-8 shadow-2xl border-t-8 border-[#0047AB]">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-2xl font-black italic text-slate-800 uppercase leading-none">Confirmar Datos</h3>
-                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest text-emerald-600">Verifique los montos finales</p>
-              </div>
-              <div className="bg-blue-50 p-3 rounded-2xl text-[#0047AB]"><Info size={28} /></div>
-            </div>
+            <h3 className="text-2xl font-black italic text-slate-800 uppercase leading-none">Confirmar Datos</h3>
             <div className="bg-slate-50 p-8 rounded-[2.5rem] space-y-4 font-bold text-sm">
-               <div className="flex justify-between"><span>Capital Solicitado:</span> <span className="text-[#0047AB]">${Number(formData.monto_capital).toLocaleString()}</span></div>
-               <div className="flex justify-between text-red-500"><span>Intereses Totales:</span> <span>${calculos.interesTotal.toLocaleString()}</span></div>
+               <div className="flex justify-between uppercase text-slate-500 text-[10px]"><span>Sujeto:</span> <span className="text-slate-800 text-xs">{clienteEncontrado?.nombre || formData.nombre_grupo}</span></div>
+               <div className="flex justify-between"><span>Capital:</span> <span>${Number(formData.monto_capital).toLocaleString()}</span></div>
+               <div className="flex justify-between text-red-500"><span>Interés Total:</span> <span>${calculos.interesTotal.toLocaleString()}</span></div>
                <div className="flex justify-between text-xl font-black text-emerald-600 pt-4 border-t-2 border-dashed border-slate-200"><span>Total a Pagar:</span> <span>${calculos.totalPagar.toLocaleString()}</span></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <button onClick={() => setConfirmando(false)} className="py-5 rounded-3xl font-black text-[10px] uppercase text-slate-400 bg-slate-100 hover:bg-slate-200 transition-colors">Cancelar</button>
-              <button onClick={ejecutarGuardado} className="py-5 rounded-3xl font-black text-[10px] uppercase text-white bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-100">Autorizar</button>
+              <button onClick={() => setConfirmando(false)} className="py-5 rounded-3xl font-black text-[10px] uppercase text-slate-400 bg-slate-100 hover:bg-slate-200">Cancelar</button>
+              <button onClick={ejecutarGuardado} className="py-5 rounded-3xl font-black text-[10px] uppercase text-white bg-emerald-500 shadow-xl shadow-emerald-100">Autorizar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- ALERTAS FLOTANTES --- */}
+      {/* ALERTAS */}
       {alerta && (
         <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'}`}>
           <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
