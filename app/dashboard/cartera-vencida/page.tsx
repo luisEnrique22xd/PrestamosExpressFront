@@ -19,34 +19,23 @@ export default function CarteraVencidaPage() {
 
   // 1. CARGA DE DATOS DESDE EL ENDPOINT HÍBRIDO
   const fetchCartera = async () => {
-    try {
-      setLoading(true);
-      // 🔥 IMPORTANTE: Usamos el directorio híbrido para ver Grupos y Clientes
-      const response = await api.get('/clientes/directorio-hibrido/');
-      setEntidades(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error('Error al obtener cartera:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    // 🔥 USAMOS EL ENDPOINT DE CARTERA, NO EL HÍBRIDO
+    const response = await api.get('/clientes/cartera-vencida-hibrida/');
+    setEntidades(Array.isArray(response.data) ? response.data : []);
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  useEffect(() => { fetchCartera(); }, []);
-
-  // 2. FILTRADO PARA MOSTRAR SOLO DEUDORES (Saldo > 0)
-  const deudoresFiltrados = entidades.filter(e => {
-    const nombre = (e.nombre || e.nombre_grupo || '').toLowerCase();
-    const matchesSearch = nombre.includes(searchTerm.toLowerCase()) || e.id.toString().includes(searchTerm);
-    
-    // Convertimos a número para evitar errores de string
-    const saldoCap = parseFloat(e.saldo_actual || '0');
-    const saldoMora = parseFloat(e.total_penalizaciones || '0');
-
-    // 🔥 REGLA DE MOROSIDAD CORREGIDA:
-    // Aparece si el nombre coincide Y (tiene capital pendiente O tiene alguna multa)
-    // Quitamos la obligación de que "tieneRecargos" sea true para que las manuales salgan
-    return matchesSearch && (saldoCap > 0 || saldoMora > 0);
-  });
+// 2. Simplifica el filtro (ya vienen filtrados del backend)
+const deudoresFiltrados = entidades.filter(e => {
+  const nombre = (e.nombre_deudor || '').toLowerCase();
+  return nombre.includes(searchTerm.toLowerCase()) || e.id_prestamo.toString().includes(searchTerm);
+});
 
   // 2. ORDENAMIENTO (Prioridad a los que tienen más dinero en mora)
   const deudoresOrdenados = [...deudoresFiltrados].sort((a, b) => 
