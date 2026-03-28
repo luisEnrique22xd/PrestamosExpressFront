@@ -71,7 +71,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     doc.rect(15, 95, 180, 10, 'F');
     doc.setTextColor(255);
     doc.setFontSize(9);
-    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} SOCIOS. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 101, { align: 'center' });
+    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} CLIENTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 101, { align: 'center' });
   }
 
   // --- 5. TABLA DE AMORTIZACIÓN ---
