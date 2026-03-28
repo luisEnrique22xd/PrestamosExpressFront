@@ -21,7 +21,7 @@ export default function CarteraVencidaPage() {
   const fetchCartera = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/clientes/cartera-vencida-hibrida/');
+      const response = await api.get('/clientes/cartera-vencida/');
       setEntidades(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error al obtener cartera:', error);
