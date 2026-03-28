@@ -21,10 +21,6 @@ export default function PrestamosPage() {
   const [editandoAval, setEditandoAval] = useState(true);
   const [clienteSeleccionado, setClienteSeleccionado] = useState<any>(null);
 
-  // --- REGLAS DE RESTRICCIÓN VISUAL ---
-  // Bloqueo si tiene préstamo activo o penalizaciones
-  const tieneBloqueo = clienteEncontrado?.tiene_prestamo_activo || clienteEncontrado?.total_penalizaciones > 0;
-
   // Estados para Grupos y Autocompletado
   const [busquedaSocio, setBusquedaSocio] = useState('');
   const [sugerenciasSocios, setSugerenciasSocios] = useState<any[]>([]);
@@ -38,7 +34,7 @@ export default function PrestamosPage() {
   const [formData, setFormData] = useState({
     cliente: '',
     nombre_grupo: '',
-    grupo_id: '',
+    grupo_id: '', 
     monto_capital: '',
     tasa_interes: '2.5',
     cuotas: '8',
@@ -58,7 +54,9 @@ export default function PrestamosPage() {
     setTimeout(() => setAlerta(null), 5000);
   };
 
-  // --- CARGA INICIAL DE GRUPOS ---
+  // --- RESTRICCIÓN: Cálculo de Bloqueo ---
+  const tieneBloqueo = clienteEncontrado?.tiene_prestamo_activo || clienteEncontrado?.total_penalizaciones > 0;
+
   useEffect(() => {
     const fetchGrupos = async () => {
       try {
@@ -69,22 +67,20 @@ export default function PrestamosPage() {
     fetchGrupos();
   }, []);
 
-  // --- BUSCADOR DE SOCIOS PARA INTEGRANTES ---
   const buscarSocios = async (val: string) => {
     setBusquedaSocio(val);
     if (val.length > 1) {
       try {
         const res = await api.get(`/clientes/directorio-hibrido/?search=${val}`);
-        // Solo mostramos clientes individuales para agregar al grupo
         setSugerenciasSocios(res.data.filter((c: any) => !c.es_grupo).slice(0, 5));
       } catch (e) { console.error(e); }
     } else { setSugerenciasSocios([]); }
   };
 
   const agregarIntegrante = (socio: any) => {
-    // RESTRICCIÓN: Si el socio tiene préstamo activo, no puede entrar a un grupo
+    // REGLA: Si tiene préstamo individual activo, no puede entrar a grupo
     if (socio.tiene_prestamo_activo) {
-      lanzarAlerta('error', `${socio.nombre} no puede unirse: Tiene un crédito activo.`);
+      lanzarAlerta('error', `Bloqueo: ${socio.nombre} tiene un préstamo individual activo.`);
       return;
     }
     if (!integrantes.find(i => i.id === socio.id)) {
@@ -94,7 +90,6 @@ export default function PrestamosPage() {
     setSugerenciasSocios([]);
   };
 
-  // --- LÓGICA SELECTOR DE GRUPO ---
   const handleNombreGrupoChange = (val: string) => {
     setFormData({ ...formData, nombre_grupo: val, grupo_id: '' });
     setGrupoSeleccionado(null);
@@ -102,9 +97,9 @@ export default function PrestamosPage() {
   };
 
   const seleccionarGrupoExistente = (g: any) => {
-    // RESTRICCIÓN: Si el grupo ya tiene deuda, no dejar seleccionar
+    // REGLA: Si el grupo ya tiene préstamo activo
     if (g.tiene_prestamo_activo) {
-      lanzarAlerta('error', `El grupo ${g.nombre} ya tiene un préstamo activo.`);
+      lanzarAlerta('error', `El grupo ${g.nombre} ya tiene un préstamo vigente.`);
       return;
     }
     setFormData({
@@ -142,13 +137,18 @@ export default function PrestamosPage() {
   const buscarCliente = async (id: string) => {
     if (!id || tipoPrestamo === 'G') return;
     try {
-      // Usamos directorio hibrido para traer estatus de prestamos/penalizaciones
+      // Usamos directorio-hibrido para obtener info de prestamo_activo y penalizaciones
       const response = await api.get(`/clientes/directorio-hibrido/?search=${id}`);
       const cliente = response.data.find((c: any) => c.id === parseInt(id));
       
       if (cliente) {
         setClienteEncontrado(cliente);
         setClienteSeleccionado(cliente);
+        
+        if (cliente.tiene_prestamo_activo) {
+          lanzarAlerta('error', `El cliente ${cliente.nombre} ya tiene un préstamo activo.`);
+        }
+
         setTipoCliente('recurrente');
         setEditandoAval(false);
 
@@ -188,7 +188,7 @@ export default function PrestamosPage() {
       lanzarAlerta('success', `Préstamo creado con éxito`);
       handleReset();
     } catch (error: any) {
-      const msg = error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || "Error al guardar.";
+      const msg = error.response?.data?.error || "Error al guardar el préstamo.";
       lanzarAlerta('error', msg);
     } finally {
       setLoading(false);
@@ -230,7 +230,6 @@ export default function PrestamosPage() {
                     onChange={(e) => handleNombreGrupoChange(e.target.value)}
                     className="w-full p-4 pl-12 bg-purple-50/30 rounded-2xl outline-none border-2 border-transparent focus:border-purple-600 font-bold"
                     placeholder="Ej. Los Comerciantes"
-                    required
                   />
                 </div>
 
@@ -276,14 +275,18 @@ export default function PrestamosPage() {
           ) : (
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">ID Cliente</label>
-              <input type="number" value={formData.cliente} onChange={(e) => setFormData({ ...formData, cliente: e.target.value })} onBlur={(e) => buscarCliente(e.target.value)} className={`w-full p-4 rounded-2xl outline-none border-2 transition-all font-bold ${tieneBloqueo ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-transparent focus:border-[#0047AB]'}`} placeholder="Ej. 102" required />
-              {clienteEncontrado && <p className={`text-[10px] font-black uppercase ml-2 italic ${tieneBloqueo ? 'text-red-500' : 'text-emerald-500'}`}>{tieneBloqueo ? '❌ Restringido' : '✅ Validado'}: {clienteEncontrado.nombre}</p>}
+              <input type="number" value={formData.cliente} onChange={(e) => setFormData({ ...formData, cliente: e.target.value })} onBlur={(e) => buscarCliente(e.target.value)} className={`w-full p-4 rounded-2xl outline-none font-bold ${tieneBloqueo ? 'bg-red-50 border-red-200 border' : 'bg-slate-50'}`} placeholder="Ej. 102" />
+              {clienteEncontrado && (
+                <p className={`text-[10px] font-black uppercase ml-2 italic ${tieneBloqueo ? 'text-red-500' : 'text-emerald-500'}`}>
+                    {tieneBloqueo ? '❌ Bloqueado' : '✅ Validado'}: {clienteEncontrado.nombre}
+                </p>
+              )}
             </div>
           )}
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Capital Solicitado ($)</label>
-            <input type="number" value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-black text-xl text-[#0047AB]" placeholder="0.00" required />
+            <input type="number" value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-black text-xl text-[#0047AB]" placeholder="0.00" />
           </div>
 
           {/* RESUMEN FINANCIERO */}
@@ -304,17 +307,23 @@ export default function PrestamosPage() {
             </div>
           )}
 
-          {/* SECCIÓN REPRESENTANTE / AVAL (MANTENIDA) */}
+          {/* SECCIÓN REPRESENTANTE / AVAL */}
           <div className="col-span-1 md:col-span-2 p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-6">
             <h3 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2">
-              <ShieldCheck size={18} /> Información del Aval / Respaldo
+              <ShieldCheck size={18} /> {tipoPrestamo === 'I' ? 'Información del Aval' : 'Representante / Presidente del Grupo'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required/>
-              <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required/>
-              <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" />
-              <input type="text" placeholder="Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
-              <input type="text" placeholder="Garantía" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
+              <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none focus:ring-2 focus:ring-blue-400 font-bold text-sm" />
+              <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none focus:ring-2 focus:ring-blue-400 font-bold text-sm" />
+              <input
+                type="text"
+                placeholder="Dirección del Representante"
+                value={formData.direccion_aval}
+                onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })}
+                className="p-4 rounded-xl border border-blue-100 outline-none focus:ring-2 focus:ring-blue-400 font-bold text-sm md:col-span-2"
+              />
+              <input type="text" placeholder="Cargo / Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none focus:ring-2 focus:ring-blue-400 font-bold text-sm" />
+              <input type="text" placeholder="Garantía" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none focus:ring-2 focus:ring-blue-400 font-bold text-sm" />
             </div>
           </div>
 
@@ -333,25 +342,25 @@ export default function PrestamosPage() {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Plazo (Cuotas)</label>
             <select value={formData.cuotas} onChange={(e) => setFormData({ ...formData, cuotas: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700">
-              {[4, 8, 12, 16, 24].map((n) => (<option key={n} value={n}>{n} Periodos</option>))}
+              {[...Array(24)].map((_, i) => (<option key={i + 1} value={i + 1}>{i + 1} Periodos</option>))}
             </select>
           </div>
 
-          {/* BANNER DE RESTRICCIÓN SI TIENE DEUDA */}
           {tieneBloqueo && (
-            <div className="col-span-1 md:col-span-2 bg-red-50 border-2 border-red-200 p-6 rounded-[2.5rem] flex items-center gap-5">
-              <div className="bg-red-500 p-3 rounded-2xl text-white shadow-lg">
+            <div className="col-span-1 md:col-span-2 bg-red-50 border-2 border-red-200 p-6 rounded-[2.5rem] flex items-center gap-5 animate-in slide-in-from-top-4 duration-500 shadow-sm">
+              <div className="bg-red-500 p-3 rounded-2xl text-white shadow-lg shadow-red-200">
                 <AlertCircle size={28} />
               </div>
               <div className="flex-1">
-                <h4 className="text-red-800 font-black uppercase text-xs">Acceso Denegado</h4>
+                <h4 className="text-red-800 font-black uppercase text-xs tracking-tighter italic">Acceso Restringido a Crédito</h4>
                 <p className="text-red-500 text-[11px] font-bold leading-tight">
-                  Este cliente/grupo ya tiene un **crédito vigente** o **moras pendientes**. No se pueden generar folios nuevos hasta liquidar la cuenta.
+                  Este cliente presenta un **préstamo activo** o **moras pendientes**. No se pueden generar nuevos folios hasta liquidar la deuda.
                 </p>
               </div>
             </div>
           )}
 
+          {/* --- BOTÓN DINÁMICO --- */}
           <button
             type="submit"
             disabled={tieneBloqueo || loading}
@@ -368,7 +377,7 @@ export default function PrestamosPage() {
             ) : tieneBloqueo ? (
               <>
                 <X size={18} className="text-red-400" />
-                <span>Bloqueo Activo</span>
+                <span>Bloqueado por Deuda</span>
               </>
             ) : (
               <>
@@ -380,7 +389,7 @@ export default function PrestamosPage() {
         </form>
       </div>
 
-      {/* --- ALERTAS FLOTANTES --- */}
+      {/* ALERTA FLOTANTE */}
       {alerta && (
         <div className={`fixed top-10 right-10 z-[100] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 animate-in slide-in-from-right duration-500 border-b-4 ${
           alerta.type === 'success' ? 'bg-white border-emerald-500 text-slate-800' : 'bg-white border-red-500 text-slate-800'
@@ -389,7 +398,7 @@ export default function PrestamosPage() {
             {alerta.type === 'success' ? <Check size={24} /> : <AlertCircle size={24} />}
           </div>
           <div>
-            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 mb-1">Notificación Sistema</p>
+            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 mb-1">Notificación del Sistema</p>
             <p className="font-bold text-sm italic">{alerta.msg}</p>
           </div>
           <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-600">
