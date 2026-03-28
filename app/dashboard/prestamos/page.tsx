@@ -134,7 +134,8 @@ export default function PrestamosPage() {
     const nCuotas = Number(formData.cuotas) || 1;
     const interesTotal = capital * tasa * nCuotas;
     const totalPagar = capital + interesTotal;
-    return { interesTotal, totalPagar };
+    const pagoPorPeriodo = totalPagar / nCuotas;
+    return { interesTotal, totalPagar,pagoPorPeriodo };
   }, [formData.monto_capital, formData.tasa_interes, formData.cuotas]);
 
   const ejecutarGuardado = async () => {
@@ -268,6 +269,22 @@ export default function PrestamosPage() {
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Monto ($)</label>
             <input type="number" value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-xl text-[#0047AB]" required />
           </div>
+          {Number(formData.monto_capital) > 0 && (
+            <div className="col-span-1 md:col-span-2 bg-[#050533] p-8 rounded-[2.5rem] text-white flex flex-col md:flex-row justify-around items-center gap-6 shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="text-center">
+                <p className="text-[9px] font-black text-sky-400 uppercase mb-1">Abono {formData.modalidad === 'S' ? 'Semanal' : 'Estimado'}</p>
+                <p className="text-3xl font-black italic">${calculos.pagoPorPeriodo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] font-black text-emerald-400 uppercase mb-1">Interés Total</p>
+                <p className="text-3xl font-black italic">${calculos.interesTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Total a Pagar</p>
+                <p className="text-3xl font-black italic text-white">${calculos.totalPagar.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          )}
 
           {/* FORMULARIO DE AVAL */}
           <div className="col-span-1 md:col-span-2 p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-6">
