@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { 
-  Users, ChevronDown, ChevronRight, ChevronLeft, ExternalLink, 
-  User, Phone, MapPin, Search, ShieldCheck, Loader2, AlertCircle 
+  Users, ChevronRight, ChevronLeft, ExternalLink, 
+  User, MapPin, Search, ShieldCheck, Loader2, AlertCircle, X 
 } from 'lucide-react';
 import React from 'react';
 import api from '@/lib/api';
@@ -17,63 +17,70 @@ export default function CarteraVencidaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPorPagina = 6;
 
-  // 1. CARGA DE DATOS DESDE EL ENDPOINT HÍBRIDO
+  // 1. CARGA DE DATOS (Solo los que el backend dice que ya vencieron)
   const fetchCartera = async () => {
-  try {
-    setLoading(true);
-    // 🔥 USAMOS EL ENDPOINT DE CARTERA, NO EL HÍBRIDO
-    const response = await api.get('/clientes/cartera-vencida-hibrida/');
-    setEntidades(Array.isArray(response.data) ? response.data : []);
-  } catch (error) {
-    console.error('Error:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      const response = await api.get('/clientes/cartera-vencida-hibrida/');
+      setEntidades(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Error al obtener cartera:', error);
+      setEntidades([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-// 2. Simplifica el filtro (ya vienen filtrados del backend)
-const deudoresFiltrados = entidades.filter(e => {
-  const nombre = (e.nombre_deudor || '').toLowerCase();
-  return nombre.includes(searchTerm.toLowerCase()) || e.id_prestamo.toString().includes(searchTerm);
-});
+  useEffect(() => { fetchCartera(); }, []);
 
-  // 2. ORDENAMIENTO (Prioridad a los que tienen más dinero en mora)
-  const deudoresOrdenados = [...deudoresFiltrados].sort((a, b) => 
-    parseFloat(b.total_penalizaciones || '0') - parseFloat(a.total_penalizaciones || '0')
-  );
+  // 2. FILTRADO Y ORDENAMIENTO (Usando useMemo para estabilidad)
+  const deudoresFiltrados = useMemo(() => {
+    return entidades
+      .filter(e => {
+        const nombre = (e.nombre_deudor || '').toLowerCase();
+        const busqueda = searchTerm.toLowerCase();
+        return nombre.includes(busqueda) || e.id_prestamo.toString().includes(busqueda);
+      })
+      .sort((a, b) => b.monto_vencido - a.monto_vencido);
+  }, [entidades, searchTerm]);
 
   const totalPaginas = Math.ceil(deudoresFiltrados.length / itemsPorPagina);
   const deudoresActuales = deudoresFiltrados.slice((currentPage - 1) * itemsPorPagina, currentPage * itemsPorPagina);
 
-  const condonarMora = async (idPenalizacion: number, nombre: string) => {
-    const motivo = window.prompt(`¿Por qué condonas la deuda de ${nombre}? (Mín. 10 carac.)`);
+  const condonarMora = async (idPrestamo: number, nombre: string) => {
+    const motivo = window.prompt(`¿Por qué condonas la mora de ${nombre}? (Mín. 10 carac.)`);
     if (!motivo || motivo.length < 10) return alert("❌ Motivo inválido.");
     try {
-      await api.post(`/condonar-mora/${idPenalizacion}/`, { motivo });
+      // Ajustamos a la ruta de condonación basada en el préstamo si es necesario
+      await api.post(`/condonar-mora/${idPrestamo}/`, { motivo });
       alert("✅ Condonación exitosa.");
       fetchCartera();
-    } catch (e) { alert("❌ Error en servidor."); }
+    } catch (e) { alert("❌ Error al procesar condonación."); }
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center h-screen text-slate-400">
+    <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
       <Loader2 className="animate-spin mb-4" size={40} color="#DC2626" />
-      <p className="font-black uppercase tracking-widest text-xs italic text-red-500">Escaneando Cartera Vencida Tlaxcala...</p>
+      <p className="font-black uppercase tracking-widest text-[10px] italic text-red-500 animate-pulse">
+        Escaneando Cartera Vencida Tlaxcala...
+      </p>
     </div>
   );
 
   return (
     <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-500">
       
-      {/* HEADER ROJO DE ALERTA */}
+      {/* HEADER ALERTA */}
       <div className="p-8 border-b border-red-50 bg-red-50/20 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-red-200">
             <AlertCircle size={24} />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 italic">Cartera en Mora</h2>
-            <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">Recuperación Urgente: {deudoresFiltrados.length} Cuentas</p>
+            <h2 className="text-2xl font-black text-slate-800 italic uppercase tracking-tighter">Cartera en Mora</h2>
+            <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">
+              Recuperación Urgente: {deudoresFiltrados.length} Cuentas Vencidas
+            </p>
           </div>
         </div>
 
@@ -81,10 +88,10 @@ const deudoresFiltrados = entidades.filter(e => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-600" size={18} />
           <input 
             type="text" 
-            placeholder="Buscar deudor moroso..." 
+            placeholder="Buscar por nombre o folio..." 
             value={searchTerm}
             onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-600 outline-none transition-all shadow-sm" 
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-600 outline-none transition-all" 
           />
         </div>
       </div>
@@ -93,17 +100,16 @@ const deudoresFiltrados = entidades.filter(e => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 text-slate-400 text-[9px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
             <tr>
-              <th className="px-8 py-5">Cliente / Grupo</th>
-              <th className="px-8 py-5">Tipo</th>
-              <th className="px-8 py-5 text-center">Deuda Total</th>
-              <th className="px-8 py-5 text-center">Atraso</th>
+              <th className="px-8 py-5">Sujeto / Préstamo</th>
+              <th className="px-8 py-5 text-center">Tipo</th>
+              <th className="px-8 py-5 text-center">Monto Vencido</th>
+              <th className="px-8 py-5 text-center">Días de Atraso</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {deudoresActuales.length > 0 ? deudoresActuales.map((e) => {
-              const uniqueKey = `${e.es_grupo ? 'G' : 'I'}-${e.id}`;
+              const uniqueKey = `${e.es_grupo ? 'G' : 'I'}-${e.id_prestamo}`;
               const isExpanded = expandedId === uniqueKey;
-              const tieneMora = parseFloat(e.total_penalizaciones || '0') > 0;
 
               return (
                 <React.Fragment key={uniqueKey}>
@@ -117,73 +123,58 @@ const deudoresFiltrados = entidades.filter(e => {
                           {e.es_grupo ? <Users size={18} /> : <User size={18} />}
                         </div>
                         <div>
-                          <p className="font-black text-slate-800 text-sm tracking-tight capitalize">{e.nombre || e.nombre_grupo}</p>
-                          <p className="text-[9px] text-slate-400 font-bold italic">REF: {e.id}</p>
+                          <p className="font-black text-slate-800 text-sm tracking-tight capitalize">{e.nombre_deudor}</p>
+                          <p className="text-[9px] text-slate-400 font-bold italic">FOLIO: #{e.id_prestamo}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      {/* Badge dinámico de tipo */}
+                    <td className="px-8 py-6 text-center">
                       <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md border ${e.es_grupo ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
-                        {e.es_grupo ? 'Grupal Solidario' : 'Individual'}
+                        {e.es_grupo ? 'Grupal' : 'Individual'}
                       </span>
                     </td>
                     <td className="px-8 py-6 text-center">
-  <span className="font-black text-sm text-red-600">
-    {/* Sumamos saldo_actual (capital) + total_penalizaciones */}
-    ${(parseFloat(e.saldo_actual || '0') + parseFloat(e.total_penalizaciones || '0')).toLocaleString('es-MX')}
-  </span>
-</td>
+                      <span className="font-black text-sm text-red-600">
+                        ${parseFloat(e.monto_vencido).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </span>
+                    </td>
                     <td className="px-8 py-6 text-center">
-    <div className="flex flex-col items-center">
-      {tieneMora ? (
-        <>
-          <span className="text-[10px] font-black text-red-500 uppercase flex items-center gap-1">
-            <AlertCircle size={10} /> Mora Activa
-          </span>
-          {/* Mostramos el desglose para que Alexander sepa de dónde salen los $45 */}
-          <span className="text-[9px] text-slate-400 font-bold italic">
-             Cap: ${parseFloat(e.saldo_actual).toLocaleString()} + Mora: ${e.total_penalizaciones}
-          </span>
-        </>
-      ) : (
-        <span className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Pendiente de Pago</span>
-      )}
-    </div>
-</td>
+                      <div className="flex flex-col items-center">
+                        <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${e.dias_atraso > 7 ? 'bg-red-600 text-white animate-pulse' : 'bg-amber-100 text-amber-600'}`}>
+                          {e.dias_atraso} Días tarde
+                        </span>
+                        <span className="text-[8px] text-slate-400 mt-1 font-bold italic">Venció: {e.fecha_vencimiento}</span>
+                      </div>
+                    </td>
                   </tr>
                   {isExpanded && (
                     <tr className="bg-red-50/20">
-                      <td colSpan={4} className="px-16 py-8 animate-in slide-in-from-top-2 duration-300">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 bg-white p-6 rounded-[2rem] border border-red-100 shadow-xl shadow-red-900/5">
-                          <div className="space-y-1">
-                            <p className="text-[9px] font-black text-slate-300 uppercase">Domicilio</p>
-                            <p className="text-xs text-slate-600 font-bold leading-tight flex items-center gap-2">
-                               <MapPin size={12} className="text-red-500" /> {e.direccion}
-                            </p>
+                      <td colSpan={4} className="px-12 py-6 animate-in slide-in-from-top-2">
+                        <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-red-100 shadow-xl">
+                          <div className="flex gap-10">
+                            <div>
+                               <p className="text-[8px] font-black text-slate-300 uppercase">Contacto</p>
+                               <p className="text-xs font-bold text-slate-700">{e.telefono || 'Sin Teléfono'}</p>
+                            </div>
+                            {e.total_penalizaciones > 0 && (
+                               <div>
+                                  <p className="text-[8px] font-black text-red-400 uppercase">Multas Acumuladas</p>
+                                  <p className="text-xs font-black text-red-600">${e.total_penalizaciones}</p>
+                               </div>
+                            )}
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-[9px] font-black text-slate-300 uppercase">Responsable / Aval</p>
-                            <p className="text-xs text-slate-800 font-black">
-                               {e.es_grupo ? (e.nombre_aval || 'S/N') : (e.datos_ultimo_aval?.nombre_aval || 'Ninguno')}
-                            </p>
-                          </div>
-                          <div className="flex gap-2 col-span-2 justify-end">
-                            
+                          <div className="flex gap-3">
                             <button 
-                              onClick={(event) => { event.stopPropagation(); condonarMora(e.id_mora_activa, e.nombre || e.nombre_grupo); }}
-                              className="flex items-center gap-2 bg-amber-500 text-white text-[9px] font-black uppercase px-4 py-3 rounded-xl hover:bg-amber-600 transition-all"
+                              onClick={(event) => { event.stopPropagation(); condonarMora(e.id_prestamo, e.nombre_deudor); }}
+                              className="px-4 py-2 bg-amber-500 text-white text-[9px] font-black uppercase rounded-xl hover:bg-amber-600 transition-all"
                             >
-                              <ShieldCheck size={14}/> Condonar
+                              Condonar
                             </button>
                             <button 
-                              onClick={(event) => { 
-                                event.stopPropagation(); 
-                                router.push('/dashboard/pagos'); 
-                              }} 
-                              className={`flex items-center gap-2 text-white text-[9px] font-black uppercase px-6 py-3 rounded-xl shadow-lg transition-all ${e.es_grupo ? 'bg-purple-700 hover:bg-purple-800' : 'bg-red-700 hover:bg-red-800'}`}
+                              onClick={(event) => { event.stopPropagation(); router.push('/dashboard/pagos'); }} 
+                              className="px-4 py-2 bg-red-700 text-white text-[9px] font-black uppercase rounded-xl hover:bg-red-800 shadow-lg"
                             >
-                              Gestionar Cobro <ExternalLink size={14}/>
+                              Gestionar Cobro
                             </button>
                           </div>
                         </div>
@@ -194,11 +185,11 @@ const deudoresFiltrados = entidades.filter(e => {
               );
             }) : (
               <tr>
-                <td colSpan={4} className="p-20 text-center">
-                   <div className="flex flex-col items-center opacity-20">
-                      <ShieldCheck size={80} />
-                      <p className="font-black italic uppercase text-xs mt-4">No se detectaron deudas vencidas</p>
-                   </div>
+                <td colSpan={4} className="p-20 text-center text-slate-300">
+                  <div className="flex flex-col items-center opacity-30">
+                    <ShieldCheck size={60} />
+                    <p className="font-black italic uppercase text-xs mt-4 tracking-widest">Cartera al Corriente</p>
+                  </div>
                 </td>
               </tr>
             )}
@@ -207,11 +198,11 @@ const deudoresFiltrados = entidades.filter(e => {
       </div>
 
       {/* PAGINACIÓN */}
-      <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-         <p className="text-[10px] text-slate-400 font-black uppercase italic">Página {currentPage} de {totalPaginas || 1}</p>
+      <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+         <p className="text-[9px] text-slate-400 font-black uppercase">Página {currentPage} de {totalPaginas || 1}</p>
          <div className="flex gap-2">
-            <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} className="p-2 bg-white rounded-lg border border-slate-200"><ChevronLeft size={16}/></button>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPaginas, p+1))} className="p-2 bg-white rounded-lg border border-slate-200"><ChevronRight size={16}/></button>
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-2 bg-white rounded-xl border border-slate-200 disabled:opacity-30"><ChevronLeft size={16}/></button>
+            <button disabled={currentPage === totalPaginas} onClick={() => setCurrentPage(p => p + 1)} className="p-2 bg-white rounded-xl border border-slate-200 disabled:opacity-30"><ChevronRight size={16}/></button>
          </div>
       </div>
     </div>
