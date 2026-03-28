@@ -38,14 +38,14 @@ export default function CarteraVencidaPage() {
     const nombre = (e.nombre || e.nombre_grupo || '').toLowerCase();
     const matchesSearch = nombre.includes(searchTerm.toLowerCase()) || e.id.toString().includes(searchTerm);
     
-    // CRITERIO DE MOROSIDAD:
-    // A) Ya tiene recargos aplicados por el script (total_penalizaciones > 0)
-    // B) O tiene un préstamo activo con saldo pendiente (Alexander decide a quién presionar)
-    const tieneRecargos = parseFloat(e.total_penalizaciones || '0') > 0;
-  const saldoPendiente = parseFloat(e.saldo_actual || '0') > 0;
-  
-  // Condición estricta: Préstamo activo + Deuda real + Multa aplicada
-  return e.tiene_prestamo_activo && saldoPendiente && tieneRecargos;
+    // Convertimos a número para evitar errores de string
+    const saldoCap = parseFloat(e.saldo_actual || '0');
+    const saldoMora = parseFloat(e.total_penalizaciones || '0');
+
+    // 🔥 REGLA DE MOROSIDAD CORREGIDA:
+    // Aparece si el nombre coincide Y (tiene capital pendiente O tiene alguna multa)
+    // Quitamos la obligación de que "tieneRecargos" sea true para que las manuales salgan
+    return matchesSearch && (saldoCap > 0 || saldoMora > 0);
   });
 
   // 2. ORDENAMIENTO (Prioridad a los que tienen más dinero en mora)
