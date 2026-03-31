@@ -16,10 +16,12 @@ import {
   Calendar, 
   Calculator, 
   LogOut,
-  User, // <--- Este es para el Perfil
+  User,
+  Menu, // <--- Este es para el Perfil
 } from 'lucide-react';
 
 export default function Sidebar() {
+  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
@@ -52,8 +54,25 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-72 bg-[#050533] text-slate-400 p-8 flex flex-col h-screen sticky top-0 shadow-2xl z-50">
-      <style jsx>{`
+    <>
+    <button 
+      onClick={() => setIsOpen(!isOpen)}
+      className="md:hidden fixed top-4 right-4 z-[100] p-3 bg-[#050533] text-white rounded-2xl shadow-xl border border-white/10"
+    >
+      <Menu size={24} />
+    </button>
+    {isOpen && (
+        <div 
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] md:hidden"
+        />
+      )}
+<aside className={`
+      fixed md:sticky top-0 left-0 z-[90]
+      w-72 h-screen bg-[#050533] p-8 flex flex-col 
+      transition-transform duration-300 ease-in-out
+      ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+    `}>      <style jsx>{`
         nav::-webkit-scrollbar {
           display: none;
         }
@@ -104,5 +123,7 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
+  
 }

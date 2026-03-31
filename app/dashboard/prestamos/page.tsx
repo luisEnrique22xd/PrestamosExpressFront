@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import {
-  UserPlus, RefreshCcw, ShieldCheck, 
+  UserPlus, RefreshCcw, ShieldCheck,
   X, Check, Plus, AlertCircle, Users, User, Search, Info
 } from 'lucide-react';
 import api from '@/lib/api';
@@ -22,7 +22,7 @@ export default function PrestamosPage() {
   const [busquedaSocio, setBusquedaSocio] = useState('');
   const [sugerenciasSocios, setSugerenciasSocios] = useState<any[]>([]);
   const [sugerenciasIndividual, setSugerenciasIndividual] = useState<any[]>([]);
-  
+
   const [integrantes, setIntegrantes] = useState<any[]>([]);
   const [gruposExistentes, setGruposExistentes] = useState<any[]>([]);
   const [mostrarSugerenciasGrupo, setMostrarSugerenciasGrupo] = useState(false);
@@ -82,7 +82,7 @@ export default function PrestamosPage() {
 
   const seleccionarCliente = (cliente: any) => {
     const deudaActiva = cliente.tiene_prestamo_activo || cliente.saldo_actual > 0;
-    
+
     if (deudaActiva) {
       setClienteEncontrado(cliente);
       lanzarAlerta('error', `RESTRICCIÓN: ${cliente.nombre} presenta deudas vigentes.`);
@@ -135,7 +135,7 @@ export default function PrestamosPage() {
     const interesTotal = capital * tasa * nCuotas;
     const totalPagar = capital + interesTotal;
     const pagoPorPeriodo = totalPagar / nCuotas;
-    return { interesTotal, totalPagar,pagoPorPeriodo };
+    return { interesTotal, totalPagar, pagoPorPeriodo };
   }, [formData.monto_capital, formData.tasa_interes, formData.cuotas]);
 
   const ejecutarGuardado = async () => {
@@ -171,74 +171,71 @@ export default function PrestamosPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
-      
+
       {/* SELECTOR */}
-      <div className="flex bg-slate-100 p-2 rounded-[2.5rem] w-fit mx-auto shadow-inner">
-        <button onClick={() => { setTipoPrestamo('I'); handleReset(); }} className={`flex items-center gap-3 px-10 py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'I' ? 'bg-[#0047AB] text-white shadow-lg' : 'text-slate-400'}`}>
-          <User size={16} /> Individual
-        </button>
-        <button onClick={() => { setTipoPrestamo('G'); handleReset(); }} className={`flex items-center gap-3 px-10 py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'G' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'}`}>
+      <div className="flex flex-col sm:flex-row bg-slate-100 p-2 rounded-3xl sm:rounded-[2.5rem] w-full sm:w-fit mx-auto shadow-inner gap-2">        <button onClick={() => { setTipoPrestamo('I'); handleReset(); }} className={`flex items-center gap-3 px-6 md:px-10 w-full sm:w-auto justify-center py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'I' ? 'bg-[#0047AB] text-white shadow-lg' : 'text-slate-400'}`}>
+        <User size={16} /> Individual
+      </button>
+        <button onClick={() => { setTipoPrestamo('G'); handleReset(); }} className={`flex items-center gap-3 px-6 md:px-10 w-full sm:w-auto justify-center py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'G' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'}`}>
           <Users size={16} /> Grupal Solidario
         </button>
       </div>
 
-      <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 relative">
-        <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter mb-10 uppercase">
-          {tipoPrestamo === 'I' ? 'Nuevo Préstamo Cliente' : 'Apertura de Crédito Grupal'}
-        </h2>
+      <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] shadow-sm border border-slate-100 relative">        <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter mb-10 uppercase">
+        {tipoPrestamo === 'I' ? 'Nuevo Préstamo Cliente' : 'Apertura de Crédito Grupal'}
+      </h2>
 
         <form onSubmit={(e) => { e.preventDefault(); setConfirmando(true); }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+
           {/* BUSCADOR POR NOMBRE (INDIVIDUAL) */}
           {tipoPrestamo === 'I' ? (
             <div className="space-y-2 relative">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Buscar Cliente (Nombre)</label>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                <input 
-                  type="text" 
-                  value={clienteEncontrado ? clienteEncontrado.nombre : formData.cliente} 
+                <input
+                  type="text"
+                  value={clienteEncontrado ? clienteEncontrado.nombre : formData.cliente}
                   onChange={(e) => {
-                    if(clienteEncontrado) setClienteEncontrado(null);
+                    if (clienteEncontrado) setClienteEncontrado(null);
                     buscarClientePorNombre(e.target.value);
                   }}
-                  className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${tieneBloqueo ? 'bg-red-50 border-red-200 border' : 'bg-slate-50'}`} 
-                  placeholder="Escriba nombre del cliente..." 
+                  className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${tieneBloqueo ? 'bg-red-50 border-red-200 border' : 'bg-slate-50'}`}
+                  placeholder="Escriba nombre del cliente..."
                   required
                 />
               </div>
 
               {sugerenciasIndividual.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
-                  {sugerenciasIndividual.map(c => (
-                    <button key={c.id} type="button" onClick={() => seleccionarCliente(c)} className="w-full p-4 text-left hover:bg-blue-50 flex items-center justify-between border-b last:border-none">
-                      <span className="text-xs font-black uppercase">{c.nombre}</span>
-                      {(c.tiene_prestamo_activo || c.saldo_actual > 0) && (
-                        <span className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase">Bloqueado</span>
-                      )}
-                    </button>
-                  ))}
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden max-h-60 overflow-y-auto">                  {sugerenciasIndividual.map(c => (
+                  <button key={c.id} type="button" onClick={() => seleccionarCliente(c)} className="w-full p-4 text-left hover:bg-blue-50 flex items-center justify-between border-b last:border-none">
+                    <span className="text-xs font-black uppercase">{c.nombre}</span>
+                    {(c.tiene_prestamo_activo || c.saldo_actual > 0) && (
+                      <span className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase">Bloqueado</span>
+                    )}
+                  </button>
+                ))}
                 </div>
               )}
 
               {clienteEncontrado && (
                 <p className={`text-[10px] font-black uppercase ml-2 italic flex items-center gap-1 ${tieneBloqueo ? 'text-red-500' : 'text-emerald-500'}`}>
-                  {tieneBloqueo ? <X size={12}/> : <Check size={12}/>} 
+                  {tieneBloqueo ? <X size={12} /> : <Check size={12} />}
                   {tieneBloqueo ? 'RESTRINGIDO: POSEE DEUDA' : 'CLIENTE SELECCIONADO'}
                 </p>
               )}
             </div>
           ) : (
             <div className="col-span-1 md:col-span-2 space-y-6">
-               <label className="text-[10px] font-black text-purple-600 uppercase ml-2 tracking-widest">Nombre del Grupo</label>
-               <input 
-                  type="text" 
-                  value={formData.nombre_grupo} 
-                  onChange={(e) => setFormData({...formData, nombre_grupo: e.target.value})}
-                  className="w-full p-4 bg-purple-50/30 rounded-2xl outline-none border-2 border-transparent focus:border-purple-600 font-bold" 
-                  placeholder="Nombre del grupo..." required
-               />
-               <div className="relative">
+              <label className="text-[10px] font-black text-purple-600 uppercase ml-2 tracking-widest">Nombre del Grupo</label>
+              <input
+                type="text"
+                value={formData.nombre_grupo}
+                onChange={(e) => setFormData({ ...formData, nombre_grupo: e.target.value })}
+                className="w-full p-4 bg-purple-50/30 rounded-2xl outline-none border-2 border-transparent focus:border-purple-600 font-bold"
+                placeholder="Nombre del grupo..." required
+              />
+              <div className="relative">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Añadir Integrantes</label>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
@@ -258,7 +255,7 @@ export default function PrestamosPage() {
               <div className="flex flex-wrap gap-2">
                 {integrantes.map(i => (
                   <div key={i.id} className="bg-[#0047AB] text-white px-4 py-2 rounded-full text-[10px] font-black flex items-center gap-2 uppercase">
-                    {i.nombre} <button type="button" onClick={() => setIntegrantes(integrantes.filter(it => it.id !== i.id))}><X size={14}/></button>
+                    {i.nombre} <button type="button" onClick={() => setIntegrantes(integrantes.filter(it => it.id !== i.id))}><X size={14} /></button>
                   </div>
                 ))}
               </div>
@@ -270,18 +267,17 @@ export default function PrestamosPage() {
             <input type="number" value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-xl text-[#0047AB]" required />
           </div>
           {Number(formData.monto_capital) > 0 && (
-            <div className="col-span-1 md:col-span-2 bg-[#050533] p-8 rounded-[2.5rem] text-white flex flex-col md:flex-row justify-around items-center gap-6 shadow-2xl animate-in zoom-in-95 duration-300">
-              <div className="text-center">
-                <p className="text-[9px] font-black text-sky-400 uppercase mb-1">Abono {formData.modalidad === 'S' ? 'Semanal' : 'Estimado'}</p>
-                <p className="text-3xl font-black italic">${calculos.pagoPorPeriodo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
-              </div>
+            <div className="col-span-1 md:col-span-2 bg-[#050533] p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] text-white flex flex-col lg:flex-row justify-around items-center gap-8 shadow-2xl animate-in zoom-in-95 duration-300">              <div className="text-center">
+              <p className="text-[9px] font-black text-sky-400 uppercase mb-1">Abono {formData.modalidad === 'S' ? 'Semanal' : 'Estimado'}</p>
+              <p className="text-2xl md:text-3xl font-black italic">${calculos.pagoPorPeriodo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+            </div>
               <div className="text-center">
                 <p className="text-[9px] font-black text-emerald-400 uppercase mb-1">Interés Total</p>
-                <p className="text-3xl font-black italic">${calculos.interesTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                <p className="text-2xl md:text-3xl font-black italic">${calculos.interesTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
               </div>
               <div className="text-center">
                 <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Total a Pagar</p>
-                <p className="text-3xl font-black italic text-white">${calculos.totalPagar.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                <p className="text-2xl md:text-3xl font-black italic text-white">${calculos.totalPagar.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
               </div>
             </div>
           )}
@@ -291,9 +287,8 @@ export default function PrestamosPage() {
             <h3 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2 italic">
               <ShieldCheck size={18} /> Información del Aval / Respaldo
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required/>
-              <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required/>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">              <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
+              <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
               <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" required />
               <input type="text" placeholder="CURP" value={formData.curp_aval} onChange={(e) => setFormData({ ...formData, curp_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
               <input type="text" placeholder="Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
@@ -323,9 +318,8 @@ export default function PrestamosPage() {
           <button
             type="submit"
             disabled={tieneBloqueo || loading || !formData.monto_capital}
-            className={`col-span-1 md:col-span-2 mt-4 py-6 rounded-[2.2rem] font-black text-xs uppercase tracking-[0.3em] transition-all shadow-2xl flex items-center justify-center gap-4 ${
-              tieneBloqueo ? 'bg-slate-200 text-slate-400 cursor-not-allowed border-2 border-slate-300' : 'bg-[#050533] text-white hover:bg-[#0047AB]'
-            }`}
+            className={`col-span-1 md:col-span-2 mt-4 py-5 md:py-6 rounded-2xl md:rounded-[2.2rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl flex items-center justify-center gap-4 ${tieneBloqueo ? 'bg-slate-200 text-slate-400 cursor-not-allowed border-2 border-slate-300' : 'bg-[#050533] text-white hover:bg-[#0047AB]'
+              }`}
           >
             <ShieldCheck size={18} />
             <span>{loading ? 'Sincronizando...' : 'Autorizar Crédito'}</span>
@@ -336,13 +330,12 @@ export default function PrestamosPage() {
       {/* MODAL DE CONFIRMACIÓN */}
       {confirmando && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#050533]/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white w-full max-w-lg rounded-[3rem] p-10 space-y-8 shadow-2xl border-t-8 border-[#0047AB]">
-            <h3 className="text-2xl font-black italic text-slate-800 uppercase leading-none text-center">Confirmar Datos</h3>
+          <div className="bg-white w-full max-w-lg rounded-3xl md:rounded-[3rem] p-6 md:p-10 space-y-6 md:space-y-8 shadow-2xl border-t-8 border-[#0047AB] mx-4 max-h-[90vh] overflow-y-auto">            <h3 className="text-2xl font-black italic text-slate-800 uppercase leading-none text-center">Confirmar Datos</h3>
             <div className="bg-slate-50 p-8 rounded-[2.5rem] space-y-4 font-bold text-sm">
-               <div className="flex justify-between uppercase text-slate-500 text-[10px]"><span>Sujeto:</span> <span className="text-slate-800 text-xs">{clienteEncontrado?.nombre || formData.nombre_grupo}</span></div>
-               <div className="flex justify-between"><span>Capital:</span> <span>${Number(formData.monto_capital).toLocaleString()}</span></div>
-               <div className="flex justify-between text-red-500"><span>Interés Total:</span> <span>${calculos.interesTotal.toLocaleString()}</span></div>
-               <div className="flex justify-between text-xl font-black text-emerald-600 border-t pt-4"><span>Total a Pagar:</span> <span>${calculos.totalPagar.toLocaleString()}</span></div>
+              <div className="flex justify-between uppercase text-slate-500 text-[10px]"><span>Sujeto:</span> <span className="text-slate-800 text-xs">{clienteEncontrado?.nombre || formData.nombre_grupo}</span></div>
+              <div className="flex justify-between"><span>Capital:</span> <span>${Number(formData.monto_capital).toLocaleString()}</span></div>
+              <div className="flex justify-between text-red-500"><span>Interés Total:</span> <span>${calculos.interesTotal.toLocaleString()}</span></div>
+              <div className="flex justify-between text-xl font-black text-emerald-600 border-t pt-4"><span>Total a Pagar:</span> <span>${calculos.totalPagar.toLocaleString()}</span></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <button onClick={() => setConfirmando(false)} className="py-5 rounded-3xl font-black text-[10px] uppercase text-slate-400 bg-slate-100">Cancelar</button>

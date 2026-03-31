@@ -73,8 +73,7 @@ export default function GlobalDashboard() {
     <div className="space-y-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* HEADER */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
+<header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">        <div>
           <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
             Sistema <span className="text-[#0047AB]">Express</span>
           </h1>
@@ -84,7 +83,7 @@ export default function GlobalDashboard() {
         </div>
 
         {/* BUSCADOR */}
-        <div className="relative w-full md:w-96 group">
+        <div className="relative w-full lg:w-96 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0047AB] transition-colors" size={18} />
           <input
             type="text"
@@ -114,7 +113,7 @@ export default function GlobalDashboard() {
       </header>
 
       {/* MÉTRICAS (TARJETAS) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <div className="bg-[#050533] p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group border border-white/5">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <TrendingUp size={80} />
@@ -160,8 +159,7 @@ export default function GlobalDashboard() {
       </div>
 
       {/* GRÁFICA Y CONCENTRACIÓN */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">        
         {/* ÁREA DE GRÁFICA */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
@@ -226,7 +224,7 @@ export default function GlobalDashboard() {
         </div>
         <button
           onClick={() => router.push('/dashboard/prestamos')}
-          className="bg-white text-[#050533] px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3 relative z-10"
+          className="w-full lg:w-auto bg-white text-[#050533] px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3 relative z-10 justify-center"
         >
           Nuevo Préstamo
           <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />

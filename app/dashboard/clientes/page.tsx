@@ -32,11 +32,11 @@ export default function ClientesPage() {
 
   const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
-// Función auxiliar para auto-limpiar la alerta
-const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
-  setAlerta({ type, msg });
-  setTimeout(() => setAlerta(null), 5000);
-};
+  // Función auxiliar para auto-limpiar la alerta
+  const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+    setAlerta({ type, msg });
+    setTimeout(() => setAlerta(null), 5000);
+  };
 
   const fetchClientes = async () => {
     try {
@@ -91,8 +91,8 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
       setIsModalOpen(false);
       resetForm();
     } catch (error: any) {
-      const errorMsg = error.response?.data 
-        ? Object.values(error.response.data).flat().join(", ") 
+      const errorMsg = error.response?.data
+        ? Object.values(error.response.data).flat().join(", ")
         : "Error en el servidor";
       lanzarAlerta('error', `❌ Error: ${errorMsg}`);
     }
@@ -126,26 +126,24 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
     <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-500">
 
       {/* HEADER */}
-      <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 italic">Directorio General</h2>
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Total registrados: {clientes.length}</p>
-        </div>
+      <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-center gap-6">        <div>
+        <h2 className="text-2xl font-black text-slate-800 italic">Directorio General</h2>
+        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Total registrados: {clientes.length}</p>
+      </div>
 
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="relative flex-1 md:w-80 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0047AB]" size={18} />
-            <input
-              type="text"
-              placeholder="Buscar cliente por nombre o ID..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-[#0047AB] outline-none transition-all"
-            />
-          </div>
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">          <div className="relative flex-1 md:w-80 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0047AB]" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar cliente por nombre o ID..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-[#0047AB] outline-none transition-all"
+          />
+        </div>
           <button
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-[#0047AB] text-white font-black px-8 py-3 rounded-2xl hover:bg-blue-700 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100"
+            className="flex items-center gap-2 bg-[#0047AB] text-white font-black px-8 py-3 rounded-2xl hover:bg-blue-700 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 w-full sm:w-auto justify-center"
           >
             <UserPlus size={16} /> Nuevo Cliente
           </button>
@@ -155,16 +153,14 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
       {/* MODAL UNIFICADO (REGISTRO / EDICIÓN) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050533]/60 backdrop-blur-md p-4">
-          <div className="bg-white w-full max-w-lg p-10 rounded-[2.5rem] shadow-2xl relative">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 transition-colors"><X size={24} /></button>
+          <div className="bg-white w-full max-w-lg p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 transition-colors"><X size={24} /></button>
             <h2 className="text-2xl font-black text-slate-800 mb-6 italic">
               {isEditing ? 'Actualizar Expediente' : 'Nuevo Registro de Cliente'}
             </h2>
-            <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
-              <div className="col-span-2 space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Nombre Completo</label>
-                <input type="text" disabled={isEditing} required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" />
-              </div>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">              <div className="col-span-2 space-y-1">
+              <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Nombre Completo</label>
+              <input type="text" disabled={isEditing} required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" />
+            </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Teléfono</label>
                 <input type="tel" required value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" />
@@ -191,15 +187,14 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
 
       {/* TABLA */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-slate-50/50 text-slate-400 text-[9px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
-            <tr>
-              <th className="px-8 py-5">Identidad / ID</th>
-              <th className="px-8 py-5">Tipo</th>
-              <th className="px-8 py-5 text-center">Saldo Actual</th>
-              <th className="px-8 py-5 text-center">Estatus</th>
-            </tr>
-          </thead>
+        <table className="min-w-[800px] lg:w-full text-left border-collapse">          <thead className="bg-slate-50/50 text-slate-400 text-[9px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
+          <tr>
+            <th className="px-4 md:px-8 py-4 md:py-6">Identidad / ID</th>
+            <th className="px-4 md:px-8 py-4 md:py-6">Tipo</th>
+            <th className="px-4 md:px-8 py-4 md:py-6 text-center">Saldo Actual</th>
+            <th className="px-4 md:px-8 py-4 md:py-6 text-center">Estatus</th>
+          </tr>
+        </thead>
           <tbody className="divide-y divide-slate-50">
             {clientesActuales.map((c) => (
               <React.Fragment key={`${c.es_grupo ? 'G' : 'I'}-${c.id}`}>
@@ -227,14 +222,14 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-center">
-  <span className={`font-black text-sm ${parseFloat(c.saldo_actual) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-    {/* Sumamos capital + penalizaciones para mostrar la deuda REAL */}
-    ${(parseFloat(c.saldo_actual || '0') + parseFloat(c.total_penalizaciones || '0')).toLocaleString('es-MX')}
-  </span>
-  {parseFloat(c.total_penalizaciones) > 0 && (
-    <p className="text-[8px] text-red-400 font-bold uppercase italic">+ Mora Incluida</p>
-  )}
-</td>
+                    <span className={`font-black text-sm ${parseFloat(c.saldo_actual) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {/* Sumamos capital + penalizaciones para mostrar la deuda REAL */}
+                      ${(parseFloat(c.saldo_actual || '0') + parseFloat(c.total_penalizaciones || '0')).toLocaleString('es-MX')}
+                    </span>
+                    {parseFloat(c.total_penalizaciones) > 0 && (
+                      <p className="text-[8px] text-red-400 font-bold uppercase italic">+ Mora Incluida</p>
+                    )}
+                  </td>
                   <td className="px-8 py-6 text-center">
                     <div className={`mx-auto w-fit px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border-2 ${c.tiene_prestamo_activo ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                       }`}>
@@ -246,23 +241,21 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
                 {expandedId === `${c.es_grupo ? 'G' : 'I'}-${c.id}` && (
                   <tr className="bg-slate-50/30">
                     <td colSpan={4} className="px-16 py-8 animate-in slide-in-from-top-4 duration-300">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
-                        <div className="space-y-1">
-                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Información Base</p>
-                          <p className="text-xs text-slate-600 font-bold leading-tight">{c.es_grupo ? `Integrantes: ${c.num_integrantes}` : c.direccion}</p>
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-center">                        <div className="space-y-1">
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Información Base</p>
+                        <p className="text-xs text-slate-600 font-bold leading-tight">{c.es_grupo ? `Integrantes: ${c.num_integrantes}` : c.direccion}</p>
+                      </div>
                         <div className="space-y-1">
                           <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Responsable / Aval</p>
                           <p className="text-xs text-slate-800 font-black">
-  {c.es_grupo ? (c.datos_ultimo_aval?.nombre_aval || 'Sin Representante') : (c.datos_ultimo_aval?.nombre_aval || 'Ninguno')}
-</p>
+                            {c.es_grupo ? (c.datos_ultimo_aval?.nombre_aval || 'Sin Representante') : (c.datos_ultimo_aval?.nombre_aval || 'Ninguno')}
+                          </p>
                         </div>
-                        <div className="flex gap-3 col-span-2 justify-end">
-                          {!c.es_grupo && (
-                            <button onClick={(e) => { e.stopPropagation(); abrirEdicion(c); }} className="flex-1 max-w-[150px] flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-600 text-[9px] font-black uppercase py-3 rounded-xl hover:bg-slate-50 transition-all">
-                              <Edit3 size={14} /> Editar
-                            </button>
-                          )}
+                        <div className="flex flex-col sm:flex-row gap-3 col-span-1 sm:col-span-2 lg:justify-end">                          {!c.es_grupo && (
+                          <button onClick={(e) => { e.stopPropagation(); abrirEdicion(c); }} className="flex-1 max-w-[150px] flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-600 text-[9px] font-black uppercase py-3 rounded-xl hover:bg-slate-50 transition-all">
+                            <Edit3 size={14} /> Editar
+                          </button>
+                        )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -285,7 +278,7 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
       </div>
 
       {/* PAGINACIÓN */}
-      <div className="p-8 bg-slate-50/20 border-t border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="p-6 md:p-8 bg-slate-50/20 border-slate-50 flex flex-col lg:flex-row items-center justify-between gap-6 text-center">
         <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
           Cliente <span className="text-[#0047AB]">{indicePrimero + 1}</span> a <span className="text-[#0047AB]">{Math.min(indiceUltimo, clientesFiltrados.length)}</span> de {clientesFiltrados.length}
         </p>
@@ -300,13 +293,11 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
         </div>
       </div>
       {alerta && (
-        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${
-          alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
-        }`}>
-          <div className={`p-3 rounded-2xl ${
-            alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
           }`}>
-            {alerta.type === 'success' ? <CheckCircle2 size={24}/> : <AlertCircle size={24}/>}
+          <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+            }`}>
+            {alerta.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
           </div>
           <div>
             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
