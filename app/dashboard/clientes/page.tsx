@@ -30,6 +30,14 @@ export default function ClientesPage() {
     fecha_nacimiento: ''
   });
 
+  const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+
+// Función auxiliar para auto-limpiar la alerta
+const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+  setAlerta({ type, msg });
+  setTimeout(() => setAlerta(null), 5000);
+};
+
   const fetchClientes = async () => {
     try {
       setLoading(true);
@@ -47,7 +55,7 @@ export default function ClientesPage() {
 
   // Función para abrir el modal en modo edición
   const abrirEdicion = (cliente: any) => {
-    if (cliente.es_grupo) return alert("Para editar grupos, vaya al detalle del préstamo.");
+    if (cliente.es_grupo) return lanzarAlerta('error', "Para editar grupos, vaya al detalle del préstamo.");
     setIsEditing(true);
     setSelectedId(cliente.id);
     setFormData({
@@ -68,22 +76,25 @@ export default function ClientesPage() {
     let edad = hoy.getFullYear() - nacimiento.getFullYear();
     if (hoy < new Date(new Date(nacimiento).setFullYear(nacimiento.getFullYear() + edad))) edad--;
 
-    if (edad < 18) return alert("❌ El cliente debe ser mayor de edad.");
+    if (edad < 18) return lanzarAlerta('error', "❌ El cliente debe ser mayor de edad.");
 
     try {
       if (isEditing && selectedId) {
         await api.put(`/clientes/${selectedId}/`, formData);
-        alert("✅ Datos actualizados correctamente");
+        lanzarAlerta('success', "✅ Datos actualizados correctamente");
       } else {
         await api.post('/clientes/', formData);
-        alert("✅ Cliente registrado con éxito");
+        lanzarAlerta('success', "✅ Cliente registrado con éxito");
       }
 
       fetchClientes();
       setIsModalOpen(false);
       resetForm();
     } catch (error: any) {
-      alert(`❌ Error: ${JSON.stringify(error.response?.data)}`);
+      const errorMsg = error.response?.data 
+        ? Object.values(error.response.data).flat().join(", ") 
+        : "Error en el servidor";
+      lanzarAlerta('error', `❌ Error: ${errorMsg}`);
     }
   };
 
