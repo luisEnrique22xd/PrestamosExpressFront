@@ -1,13 +1,20 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Search, DollarSign, Calendar, CheckCircle2,
+  Search, DollarSign, X, CheckCircle2,
   Loader2, ArrowUpRight, Users, User, AlertCircle
 } from "lucide-react";
 import api from '@/lib/api';
 import { generarPDFRecibo } from '@/lib/generateTicket';
 
 export default function PagosPage() {
+  const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+
+// Función auxiliar para auto-limpiar la alerta
+const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+  setAlerta({ type, msg });
+  setTimeout(() => setAlerta(null), 5000);
+};
   const [montoPenalizacion, setMontoPenalizacion] = useState(0);
   const [tienePenalizaciones, setTienePenalizaciones] = useState(false);
   const [busqueda, setBusqueda] = useState('');
@@ -98,14 +105,15 @@ export default function PagosPage() {
         hora: res.data.hora
       });
 
-      alert("✅ Pago aplicado con éxito");
+      
+      lanzarAlerta('success', "✅ Pago aplicado con éxito");
       setClienteSel(null);
       setBusqueda('');
       setMontoAbono('');
       setMontoPenalizacion(0);
 
     } catch (error) {
-      alert("❌ Error al procesar el pago");
+      lanzarAlerta('error',"❌ Error al procesar el pago");
     } finally { setLoading(false); }
   };
 
@@ -227,6 +235,26 @@ export default function PagosPage() {
           </form>
         </div>
       </div>
+      {alerta && (
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${
+          alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
+        }`}>
+          <div className={`p-3 rounded-2xl ${
+            alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+          }`}>
+            {alerta.type === 'success' ? <CheckCircle2 size={24}/> : <AlertCircle size={24}/>}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
+              {alerta.type === 'success' ? 'Sistema Express' : 'Atención'}
+            </p>
+            <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
+          </div>
+          <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-500">
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
