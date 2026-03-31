@@ -110,8 +110,7 @@ export default function EstadisticasPage() {
         </div>
 
         {/* CONTENEDOR DERECHO: GRÁFICA (Flexible) */}
-        <div className="flex-1 w-full bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-sm self-stretch flex flex-col min-h-[500px]">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6 text-center sm:text-left">
+<div className="flex-1 w-full bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-sm flex flex-col h-[500px] md:h-auto md:min-h-[600px]">          <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6 text-center sm:text-left">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl shadow-inner"><BarChart3 size={24} /></div>
               <div>
@@ -135,8 +134,7 @@ export default function EstadisticasPage() {
             </div>
           </div>
 
-          <div className="flex-1 w-full min-h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
+<div className="w-full h-[350px] md:flex-1">            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dataGrafica} barGap={12}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis 
