@@ -53,7 +53,15 @@ export default function Sidebar() {
 
   return (
     <aside className="w-72 bg-[#050533] text-slate-400 p-8 flex flex-col h-screen sticky top-0 shadow-2xl z-50">
-      
+      <style jsx>{`
+        nav::-webkit-scrollbar {
+          display: none;
+        }
+        nav {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
       {/* LOGO SECTION */}
       <div className="flex flex-col items-center gap-4 mb-12 border-b border-white/5 pb-8">
         <Image src="/images/logo.png" alt="Logo" width={80} height={80} className="object-contain" priority />
@@ -66,7 +74,7 @@ export default function Sidebar() {
       </div>
 
       {/* NAVIGATION */}
-      <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar scrollbar-hide">
+      <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
         {filteredMenu.map((item) => {
           const isActive = pathname === item.path;
           return (
