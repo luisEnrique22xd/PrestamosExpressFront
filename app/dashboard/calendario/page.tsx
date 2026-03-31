@@ -65,10 +65,8 @@ export default function CalendarioCobranza() {
   );
 
   return (
-    <div className="relative flex flex-col lg:flex-row gap-6 md:gap-8 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-700">
-      {/* CALENDARIO */}
-      <div className={`transition-all duration-700 bg-white p-4 md:p-10 rounded-3xl md:rounded-[3rem] shadow-sm border border-slate-100 ${selectedDate ? 'w-2/3' : 'w-full'}`}>
-        <div className="flex justify-between items-center mb-10">
+<div className="relative flex flex-col lg:flex-row gap-6 lg:gap-8 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-700">      {/* CALENDARIO */}
+<div className={`transition-all duration-700 bg-white p-4 md:p-10 rounded-3xl md:rounded-[3rem] shadow-sm border border-slate-100 w-full ${selectedDate ? 'lg:w-2/3' : 'lg:w-full'}`}>        <div className="flex justify-between items-center mb-10">
           <div>
             <h2 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tighter italic uppercase">Cobranza {nombreMes}</h2>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Gestión de Abonos Programados</p>
@@ -99,8 +97,8 @@ export default function CalendarioCobranza() {
             <button
               key={dia}
               onClick={() => setSelectedDate(fechaISO)}
-              className={`relative h-32 p-6 rounded-[2.5rem] border-2 transition-all flex flex-col items-center justify-between group
-                  ${isSelected ? 'bg-blue-50 border-[#0047AB] shadow-lg scale-105 z-10' : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'}`}
+              className={`relative min-h-[80px] md:h-32 p-2 md:p-6 rounded-2xl md:rounded-[2.5rem] border-2 transition-all flex flex-col items-center justify-between group
+  ${isSelected ? 'bg-blue-50 border-[#0047AB] shadow-lg scale-105 z-10' : 'bg-white border-transparent hover:bg-slate-50'}`}
             >
               {esHoy && (
                 <div className="absolute top-4 right-4 flex flex-col items-center gap-1">
@@ -127,8 +125,7 @@ export default function CalendarioCobranza() {
 
       {/* PANEL DETALLE (SIDEBAR) */}
       {selectedDate && (
-        <div className="w-full lg:w-1/3 bg-[#050533] p-6 md:p-10 rounded-3xl md:rounded-[3rem] text-white shadow-2xl flex flex-col border border-white/5 relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl" />
+<div className="w-full lg:max-w-md bg-[#050533] p-6 md:p-10 rounded-3xl md:rounded-[3rem] text-white shadow-2xl flex flex-col border border-white/5 relative overflow-hidden min-h-[500px]">          <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl" />
 
           <div className="flex justify-between items-center mb-12 relative z-10">
             <h3 className="text-2xl font-black italic tracking-tighter flex items-center gap-3">
