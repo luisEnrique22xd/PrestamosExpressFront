@@ -188,7 +188,7 @@ export default function CalendarioCobranza() {
                     <Phone size={14} className="text-green-400" /> WhatsApp
                   </button>
                   <button 
-                    onClick={() => router.push(`/dashboard/${cobro.idCliente}`)}
+                    onClick={() => router.push(`/dashboard/pagos`)}
                     className={`flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] font-black uppercase transition-all shadow-xl ${
                       cobro.estatus === 'pagado' ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-[#10B981] text-white hover:bg-emerald-600 shadow-emerald-900/40'
                     }`}
