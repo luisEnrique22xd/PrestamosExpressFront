@@ -66,7 +66,7 @@ export default function Sidebar() {
       </div>
 
       {/* NAVIGATION */}
-      <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+      <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar scrollbar-hide">
         {filteredMenu.map((item) => {
           const isActive = pathname === item.path;
           return (
