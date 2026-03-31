@@ -152,7 +152,7 @@ export default function ClientesPage() {
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
               <div className="col-span-2 space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Nombre Completo</label>
-                <input type="text" required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" />
+                <input type="text" disabled={isEditing} required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Teléfono</label>
@@ -160,7 +160,7 @@ export default function ClientesPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase ml-2">CURP</label>
-                <input type="text" required maxLength={18} value={formData.curp} onChange={(e) => setFormData({ ...formData, curp: e.target.value.toUpperCase() })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-mono font-bold" />
+                <input type="text" disabled={isEditing} required maxLength={18} value={formData.curp} onChange={(e) => setFormData({ ...formData, curp: e.target.value.toUpperCase() })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-mono font-bold" />
               </div>
               <div className="col-span-2 space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Dirección Particular</label>
@@ -168,7 +168,7 @@ export default function ClientesPage() {
               </div>
               <div className="col-span-2 space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Fecha de Nacimiento</label>
-                <input type="date" required value={formData.fecha_nacimiento} onChange={(e) => setFormData({ ...formData, fecha_nacimiento: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" />
+                <input type="date" disabled={isEditing} required value={formData.fecha_nacimiento} onChange={(e) => setFormData({ ...formData, fecha_nacimiento: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold" />
               </div>
               <button type="submit" className="col-span-2 mt-4 bg-[#050533] text-white font-black py-5 rounded-2xl hover:bg-[#0047AB] transition-all uppercase text-[10px] tracking-[0.2em]">
                 {isEditing ? 'Guardar Cambios' : 'Registrar en Sistema'}
