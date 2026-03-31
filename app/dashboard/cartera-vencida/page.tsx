@@ -2,13 +2,21 @@
 import { useEffect, useState, useMemo } from 'react';
 import { 
   Users, ChevronRight, ChevronLeft, ExternalLink, 
-  User, MapPin, Search, ShieldCheck, Loader2, AlertCircle, X 
+  User, MapPin, Search, ShieldCheck, Loader2, AlertCircle, X, 
+  CheckCircle2
 } from 'lucide-react';
 import React from 'react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
 export default function CarteraVencidaPage() {
+  const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+
+// Función auxiliar para auto-limpiar la alerta
+const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+  setAlerta({ type, msg });
+  setTimeout(() => setAlerta(null), 5000);
+};
   const router = useRouter();
   const [entidades, setEntidades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,13 +58,13 @@ export default function CarteraVencidaPage() {
 
   const condonarMora = async (idPrestamo: number, nombre: string) => {
     const motivo = window.prompt(`¿Por qué condonas la mora de ${nombre}? (Mín. 10 carac.)`);
-    if (!motivo || motivo.length < 10) return alert("❌ Motivo inválido.");
+    if (!motivo || motivo.length < 10) return lanzarAlerta('error',"❌ Motivo inválido.");
     try {
       // Ajustamos a la ruta de condonación basada en el préstamo si es necesario
       await api.post(`/condonar-mora/${idPrestamo}/`, { motivo });
-      alert("✅ Condonación exitosa.");
+      lanzarAlerta('success', "✅ Condonación exitosa.");
       fetchCartera();
-    } catch (e) { alert("❌ Error al procesar condonación."); }
+    } catch (e) { lanzarAlerta('error',"❌ Error al procesar condonación."); }
   };
 
   if (loading) return (
@@ -206,6 +214,26 @@ export default function CarteraVencidaPage() {
             <button disabled={currentPage === totalPaginas} onClick={() => setCurrentPage(p => p + 1)} className="p-2 bg-white rounded-xl border border-slate-200 disabled:opacity-30"><ChevronRight size={16}/></button>
          </div>
       </div>
+      {alerta && (
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${
+          alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
+        }`}>
+          <div className={`p-3 rounded-2xl ${
+            alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+          }`}>
+            {alerta.type === 'success' ? <CheckCircle2 size={24}/> : <AlertCircle size={24}/>}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
+              {alerta.type === 'success' ? 'Sistema Express' : 'Atención'}
+            </p>
+            <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
+          </div>
+          <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-500">
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
