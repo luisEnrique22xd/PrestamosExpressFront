@@ -42,7 +42,7 @@ export default function CalendarioCobranza() {
   }, [mesActual, anioActual]);
 
   const contactarCliente = (tel: string, nombre: string) => {
-    const msg = encodeURIComponent(`Hola *${nombre}*, te recordamos tu abono de hoy en *Préstamos Express*. 🏦 ¿A qué hora podríamos pasar?`);
+    const msg = encodeURIComponent(`Hola "${nombre}", te recordamos que hoy te corresponde realizar el pago de tu préstamo, agradecemos tu cumplimiento puntual para evitar el pago de días de penalizaciones. `);
     window.open(`https://wa.me/52${tel.replace(/\D/g, '')}?text=${msg}`, '_blank');
   };
 
