@@ -310,7 +310,7 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
           </div>
           <div>
             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
-              {alerta.type === 'success' ? 'Sistema Express' : 'Atención'}
+              {alerta.type === 'success' ? 'Prestamos Express' : 'Atención'}
             </p>
             <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
           </div>

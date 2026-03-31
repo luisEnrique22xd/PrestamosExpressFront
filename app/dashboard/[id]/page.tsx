@@ -3,7 +3,8 @@ import React, { useEffect, useState, use, useRef } from 'react';
 import {
   Search, X, TrendingUp, CheckCircle2, Printer,
   DollarSign, UserCheck, Users, Phone,
-  User, ArrowRight, Loader2, AlertTriangle
+  User, ArrowRight, Loader2, AlertTriangle,
+  AlertCircle
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -34,6 +35,13 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 export default function ClienteDashboard({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = use(paramsPromise);
   const router = useRouter();
+  const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+
+// Función auxiliar para auto-limpiar la alerta
+const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+  setAlerta({ type, msg });
+  setTimeout(() => setAlerta(null), 5000);
+};
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -122,7 +130,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
 
   // --- 4. LÓGICA DE ABONO ---
   const handleRegistrarPago = async () => {
-    if (!montoAbono) return alert("Ingresa un monto válido");
+    if (!montoAbono) return lanzarAlerta('error', "❌ Ingresa un monto válido");
     try {
       setLoading(true);
       const response = await api.post('/abonos/', {
@@ -157,12 +165,12 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
       const resRefresh = await api.get(endpoint);
       setData(resRefresh.data);
     } catch (error: any) {
-      alert("❌ Error al registrar el pago.");
+      lanzarAlerta('error', "❌ Error al registrar el pago.");
     } finally { setLoading(false); }
   };
 
   const handleCondonar = async () => {
-  if (motivoCondonacion.length < 10) return alert("⚠️ Justificación muy corta.");
+  if (motivoCondonacion.length < 10) return lanzarAlerta('error', "⚠️ Justificación muy corta.");
   try {
     setProcesandoCondonacion(true);
     // Usamos el ID de la mora que seleccionamos al abrir el modal
@@ -176,9 +184,9 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     const res = await api.get(`/clientes/${params.id}/`);
     setData(res.data);
     
-    alert("✅ Recargos condonados. El saldo ha sido actualizado.");
+    lanzarAlerta('success', "✅ Recargos condonados. El saldo ha sido actualizado.");
   } catch (error) { 
-    alert("❌ Error al condonar la mora."); 
+    lanzarAlerta('error', "❌ Error al condonar la mora."); 
   } finally { 
     setProcesandoCondonacion(false); 
   }
@@ -447,6 +455,26 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
               </div>
             </div>
           </div>
+        </div>
+      )}
+      {alerta && (
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${
+          alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
+        }`}>
+          <div className={`p-3 rounded-2xl ${
+            alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+          }`}>
+            {alerta.type === 'success' ? <CheckCircle2 size={24}/> : <AlertCircle size={24}/>}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
+              {alerta.type === 'success' ? 'Sistema Express' : 'Atención'}
+            </p>
+            <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
+          </div>
+          <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-500">
+            <X size={18} />
+          </button>
         </div>
       )}
     </div>
