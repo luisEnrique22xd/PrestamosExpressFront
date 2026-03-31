@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import {
   Users, ChevronLeft, ChevronRight, ExternalLink,
-  User, Phone, X, Search, UserPlus, Edit3, Loader2
+  User, CheckCircle2, AlertCircle, X, Search, UserPlus, Edit3, Loader2
 } from 'lucide-react';
 import React from 'react';
 import api from '@/lib/api';
@@ -299,6 +299,26 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
           <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPaginas))} disabled={currentPage === totalPaginas} className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-[#0047AB] disabled:opacity-20"><ChevronRight size={18} /></button>
         </div>
       </div>
+      {alerta && (
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${
+          alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
+        }`}>
+          <div className={`p-3 rounded-2xl ${
+            alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+          }`}>
+            {alerta.type === 'success' ? <CheckCircle2 size={24}/> : <AlertCircle size={24}/>}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
+              {alerta.type === 'success' ? 'Sistema Express' : 'Atención'}
+            </p>
+            <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
+          </div>
+          <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-500">
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
