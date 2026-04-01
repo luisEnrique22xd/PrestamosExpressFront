@@ -165,7 +165,7 @@ export default function PagosPage() {
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Número de Cuota a Liquidar</label>
             <select required value={semanaSeleccionada} onChange={(e) => setSemanaSeleccionada(e.target.value)} className="w-full p-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-[#0047AB] font-bold text-slate-700 cursor-pointer">
               <option value="">Selecciona el periodo de pago...</option>
-              {[...Array(clienteSel?.progreso_pagos?.total_cuotas || 20)].map((_, i) => (
+              {[...Array(clienteSel?.progreso_pagos?.total_cuotas || 99)].map((_, i) => (
                 <option key={i + 1} value={i + 1}>Abono #{i + 1}</option>
               ))}
             </select>
