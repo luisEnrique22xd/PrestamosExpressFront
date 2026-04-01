@@ -124,7 +124,7 @@ export default function PagosPage() {
       </div>
 
       <div className="relative z-10">
-        <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-2 italic tracking-tighter">Caja de Cobranza</h2>        
+        <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-2 italic tracking-tighter">Caja de Cobranza</h2>
         <p className="text-slate-400 text-sm mb-10 font-medium italic">Gestión de Abonos y Recuperación de Capital</p>
 
         <form onSubmit={handleAplicarPago} className="space-y-8">
@@ -165,13 +165,14 @@ export default function PagosPage() {
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Número de Cuota a Liquidar</label>
             <select required value={semanaSeleccionada} onChange={(e) => setSemanaSeleccionada(e.target.value)} className="w-full p-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-[#0047AB] font-bold text-slate-700 cursor-pointer">
               <option value="">Selecciona el periodo de pago...</option>
-              {[...Array(clienteSel?.progreso_pagos?.total_cuotas || 99)].map((_, i) => (
+              {[...Array(clienteSel?.progreso_pagos?.total_cuotas || 20)].map((_, i) => (
                 <option key={i + 1} value={i + 1}>Abono #{i + 1}</option>
               ))}
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">            <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">            
+            <div className="space-y-3">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Monto Recibido ($)</label>
             <div className="relative">
               <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-emerald-500 text-xl">$</span>

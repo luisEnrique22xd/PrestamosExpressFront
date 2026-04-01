@@ -310,8 +310,16 @@ export default function PrestamosPage() {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Plazo</label>
-            <select value={formData.cuotas} onChange={(e) => setFormData({ ...formData, cuotas: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
-              {[1,2,3,4,5,6,7, 8,9,10,11, 12,13,14,15, 16,17,18,19,20].map(n => <option key={n} value={n}>{n} Periodos</option>)}
+            <select
+              value={formData.cuotas}
+              onChange={(e) => setFormData({ ...formData, cuotas: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold"
+            >
+              {[...Array(99)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1} Periodos
+                </option>
+              ))}
             </select>
           </div>
 
