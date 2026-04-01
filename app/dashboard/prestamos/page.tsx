@@ -264,7 +264,7 @@ export default function PrestamosPage() {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Monto ($)</label>
-            <input type="number" value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-xl text-[#0047AB]" required />
+            <input type="number" min={0} value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-xl text-[#0047AB]" required />
           </div>
           {Number(formData.monto_capital) > 0 && (
             <div className="col-span-1 md:col-span-2 bg-[#050533] p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] text-white flex flex-col lg:flex-row justify-around items-center gap-8 shadow-2xl animate-in zoom-in-95 duration-300">              <div className="text-center">

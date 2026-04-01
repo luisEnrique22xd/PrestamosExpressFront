@@ -233,11 +233,11 @@ export default function ProyeccionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Capital</label>
-                <input type="number" value={monto} onChange={e => setMonto(Number(e.target.value))} className="w-full p-4 bg-slate-50 rounded-2xl font-black text-[#0047AB] outline-none" />
+                <input type="number" min={0} value={monto} onChange={e => setMonto(Number(e.target.value))} className="w-full p-4 bg-slate-50 rounded-2xl font-black text-[#0047AB] outline-none" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Cuotas</label>
-                <input type="number" value={cuotas} onChange={e => setCuotas(Number(e.target.value))} className="w-full p-4 bg-slate-50 rounded-2xl font-black text-slate-700 outline-none" />
+                <input type="number" min={0} value={cuotas} onChange={e => setCuotas(Number(e.target.value))} className="w-full p-4 bg-slate-50 rounded-2xl font-black text-slate-700 outline-none" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

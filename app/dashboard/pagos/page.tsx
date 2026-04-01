@@ -174,7 +174,7 @@ export default function PagosPage() {
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Monto Recibido ($)</label>
             <div className="relative">
               <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-emerald-500 text-xl">$</span>
-              <input type="number" required value={montoAbono} onChange={(e) => setMontoAbono(e.target.value)} className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]" placeholder="0.00" />
+              <input type="number" min={0} required value={montoAbono} onChange={(e) => setMontoAbono(e.target.value)} className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]" placeholder="0.00" />
             </div>
           </div>
 
@@ -186,6 +186,7 @@ export default function PagosPage() {
                 <span className={`absolute left-5 top-1/2 -translate-y-1/2 font-black text-xl ${tienePenalizaciones ? 'text-red-500' : 'text-slate-300'}`}>$</span>
                 <input
                   type="number"
+                  min={0}
                   value={montoPenalizacion}
                   onChange={(e) => setMontoPenalizacion(Number(e.target.value))}
                   disabled={!tienePenalizaciones}

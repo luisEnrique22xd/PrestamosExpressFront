@@ -35,35 +35,39 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setTextColor(100);
   doc.setFont("helvetica", "normal");
   doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
-
-  // --- 3. CUADRO DE INFORMACIÓN ---
-  // Fondo gris tenue
+  // --- 3. CUADRO DE INFORMACIÓN (AJUSTADO PARA NO ENCIMARSE) ---
+  // Fondo gris tenue (Lo hacemos un poco más alto por si el domicilio salta de línea)
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 55, 180, 35, 'F');
+  doc.rect(15, 55, 180, 38, 'F');
   
   doc.setFontSize(10);
   doc.setTextColor(40);
-  doc.setFont("helvetica", "bold");
   
-  // Columna Izquierda
+  // Columna Izquierda (Etiquetas)
+  doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, 20, 65);
   doc.text(`DOMICILIO:`, 20, 73);
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, 20, 81);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, 20, 85); // Bajamos un poco el Aval
   
-  // Datos Izquierda (Valores)
+  // Datos Izquierda (Valores con Límite de Ancho)
   doc.setFont("helvetica", "normal");
   doc.text(`${nombreCliente.toUpperCase()}`, 50, 65);
-  doc.text(`${(datos.direccion || 'No proporcionada').toUpperCase()}`, 50, 73);
-  doc.text(`${nombreAval.toUpperCase()}`, 55, 81);
+  
+  // USAMOS splitTextToSize para que el domicilio no choque con la derecha
+  const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
+  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); // Límite de 85mm
+  doc.text(domicilioCortado, 50, 73);
+  
+  doc.text(`${nombreAval.toUpperCase()}`, 55, 85);
 
-  // Columna Derecha (Valores)
+  // Columna Derecha (Etiquetas y Valores movidos a la derecha x=140)
   doc.setFont("helvetica", "bold");
-  doc.text(`MONTO:`, 135, 65);
-  doc.text(`PLAZO:`, 135, 73);
+  doc.text(`MONTO:`, 140, 65);
+  doc.text(`PLAZO:`, 140, 73);
   
   doc.setFont("helvetica", "normal");
-  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, 155, 65);
-  doc.text(`${cuotas} ${modalidad}(s)`, 155, 73);
+  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, 160, 65);
+  doc.text(`${cuotas} ${modalidad}(s)`, 160, 73);
 
   // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
   if (esGrupal) {

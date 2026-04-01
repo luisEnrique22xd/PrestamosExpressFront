@@ -17,7 +17,6 @@ export default function EstadisticasPage() {
   const [periodo, setPeriodo] = useState<'semana' | 'mes' | 'anio'>('semana');
   const [loading, setLoading] = useState(true);
 
-  // 1. Carga de totales iniciales
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -28,7 +27,6 @@ export default function EstadisticasPage() {
     fetchStats();
   }, []);
 
-  // 2. Carga de gráfica según periodo
   useEffect(() => {
     const fetchGrafica = async () => {
       try {
@@ -56,7 +54,7 @@ export default function EstadisticasPage() {
       {/* CONTENEDOR SUPERIOR: SIDEBAR + GRÁFICA */}
       <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
         
-        {/* SIDEBAR IZQUIERDO (Capital, Salud y Botones) */}
+        {/* SIDEBAR IZQUIERDO */}
         <div className="w-full lg:w-[380px] lg:flex-shrink-0 space-y-6">
           
           {/* 1. BANNER PRINCIPAL DE CAPITAL */}
@@ -96,21 +94,22 @@ export default function EstadisticasPage() {
           <div className="flex flex-col gap-3">
             <button 
               onClick={() => exportToExcel(statsGenerales, dataGrafica)}
-              className="flex items-center justify-center gap-3 bg-emerald-50 text-emerald-700 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-emerald-100 hover:bg-emerald-100 hover:-translate-y-1 transition-all shadow-sm"
+              className="flex items-center justify-center gap-3 bg-emerald-50 text-emerald-700 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-emerald-100 hover:bg-emerald-100 hover:-translate-y-1 transition-all shadow-sm w-full"
             >
               <Wallet size={16} /> Exportar Excel
             </button>
             <button 
               onClick={() => exportToPDF(statsGenerales, dataGrafica)}
-              className="flex items-center justify-center gap-3 bg-white text-slate-700 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-slate-200 hover:bg-slate-50 hover:-translate-y-1 transition-all shadow-sm"
+              className="flex items-center justify-center gap-3 bg-white text-slate-700 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-slate-200 hover:bg-slate-50 hover:-translate-y-1 transition-all shadow-sm w-full"
             >
               <Landmark size={16} /> Reporte PDF
             </button>
           </div>
         </div>
 
-        {/* CONTENEDOR DERECHO: GRÁFICA (Flexible) */}
-<div className="flex-1 w-full bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-sm flex flex-col h-[500px] md:h-auto md:min-h-[600px]">          <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6 text-center sm:text-left">
+        {/* CONTENEDOR DERECHO: GRÁFICA (CORREGIDA ALTURA) */}
+        <div className="flex-1 w-full bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-sm flex flex-col min-h-[450px] lg:min-h-[620px]">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6 text-center sm:text-left">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl shadow-inner"><BarChart3 size={24} /></div>
               <div>
@@ -119,7 +118,7 @@ export default function EstadisticasPage() {
               </div>
             </div>
             
-            <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner overflow-x-auto max-w-full">
+            <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner overflow-x-auto">
               {(['semana', 'mes', 'anio'] as const).map((p) => (
                 <button 
                   key={p} 
@@ -134,7 +133,9 @@ export default function EstadisticasPage() {
             </div>
           </div>
 
-<div className="w-full h-[350px] md:flex-1">            <ResponsiveContainer width="100%" height="100%">
+          {/* Gráfica con altura definida para que Recharts la detecte */}
+          <div className="w-full h-[350px] lg:h-[450px]">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dataGrafica} barGap={12}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis 
@@ -144,7 +145,6 @@ export default function EstadisticasPage() {
                   tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: '900' }} 
                 />
                 <YAxis 
-                  hide={window.innerWidth < 768} 
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fill: '#94a3b8', fontSize: 10 }} 
@@ -157,39 +157,18 @@ export default function EstadisticasPage() {
                       const capital = payload[0].value as number;
                       const interes = payload[1].value as number;
                       return (
-                        <div className="bg-white p-5 rounded-[1.5rem] shadow-2xl border border-slate-50 animate-in zoom-in-95">
-                          <p className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest border-b pb-2">{label}</p>
-                          <div className="space-y-1">
-                            <p className="text-xs font-bold text-blue-600 flex justify-between gap-4"><span>Cap:</span> <span>${capital.toLocaleString()}</span></p>
-                            <p className="text-xs font-bold text-emerald-600 flex justify-between gap-4"><span>Int:</span> <span>${interes.toLocaleString()}</span></p>
-                            <div className="pt-2 mt-2 border-t border-slate-100">
-                              <p className="text-xs font-black text-slate-800 italic flex justify-between"><span>Total:</span> <span>${(capital + interes).toLocaleString()}</span></p>
-                            </div>
-                          </div>
+                        <div className="bg-white p-5 rounded-[1.5rem] shadow-2xl border border-slate-50">
+                          <p className="text-[10px] font-black text-slate-400 uppercase mb-3 border-b pb-2">{label}</p>
+                          <p className="text-xs font-bold text-blue-600">Cap: ${capital.toLocaleString()}</p>
+                          <p className="text-xs font-bold text-emerald-600">Int: ${interes.toLocaleString()}</p>
                         </div>
                       );
                     }
                     return null;
                 }} />
-                <Legend 
-                  verticalAlign="top" 
-                  align="right" 
-                  wrapperStyle={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', paddingBottom: '30px' }} 
-                />
-                <Bar 
-                  dataKey="capital" 
-                  fill={COLORS.azulRey} 
-                  radius={[8, 8, 0, 0]} 
-                  barSize={window.innerWidth < 768 ? 16 : 35} 
-                  name="Capital ($)" 
-                />
-                <Bar 
-                  dataKey="interes" 
-                  fill={COLORS.verdeExito} 
-                  radius={[8, 8, 0, 0]} 
-                  barSize={window.innerWidth < 768 ? 16 : 35} 
-                  name="Interés ($)" 
-                />
+                <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', paddingBottom: '30px' }} />
+                <Bar dataKey="capital" fill={COLORS.azulRey} radius={[8, 8, 0, 0]} name="Capital" barSize={35} />
+                <Bar dataKey="interes" fill={COLORS.verdeExito} radius={[8, 8, 0, 0]} name="Ganancia" barSize={35} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -206,14 +185,13 @@ export default function EstadisticasPage() {
                 <h4 className="text-base md:text-lg font-black text-slate-800 leading-none italic">{item.total}</h4>
                 <p className="text-[8px] text-slate-300 font-bold uppercase mt-2">Colocado</p>
               </div>
-              <div className="bg-blue-50 text-[#0047AB] px-3 py-1.5 rounded-xl text-[10px] font-black group-hover:bg-[#0047AB] group-hover:text-white transition-colors">
+              <div className="bg-blue-50 text-[#0047AB] px-3 py-1.5 rounded-xl text-[10px] font-black">
                 {item.cant}
               </div>
             </div>
           </div>
         ))}
       </div>
-
     </div>
   );
 }
