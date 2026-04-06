@@ -223,11 +223,13 @@ export default function ClientesPage() {
                   </td>
                   <td className="px-8 py-6 text-center">
                     <span className={`font-black text-sm ${parseFloat(c.saldo_actual) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                      {/* Sumamos capital + penalizaciones para mostrar la deuda REAL */}
-                      ${(parseFloat(c.saldo_actual || '0') + parseFloat(c.total_penalizaciones || '0')).toLocaleString('es-MX')}
+                      {/* Usamos solo saldo_actual igual que en el dashboard */}
+                      ${parseFloat(c.saldo_actual || '0').toLocaleString('es-MX')}
                     </span>
+
+                    {/* La mora solo se muestra como texto informativo, no se suma al número de arriba */}
                     {parseFloat(c.total_penalizaciones) > 0 && (
-                      <p className="text-[8px] text-red-400 font-bold uppercase italic">+ Mora Incluida</p>
+                      <p className="text-[8px] text-red-400 font-bold uppercase italic">+ Mora Detectada</p>
                     )}
                   </td>
                   <td className="px-8 py-6 text-center">
