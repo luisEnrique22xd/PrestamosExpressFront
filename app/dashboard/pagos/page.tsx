@@ -23,6 +23,7 @@ export default function PagosPage() {
   const [montoAbono, setMontoAbono] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [semanaSeleccionada, setSemanaSeleccionada] = useState<string>('');
+  const [modalidadPago, setModalidadPago] = useState('E'); // 'E' por defecto (Efectivo)
 
   // --- LÓGICA DINÁMICA DE PENALIZACIONES ---
   useEffect(() => {
@@ -91,6 +92,7 @@ export default function PagosPage() {
         monto: Number(montoAbono),
         semana_numero: Number(semanaSeleccionada),
         monto_penalizacion: Number(montoPenalizacion),
+        modalidad: modalidadPago,
       });
 
       generarPDFRecibo({
@@ -201,6 +203,31 @@ export default function PagosPage() {
               </div>
             </div>
           </div>
+          <div className="space-y-3">
+  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">
+    Modalidad de Pago
+  </label>
+  <div className="grid grid-cols-3 gap-2">
+    {[
+      { id: 'E', label: 'Efectivo', color: 'bg-emerald-500' },
+      { id: 'D', label: 'Depósito', color: 'bg-blue-500' },
+      { id: 'T', label: 'Transferencia', color: 'bg-purple-500' }
+    ].map((m) => (
+      <button
+        key={m.id}
+        type="button"
+        onClick={() => setModalidadPago(m.id)}
+        className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${
+          modalidadPago === m.id 
+            ? `border-slate-800 bg-slate-800 text-white shadow-md` 
+            : `border-slate-100 bg-slate-50 text-slate-400`
+        }`}
+      >
+        {m.label}
+      </button>
+    ))}
+  </div>
+</div>
 
           {/* RESUMEN ACTUALIZADO CON DESGLOSE */}
           {clienteSel && (
