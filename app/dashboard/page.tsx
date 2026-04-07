@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import {
-  DollarSign, ArrowRight, Search, TrendingUp,
+import { 
+  DollarSign, ArrowRight, Search, TrendingUp, 
   Users, Wallet, Calendar, ArrowUpRight, Loader2,
-  TrendingDown, Activity,
-  AlertCircle
+  Activity, AlertCircle
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -15,7 +14,7 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import StatCard from '../components/statscard';
 
-const COLORES_MODALIDAD = {
+const COLORES_MODALIDAD: { [key: string]: string } = {
   'Efectivo': '#10B981',      // Esmeralda
   'Transferencia': '#3B82F6', // Azul
   'Depósito': '#8B5CF6',      // Violeta
@@ -25,19 +24,24 @@ const COLORES_MODALIDAD = {
 export default function GlobalDashboard() {
   const [resumen, setResumen] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false); // Para evitar errores de hidratación
   const [busqueda, setBusqueda] = useState('');
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const router = useRouter();
 
   // 1. Carga de datos globales
   useEffect(() => {
+    setMounted(true);
     const fetchGlobalData = async () => {
       try {
         setLoading(true);
         const res = await api.get('/estadisticas-globales/');
         setResumen(res.data);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
+      } catch (e) { 
+        console.error("Error al cargar estadísticas:", e); 
+      } finally { 
+        setLoading(false); 
+      }
     };
     fetchGlobalData();
   }, []);
@@ -55,18 +59,18 @@ export default function GlobalDashboard() {
     }
   };
 
-  // 3. Cálculo dinámico de Inversión (Limpiando strings de pesos)
+  // 3. Cálculo dinámico de Inversión
   const capitalEnCalle = useMemo(() => {
     if (!resumen?.rangos) return 0;
     return resumen.rangos.reduce((acc: number, r: any) => {
-      const valor = typeof r.total === 'string'
-        ? parseFloat(r.total.replace(/[^0-9.-]+/g, ""))
+      const valor = typeof r.total === 'string' 
+        ? parseFloat(r.total.replace(/[^0-9.-]+/g, "")) 
         : (r.total || 0);
       return acc + (isNaN(valor) ? 0 : valor);
     }, 0);
   }, [resumen]);
 
-  if (loading) return (
+  if (loading || !mounted) return (
     <div className="flex flex-col items-center justify-center h-[70vh] text-slate-400">
       <Loader2 className="animate-spin mb-4" size={40} color="#0047AB" />
       <p className="font-black uppercase tracking-[0.3em] text-[10px] italic">
@@ -77,16 +81,17 @@ export default function GlobalDashboard() {
 
   return (
     <div className="space-y-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-
+      
       {/* HEADER */}
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">        <div>
-        <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
-          Sistema <span className="text-[#0047AB]">Express</span>
-        </h1>
-        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
-          Control Central • Santa Maria Acuitlapilco, Tlaxcala
-        </p>
-      </div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
+        <div>
+          <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
+            Sistema <span className="text-[#0047AB]">Express</span>
+          </h1>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
+            Control Central • Santa Maria Acuitlapilco, Tlaxcala
+          </p>
+        </div>
 
         {/* BUSCADOR */}
         <div className="relative w-full lg:w-96 group">
@@ -101,7 +106,7 @@ export default function GlobalDashboard() {
           {sugerencias.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-slate-50 overflow-hidden animate-in zoom-in-95 duration-200">
               {sugerencias.map((c) => (
-                <button
+                <button 
                   key={c.id}
                   onClick={() => router.push(`/dashboard/${c.id}`)}
                   className="w-full p-4 flex items-center justify-between hover:bg-blue-50 transition-colors border-b border-slate-50 last:border-none"
@@ -150,7 +155,6 @@ export default function GlobalDashboard() {
           </h2>
         </div>
 
-        {/* TARJETA DE COBRANZA CON DESGLOSE */}
         <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 relative group transition-all hover:bg-emerald-100 flex flex-col justify-between">
           <div>
             <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest">Cobranza del Día</p>
@@ -158,8 +162,6 @@ export default function GlobalDashboard() {
               {resumen?.cobrado_hoy || "$0.00"}
             </h2>
           </div>
-
-          {/* Desglose de modalidades si existen pagos hoy */}
           {resumen?.metodos_pago?.length > 0 && (
             <div className="mt-4 pt-4 border-t border-emerald-200/50 space-y-2">
               {resumen.metodos_pago.map((metodo: any, idx: number) => (
@@ -171,126 +173,114 @@ export default function GlobalDashboard() {
             </div>
           )}
         </div>
-        <StatCard
-          title="Moras por Recuperar"
-          value={`${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={AlertCircle}
-          color="#DC2626"
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="Moras por Recuperar" 
+          value={`${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} 
+          icon={AlertCircle} 
+          color="#DC2626" 
         />
       </div>
 
       {/* GRÁFICA Y CONCENTRACIÓN */}
-      {/* GRÁFICA Y CONCENTRACIÓN */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-  
-  {/* ÁREA DE GRÁFICA SEMANAL (Lado izquierdo, ocupa 2/3) */}
-  <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
-    <div className="flex items-center justify-between mb-8">
-      <h3 className="font-black text-slate-800 uppercase italic flex items-center gap-2 text-sm tracking-tight">
-        <Calendar size={18} className="text-[#0047AB]" />
-        Rendimiento Semanal
-      </h3>
-      <span className="text-[9px] font-black bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full uppercase tracking-widest">Historial de Flujo</span>
-    </div>
-    <div className="h-[350px] w-full pr-4">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={resumen?.grafica_semanal || []}>
-          <defs>
-            <linearGradient id="colorRecup" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0047AB" stopOpacity={0.2}/>
-              <stop offset="95%" stopColor="#0047AB" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-          <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
-          <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} tickFormatter={(v) => `$${v}`} />
-          <Tooltip 
-             contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '15px'}}
-             itemStyle={{color: '#0047AB', fontWeight: '900', fontSize: '12px'}}
-             formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Recuperado']}
-          />
-          <Area type="monotone" dataKey="monto" stroke="#0047AB" strokeWidth={4} fillOpacity={1} fill="url(#colorRecup)" animationDuration={1500} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  </div>
-
-  {/* COLUMNA DERECHA: PASTEL + CONCENTRACIÓN (Ocupa 1/3) */}
-  <div className="space-y-6 md:space-y-8">
-    
-    {/* 1. GRÁFICA DE PASTEL - MODALIDADES DE HOY */}
-    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center">
-      <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
-        <Activity size={18} className="text-[#0047AB]" />
-        Métodos de Hoy
-      </h3>
-      
-      <div className="h-[180px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={resumen?.metodos_pago || []}
-              cx="50%"
-              cy="50%"
-              innerRadius={55}
-              outerRadius={75}
-              paddingAngle={8}
-              dataKey="monto"
-              nameKey="label"
-              stroke="none"
-            >
-              {(resumen?.metodos_pago || []).map((entry: any, index: number) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={COLORES_MODALIDAD[entry.label as keyof typeof COLORES_MODALIDAD] || COLORES_MODALIDAD['Otro']} 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="font-black text-slate-800 uppercase italic flex items-center gap-2 text-sm tracking-tight">
+              <Calendar size={18} className="text-[#0047AB]" />
+              Rendimiento Semanal
+            </h3>
+            <span className="text-[9px] font-black bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full uppercase tracking-widest">Historial de Flujo</span>
+          </div>
+          <div className="h-[350px] w-full pr-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={resumen?.grafica_semanal || []}>
+                <defs>
+                  <linearGradient id="colorRecup" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0047AB" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#0047AB" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} tickFormatter={(v) => `$${v}`} />
+                <Tooltip 
+                   contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '15px'}}
+                   itemStyle={{color: '#0047AB', fontWeight: '900', fontSize: '12px'}}
+                   formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Recuperado']}
                 />
-              ))}
-            </Pie>
-            <Tooltip 
-  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-  // Cambiamos (value: number) por (value: any) o (value: number | string | any)
-  formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Recuperado']}
-/>
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Leyenda del Pastel */}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full">
-        {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
-          <div key={idx} className="flex items-center gap-1.5">
-            <div 
-              className="w-2.5 h-2.5 rounded-full" 
-              style={{ backgroundColor: COLORES_MODALIDAD[metodo.label as keyof typeof COLORES_MODALIDAD] }}
-            ></div>
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{metodo.label}</span>
+                <Area type="monotone" dataKey="monto" stroke="#0047AB" strokeWidth={4} fillOpacity={1} fill="url(#colorRecup)" animationDuration={1500} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
 
-    {/* 2. LISTA DE CONCENTRACIÓN DE CARTERAS */}
-    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col">
-      <h3 className="font-black text-slate-800 uppercase italic mb-8 flex items-center gap-2 text-sm text-left">
-        <Wallet size={18} className="text-[#0047AB]" />
-        Concentración
-      </h3>
-      <div className="space-y-3 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar">
-        {resumen?.rangos?.filter((r: any) => r.cant > 0).map((r: any, i: number) => (
-          <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-[1.5rem] border border-transparent hover:border-blue-100 hover:bg-white transition-all group">
-            <div>
-              <p className="text-[10px] font-black text-slate-700 group-hover:text-[#0047AB] transition-colors uppercase tracking-tight">{r.label}</p>
-              <p className="text-[8px] text-slate-400 uppercase font-black tracking-widest">{r.cant} Créditos</p>
+        <div className="space-y-6 md:space-y-8">
+          {/* GRÁFICA DE PASTEL */}
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center">
+            <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
+              <Activity size={18} className="text-[#0047AB]" />
+              Métodos de Hoy
+            </h3>
+            <div className="h-[180px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={resumen?.metodos_pago || []}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={75}
+                    paddingAngle={8}
+                    dataKey="monto"
+                    nameKey="label"
+                    stroke="none"
+                  >
+                    {(resumen?.metodos_pago || []).map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORES_MODALIDAD[entry.label] || COLORES_MODALIDAD['Otro']} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Recibido']}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-[10px] font-black text-slate-800 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-slate-100">{r.total}</p>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full">
+              {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_MODALIDAD[metodo.label] || COLORES_MODALIDAD['Otro'] }}></div>
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{metodo.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
-  </div>
-</div>
 
-      {/* BANNER DE ACCIÓN (FOOTER) */}
+          {/* LISTA DE CONCENTRACIÓN */}
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col">
+            <h3 className="font-black text-slate-800 uppercase italic mb-8 flex items-center gap-2 text-sm text-left">
+              <Wallet size={18} className="text-[#0047AB]" />
+              Concentración
+            </h3>
+            <div className="space-y-3 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar">
+              {resumen?.rangos?.filter((r: any) => r.cant > 0).map((r: any, i: number) => (
+                <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-[1.5rem] border border-transparent hover:border-blue-100 hover:bg-white transition-all group">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-700 group-hover:text-[#0047AB] transition-colors uppercase tracking-tight">{r.label}</p>
+                    <p className="text-[8px] text-slate-400 uppercase font-black tracking-widest">{r.cant} Créditos</p>
+                  </div>
+                  <p className="text-[10px] font-black text-slate-800 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-slate-100">{r.total}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BANNER ACCIÓN */}
       <div className="bg-gradient-to-br from-[#0047AB] to-[#050533] p-10 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-blue-900/40 relative overflow-hidden group">
         <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
         <div className="text-center md:text-left relative z-10">
@@ -305,7 +295,6 @@ export default function GlobalDashboard() {
           <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
-
     </div>
   );
 }
