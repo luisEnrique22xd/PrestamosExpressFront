@@ -243,10 +243,18 @@ const nuevoSaldoCalculado = useMemo(() => {
                 </div>
 
                 {/* Detalle informativo para Alexander */}
-                <div className="flex justify-between text-slate-400 text-[10px] italic font-medium px-1">
-                  <span>Capital: ${Number(clienteSel.saldo_actual).toLocaleString()}</span>
-                  <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
-                </div>
+                <div className="space-y-1 px-1">
+        <div className="flex justify-between text-slate-400 text-[10px] italic font-medium">
+          <span>Capital actual: ${Number(clienteSel.saldo_actual).toLocaleString()}</span>
+          <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
+        </div>
+        
+        {/* 🔥 NUEVA FILA: Muestra lo que se está pagando en este momento */}
+        <div className="flex justify-between text-rose-500 text-[10px] font-black uppercase tracking-tighter pt-1">
+          <span>Abono a aplicar:</span>
+          <span>- ${(Number(montoAbono) + Number(montoPenalizacion)).toLocaleString('es-MX')}</span>
+        </div>
+      </div>
 
                 <div className={`flex justify-between pt-4 border-t ${clienteSel.es_grupo ? 'border-purple-200' : 'border-emerald-200'}`}>
                   <span className="text-xs font-black uppercase">NUEVO SALDO CAPITAL:</span>
