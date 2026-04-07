@@ -144,12 +144,27 @@ export default function GlobalDashboard() {
           </h2>
         </div>
 
-        <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 relative group transition-all hover:bg-emerald-100">
-          <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest">Cobranza del Día</p>
-          <h2 className="text-4xl font-black text-emerald-700 mt-2 tracking-tighter italic">
-            {resumen?.cobrado_hoy || "$0.00"}
-          </h2>
+        {/* TARJETA DE COBRANZA CON DESGLOSE */}
+<div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 relative group transition-all hover:bg-emerald-100 flex flex-col justify-between">
+  <div>
+    <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest">Cobranza del Día</p>
+    <h2 className="text-4xl font-black text-emerald-700 mt-2 tracking-tighter italic">
+      {resumen?.cobrado_hoy || "$0.00"}
+    </h2>
+  </div>
+
+  {/* Desglose de modalidades si existen pagos hoy */}
+  {resumen?.metodos_pago?.length > 0 && (
+    <div className="mt-4 pt-4 border-t border-emerald-200/50 space-y-2">
+      {resumen.metodos_pago.map((metodo: any, idx: number) => (
+        <div key={idx} className="flex justify-between items-center text-[9px] font-black uppercase">
+          <span className="text-emerald-600/70">{metodo.label}:</span>
+          <span className="text-emerald-800">${metodo.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
         </div>
+      ))}
+    </div>
+  )}
+</div>
         <StatCard 
           title="Moras por Recuperar" 
           value={`${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} 
