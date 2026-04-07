@@ -258,7 +258,7 @@ export default function GlobalDashboard() {
   <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full min-h-[20px]">
     {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
       <div key={idx} className="flex items-center gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_MODALIDAD[metodo.label] || COLORES_MODALIDAD['Otro'] }}></div>
+        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_MODALIDAD[metodo.label as keyof typeof COLORES_MODALIDAD] || COLORES_MODALIDAD['Otro'] }}></div>
         <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{metodo.label}</span>
       </div>
     ))}
