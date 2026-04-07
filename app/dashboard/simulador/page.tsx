@@ -108,18 +108,19 @@ export default function ProyeccionPage() {
     };
   }, [monto, interes, cuotas, esGrupal, numIntegrantes]);
 
-  // 🔥 5. FECHAS DE PAGO CORREGIDAS (EL TRUCO DE LAS 12:00 PM)
-  // --- 5. FECHAS DE PAGO BLINDADAS (Miércoles es Miércoles) ---
+  // --- 5. FECHAS DE PAGO BLINDADAS (Cálculo exacto) ---
   const fechasPago = useMemo(() => {
     let fechas = [];
     const [year, month, day] = fechaInicio.split('-').map(Number);
 
-    // Base inamovible al mediodía UTC
+    // Base al mediodía UTC para evitar saltos de zona horaria
     let fechaReferencia = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
     for (let i = 1; i <= cuotas; i++) {
       let nuevaFecha = new Date(fechaReferencia.getTime());
+      let fueRecorrido = false;
 
+      // 1. Calculamos la fecha según modalidad
       if (modalidad === 'semanal') {
         nuevaFecha.setUTCDate(fechaReferencia.getUTCDate() + (7 * i));
       } else if (modalidad === 'quincenal') {
@@ -128,12 +129,17 @@ export default function ProyeccionPage() {
         nuevaFecha.setUTCMonth(fechaReferencia.getUTCMonth() + i);
       }
 
-      // Si cae en Domingo (0), se pasa a Lunes (sumar 1 día UTC)
+      // 2. Aplicamos REGLA ALEXANDER (Domingo -> Lunes)
       if (nuevaFecha.getUTCDay() === 0) {
         nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + 1);
+        fueRecorrido = true;
       }
 
-      fechas.push({ fechaCobro: nuevaFecha });
+      // 3. Guardamos el objeto final (UNA SOLA VEZ)
+      fechas.push({ 
+        fechaCobro: nuevaFecha, 
+        recorrido: fueRecorrido 
+      });
     }
     return fechas;
   }, [fechaInicio, modalidad, cuotas]);
@@ -309,9 +315,11 @@ export default function ProyeccionPage() {
                         timeZone: 'UTC'
                       })}
                     </p>
-                    {item.fechaCobro.getDay() === 1 && (index + 1) % 7 !== 0 && (
-                      <span className="text-[7px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black">RECORRIDO</span>
-                    )}
+                    {item.recorrido && (
+  <span className="text-[7px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">
+    Domingo Recorrido
+  </span>
+)}
                   </div>
                 </div>
               </div>
