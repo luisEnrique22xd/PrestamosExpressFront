@@ -104,8 +104,8 @@ const nuevoSaldoCalculado = useMemo(() => {
         cliente: res.data.cliente,
         monto: res.data.monto,
         semana: semanaSeleccionada,
-        saldoAnterior: res.data.saldo_anterior,
-        nuevoSaldo: res.data.nuevo_saldo,
+        saldoAnterior: saldoTotalAnterior, // Los 3690 que calculamos arriba
+  nuevoSaldo: nuevoSaldoCalculado,   // Los 3150 que calculamos arriba
         penalizacion: res.data.penalizaciones_pagadas || montoPenalizacion,
         fecha: res.data.fecha,
         hora: res.data.hora
