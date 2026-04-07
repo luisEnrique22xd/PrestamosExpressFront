@@ -43,7 +43,7 @@ export default function PagosPage() {
       setMontoPenalizacion(0);
     }
   }, [clienteSel]);
-  
+
   useEffect(() => {
     if (clienteSel && semanaSeleccionada) {
       // Calculamos la cuota base (Monto total del préstamo / número de cuotas)
@@ -80,11 +80,10 @@ export default function PagosPage() {
   // --- CÁLCULO DEL NUEVO SALDO (CORREGIDO) ---
   const nuevoSaldoCalculado = useMemo(() => {
     const saldoConMora = Number(clienteSel?.saldo_actual) || 0;
-    const abonoRecibido = Number(montoAbono) || 0;
+    // Si el usuario borró el input, tratamos el abono como 0 para que el saldo no salte
+    const abonoRecibido = montoAbono === '' ? 0 : Number(montoAbono);
     const multaRecibida = Number(montoPenalizacion) || 0;
 
-    // La resta real: Total con mora - (Abono + Multa)
-    // 3690 - 540 = 3150
     const resultado = saldoConMora - (abonoRecibido + multaRecibida);
 
     return Math.max(0, resultado);
@@ -209,7 +208,7 @@ export default function PagosPage() {
               {/* Texto informativo justo debajo del input con blindaje anti-NaN */}
               {clienteSel && (
                 <div className="flex justify-between px-2 text-[10px] text-[#0047AB] font-black uppercase italic animate-in fade-in duration-300">
-                  <span>Abono pactado:</span>
+                  <span>Abono a capital:</span>
                   <span>
                     {clienteSel.monto_total_pagar && clienteSel.cuotas
                       ? `$${(Number(clienteSel.monto_total_pagar) / Number(clienteSel.cuotas)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
