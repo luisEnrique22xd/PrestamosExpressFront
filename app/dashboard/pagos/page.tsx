@@ -43,6 +43,18 @@ export default function PagosPage() {
       setMontoPenalizacion(0);
     }
   }, [clienteSel]);
+  useEffect(() => {
+    if (clienteSel && semanaSeleccionada) {
+      // Calculamos la cuota base (Monto total del préstamo / número de cuotas)
+      // Usamos los datos que ya vienen en el objeto del cliente
+      const totalPrestamo = Number(clienteSel.monto_total_pagar) || 0;
+      const numCuotas = Number(clienteSel.cuotas) || 8;
+      const sugerencia = totalPrestamo / numCuotas;
+
+      // Solo lo autocompletamos si el campo de monto está vacío o Alexander acaba de cambiar la semana
+      setMontoAbono(sugerencia.toString());
+    }
+  }, [semanaSeleccionada, clienteSel]);
 
   // 1. Buscador Híbrido
   const buscarEntidades = async (val: string) => {
@@ -61,21 +73,21 @@ export default function PagosPage() {
   // Saldo que incluye capital + mora actual detectada
   const saldoTotalAnterior = useMemo(() => {
     return Number(clienteSel?.saldo_actual) || 0;
-}, [clienteSel]);
+  }, [clienteSel]);
 
   // Nuevo saldo después de aplicar el abono (la mora se asume liquidada con el pago)
- // --- CÁLCULO DEL NUEVO SALDO (CORREGIDO) ---
-const nuevoSaldoCalculado = useMemo(() => {
-  const saldoConMora = Number(clienteSel?.saldo_actual) || 0; 
-  const abonoRecibido = Number(montoAbono) || 0;             
-  const multaRecibida = Number(montoPenalizacion) || 0;      
-  
-  // La resta real: Total con mora - (Abono + Multa)
-  // 3690 - 540 = 3150
-  const resultado = saldoConMora - (abonoRecibido + multaRecibida);
-  
-  return Math.max(0, resultado);
-}, [clienteSel, montoAbono, montoPenalizacion]);
+  // --- CÁLCULO DEL NUEVO SALDO (CORREGIDO) ---
+  const nuevoSaldoCalculado = useMemo(() => {
+    const saldoConMora = Number(clienteSel?.saldo_actual) || 0;
+    const abonoRecibido = Number(montoAbono) || 0;
+    const multaRecibida = Number(montoPenalizacion) || 0;
+
+    // La resta real: Total con mora - (Abono + Multa)
+    // 3690 - 540 = 3150
+    const resultado = saldoConMora - (abonoRecibido + multaRecibida);
+
+    return Math.max(0, resultado);
+  }, [clienteSel, montoAbono, montoPenalizacion]);
   // 3. Selección de Entidad
   const seleccionarEntidad = (entidad: any) => {
     setClienteSel(entidad);
@@ -105,7 +117,7 @@ const nuevoSaldoCalculado = useMemo(() => {
         monto: res.data.monto,
         semana: semanaSeleccionada,
         saldoAnterior: saldoTotalAnterior, // Los 3690 que calculamos arriba
-  nuevoSaldo: nuevoSaldoCalculado,   // Los 3150 que calculamos arriba
+        nuevoSaldo: nuevoSaldoCalculado,   // Los 3150 que calculamos arriba
         penalizacion: res.data.penalizaciones_pagadas || montoPenalizacion,
         fecha: res.data.fecha,
         hora: res.data.hora
@@ -177,14 +189,14 @@ const nuevoSaldoCalculado = useMemo(() => {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">            
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Monto Recibido ($)</label>
-            <div className="relative">
-              <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-emerald-500 text-xl">$</span>
-              <input type="number" min={0} required value={montoAbono} onChange={(e) => setMontoAbono(e.target.value)} className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]" placeholder="0.00" />
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Monto Recibido ($)</label>
+              <div className="relative">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-emerald-500 text-xl">$</span>
+                <input type="number" min={0} required value={montoAbono} onChange={(e) => setMontoAbono(e.target.value)} className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]" placeholder="0.00" />
+              </div>
             </div>
-          </div>
 
             <div className="space-y-3">
               <label className={`text-[10px] font-black uppercase ml-2 tracking-widest ${tienePenalizaciones ? 'text-red-500' : 'text-slate-400'}`}>
@@ -208,30 +220,29 @@ const nuevoSaldoCalculado = useMemo(() => {
             </div>
           </div>
           <div className="space-y-3">
-  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">
-    Modalidad de Pago
-  </label>
-  <div className="grid grid-cols-3 gap-2">
-    {[
-      { id: 'E', label: 'Efectivo', color: 'bg-emerald-500' },
-      { id: 'D', label: 'Depósito', color: 'bg-blue-500' },
-      { id: 'T', label: 'Transferencia', color: 'bg-purple-500' }
-    ].map((m) => (
-      <button
-        key={m.id}
-        type="button"
-        onClick={() => setModalidadPago(m.id)}
-        className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${
-          modalidadPago === m.id 
-            ? `border-slate-800 bg-slate-800 text-white shadow-md` 
-            : `border-slate-100 bg-slate-50 text-slate-400`
-        }`}
-      >
-        {m.label}
-      </button>
-    ))}
-  </div>
-</div>
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">
+              Modalidad de Pago
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'E', label: 'Efectivo', color: 'bg-emerald-500' },
+                { id: 'D', label: 'Depósito', color: 'bg-blue-500' },
+                { id: 'T', label: 'Transferencia', color: 'bg-purple-500' }
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setModalidadPago(m.id)}
+                  className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${modalidadPago === m.id
+                      ? `border-slate-800 bg-slate-800 text-white shadow-md`
+                      : `border-slate-100 bg-slate-50 text-slate-400`
+                    }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* RESUMEN ACTUALIZADO CON DESGLOSE */}
           {clienteSel && (
@@ -244,17 +255,21 @@ const nuevoSaldoCalculado = useMemo(() => {
 
                 {/* Detalle informativo para Alexander */}
                 <div className="space-y-1 px-1">
-        <div className="flex justify-between text-slate-400 text-[10px] italic font-medium">
-          <span>Capital actual: ${Number(clienteSel.saldo_actual).toLocaleString()}</span>
-          <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
+                  <div className="flex justify-between text-[10px] text-blue-600 font-black uppercase italic mb-1">
+          <span>Cuota pactada:</span>
+          <span>${(Number(clienteSel.monto_total_pagar) / (Number(clienteSel.cuotas) || 1)).toLocaleString('es-MX')}</span>
         </div>
-        
-        {/* 🔥 NUEVA FILA: Muestra lo que se está pagando en este momento */}
-        <div className="flex justify-between text-rose-500 text-[10px] font-black uppercase tracking-tighter pt-1">
-          <span>Abono a aplicar:</span>
-          <span>- ${(Number(montoAbono) + Number(montoPenalizacion)).toLocaleString('es-MX')}</span>
-        </div>
-      </div>
+                  <div className="flex justify-between text-slate-400 text-[10px] italic font-medium">
+                    <span>Capital actual: ${Number(clienteSel.saldo_actual).toLocaleString()}</span>
+                    <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
+                  </div>
+
+                  {/* 🔥 NUEVA FILA: Muestra lo que se está pagando en este momento */}
+                  <div className="flex justify-between text-rose-500 text-[10px] font-black uppercase tracking-tighter pt-1">
+                    <span>Abono a aplicar:</span>
+                    <span>- ${(Number(montoAbono) + Number(montoPenalizacion)).toLocaleString('es-MX')}</span>
+                  </div>
+                </div>
 
                 <div className={`flex justify-between pt-4 border-t ${clienteSel.es_grupo ? 'border-purple-200' : 'border-emerald-200'}`}>
                   <span className="text-xs font-black uppercase">NUEVO SALDO CAPITAL:</span>
