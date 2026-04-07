@@ -196,7 +196,7 @@ export default function GlobalDashboard() {
           </div>
           <div className="h-[350px] w-full pr-4">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={resumen?.grafica_semanal || []}>
+              <AreaChart data={resumen?.grafica_semanal || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRecup" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0047AB" stopOpacity={0.2}/>
@@ -219,45 +219,51 @@ export default function GlobalDashboard() {
 
         <div className="space-y-6 md:space-y-8">
           {/* GRÁFICA DE PASTEL */}
-          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center">
-            <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
-              <Activity size={18} className="text-[#0047AB]" />
-              Métodos de Hoy
-            </h3>
-            <div className="h-[180px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={resumen?.metodos_pago || []}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
-                    paddingAngle={8}
-                    dataKey="monto"
-                    nameKey="label"
-                    stroke="none"
-                  >
-                    {(resumen?.metodos_pago || []).map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORES_MODALIDAD[entry.label] || COLORES_MODALIDAD['Otro']} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Recibido']}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full">
-              {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_MODALIDAD[metodo.label] || COLORES_MODALIDAD['Otro'] }}></div>
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{metodo.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[300px]">
+  <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
+    <Activity size={18} className="text-[#0047AB]" />
+    Métodos de Hoy
+  </h3>
+  
+  <div className="h-[180px] w-full flex items-center justify-center">
+    {resumen?.metodos_pago && resumen.metodos_pago.length > 0 ? (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={resumen.metodos_pago}
+            cx="50%" cy="50%"
+            innerRadius={55} outerRadius={75}
+            paddingAngle={8} dataKey="monto" nameKey="label" stroke="none"
+          >
+            {resumen.metodos_pago.map((entry: any, index: number) => (
+              <Cell key={`cell-${index}`} fill={COLORES_MODALIDAD[entry.label] || COLORES_MODALIDAD['Otro']} />
+            ))}
+          </Pie>
+          <Tooltip 
+            contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+            formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Recuperado']}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    ) : (
+      /* ✨ ESTADO VACÍO ELEGANTE */
+      <div className="flex flex-col items-center justify-center opacity-20">
+        <DollarSign size={60} className="text-slate-400 mb-2" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sin cobranza aún</p>
+      </div>
+    )}
+  </div>
+
+  {/* Leyendas (Solo si hay datos) */}
+  <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full min-h-[20px]">
+    {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
+      <div key={idx} className="flex items-center gap-1.5">
+        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_MODALIDAD[metodo.label] || COLORES_MODALIDAD['Otro'] }}></div>
+        <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{metodo.label}</span>
+      </div>
+    ))}
+  </div>
+</div>
 
           {/* LISTA DE CONCENTRACIÓN */}
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col">
