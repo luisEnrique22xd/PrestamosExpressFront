@@ -197,7 +197,7 @@ export default function PagosPage() {
                 <input type="number" min={0} required value={montoAbono} onChange={(e) => setMontoAbono(e.target.value)} className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]" placeholder="0.00" />
               </div>
               <div className="flex justify-between text-[10px] text-blue-600 font-black uppercase italic mb-1">
-          <span>Cuota pactada:</span>
+          <span>Abono a capital:</span>
           <span>${(Number(clienteSel.monto_total_pagar) / (Number(clienteSel.cuotas) || 1)).toLocaleString('es-MX')}</span>
         </div>
             </div>
@@ -260,7 +260,7 @@ export default function PagosPage() {
                 {/* Detalle informativo para Alexander */}
                 <div className="space-y-1 px-1">
                   <div className="flex justify-between text-[10px] text-blue-600 font-black uppercase italic mb-1">
-          <span>Cuota pactada:</span>
+          <span>Abono a capital:</span>
           <span>${(Number(clienteSel.monto_total_pagar) / (Number(clienteSel.cuotas) || 1)).toLocaleString('es-MX')}</span>
         </div>
                   <div className="flex justify-between text-slate-400 text-[10px] italic font-medium">
