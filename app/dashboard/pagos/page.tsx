@@ -60,11 +60,8 @@ export default function PagosPage() {
 
   // Saldo que incluye capital + mora actual detectada
   const saldoTotalAnterior = useMemo(() => {
-    // Si el backend ya manda 3690, le sumamos los 90 para que Alexander vea 3780 (Total a liquidar)
-    const capitalLimpio = Number(clienteSel?.saldo_actual) || 0;
-    const moraDetectada = Number(montoPenalizacion) || 0;
-    return capitalLimpio + moraDetectada;
-}, [clienteSel, montoPenalizacion]);
+    return Number(clienteSel?.saldo_actual) || 0;
+}, [clienteSel]);
 
   // Nuevo saldo después de aplicar el abono (la mora se asume liquidada con el pago)
   const nuevoSaldoCalculado = useMemo(() => {
