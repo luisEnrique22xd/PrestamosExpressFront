@@ -64,12 +64,18 @@ export default function PagosPage() {
 }, [clienteSel]);
 
   // Nuevo saldo después de aplicar el abono (la mora se asume liquidada con el pago)
-  const nuevoSaldoCalculado = useMemo(() => {
-    const capitalActual = Number(clienteSel?.saldo_actual) || 0;
-    const abono = Number(montoAbono) || 0;
-    return Math.max(0, capitalActual - abono);
-  }, [clienteSel, montoAbono]);
-
+ // --- CÁLCULO DEL NUEVO SALDO (CORREGIDO) ---
+const nuevoSaldoCalculado = useMemo(() => {
+  const saldoConMora = Number(clienteSel?.saldo_actual) || 0; 
+  const abonoRecibido = Number(montoAbono) || 0;             
+  const multaRecibida = Number(montoPenalizacion) || 0;      
+  
+  // La resta real: Total con mora - (Abono + Multa)
+  // 3690 - 540 = 3150
+  const resultado = saldoConMora - (abonoRecibido + multaRecibida);
+  
+  return Math.max(0, resultado);
+}, [clienteSel, montoAbono, montoPenalizacion]);
   // 3. Selección de Entidad
   const seleccionarEntidad = (entidad: any) => {
     setClienteSel(entidad);
