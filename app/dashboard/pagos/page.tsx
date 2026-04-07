@@ -43,6 +43,7 @@ export default function PagosPage() {
       setMontoPenalizacion(0);
     }
   }, [clienteSel]);
+  
   useEffect(() => {
     if (clienteSel && semanaSeleccionada) {
       // Calculamos la cuota base (Monto total del préstamo / número de cuotas)
@@ -194,12 +195,28 @@ export default function PagosPage() {
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Monto Recibido ($)</label>
               <div className="relative">
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-emerald-500 text-xl">$</span>
-                <input type="number" min={0} required value={montoAbono} onChange={(e) => setMontoAbono(e.target.value)} className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]" placeholder="0.00" />
+                <input
+                  type="number"
+                  min={0}
+                  required
+                  value={montoAbono}
+                  onChange={(e) => setMontoAbono(e.target.value)}
+                  className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]"
+                  placeholder="0.00"
+                />
               </div>
-              <div className="flex justify-between text-[10px] text-blue-600 font-black uppercase italic mb-1">
-          <span>Abono a capital:</span>
-          <span>${(Number(clienteSel.monto_total_pagar) / (Number(clienteSel.cuotas) || 1)).toLocaleString('es-MX')}</span>
-        </div>
+
+              {/* Texto informativo justo debajo del input con blindaje anti-NaN */}
+              {clienteSel && (
+                <div className="flex justify-between px-2 text-[10px] text-[#0047AB] font-black uppercase italic animate-in fade-in duration-300">
+                  <span>Abono pactado:</span>
+                  <span>
+                    {clienteSel.monto_total_pagar && clienteSel.cuotas
+                      ? `$${(Number(clienteSel.monto_total_pagar) / Number(clienteSel.cuotas)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+                      : '---'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -238,8 +255,8 @@ export default function PagosPage() {
                   type="button"
                   onClick={() => setModalidadPago(m.id)}
                   className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${modalidadPago === m.id
-                      ? `border-slate-800 bg-slate-800 text-white shadow-md`
-                      : `border-slate-100 bg-slate-50 text-slate-400`
+                    ? `border-slate-800 bg-slate-800 text-white shadow-md`
+                    : `border-slate-100 bg-slate-50 text-slate-400`
                     }`}
                 >
                   {m.label}
@@ -260,9 +277,9 @@ export default function PagosPage() {
                 {/* Detalle informativo para Alexander */}
                 <div className="space-y-1 px-1">
                   <div className="flex justify-between text-[10px] text-blue-600 font-black uppercase italic mb-1">
-          <span>Abono a capital:</span>
-          <span>${(Number(clienteSel.monto_total_pagar) / (Number(clienteSel.cuotas) || 1)).toLocaleString('es-MX')}</span>
-        </div>
+                    <span>Abono a capital:</span>
+                    <span>${(Number(clienteSel.monto_total_pagar) / (Number(clienteSel.cuotas) || 1)).toLocaleString('es-MX')}</span>
+                  </div>
                   <div className="flex justify-between text-slate-400 text-[10px] italic font-medium">
                     <span>Capital actual: ${Number(clienteSel.saldo_actual).toLocaleString()}</span>
                     <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
