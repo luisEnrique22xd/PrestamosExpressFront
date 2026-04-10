@@ -16,9 +16,15 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     numIntegrantes, cuotaPorSocio 
   } = datos;
 
-  // --- 1. LOGO (Asegúrate de que LOGO_DATA esté definido o importado) ---
+  // --- 0. OBTENER FECHA ACTUAL ---
+  const fechaHoy = new Date().toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  // --- 1. LOGO ---
   try {
-    // 30x38 para mantener proporción circular/ovalada
     doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
   } catch (e) {
     console.warn("Logo no encontrado o no definido");
@@ -35,21 +41,24 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setFont("helvetica", "normal");
   doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
 
+  // --- 🔥 NUEVO: FECHA DE EMISIÓN (Alineada a la derecha) ---
+  doc.setFontSize(9);
+  doc.setTextColor(150);
+  // La ponemos en x=195 (derecha) con alineación derecha
+  doc.text(`Fecha de Préstamo: ${fechaHoy}`, 195, 15, { align: 'right' });
+
   // --- 3. CUADRO DE INFORMACIÓN (DISEÑO ANTI-ENCIMADO) ---
-  // Aumentamos ligeramente la altura del fondo por si hay saltos de línea
   doc.setFillColor(245, 247, 250);
   doc.rect(15, 55, 180, 40, 'F');
   
   doc.setFontSize(10);
   doc.setTextColor(40);
   
-  // Definición de columnas para orden perfecto
-  const col1X = 20;   // Etiquetas izquierda
-  const val1X = 45;   // Valores izquierda
-  const col2X = 132;  // Etiquetas derecha (Más espacio para el domicilio)
-  const val2X = 155;  // Valores derecha
+  const col1X = 20;   
+  const val1X = 45;   
+  const col2X = 132;  
+  const val2X = 155;  
 
-  // FILA 1: NOMBRE Y MONTO
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
   doc.text(`MONTO:`, col2X, 65);
@@ -58,31 +67,26 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
   doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 65);
 
-  // FILA 2: DOMICILIO Y PLAZO (Aquí corregimos el choque)
   doc.setFont("helvetica", "bold");
   doc.text(`DOMICILIO:`, col1X, 73);
   doc.text(`PLAZO:`, col2X, 73);
 
   doc.setFont("helvetica", "normal");
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
-  // Limitamos el ancho a 75mm para que el domicilio salte de línea antes de tocar a "PLAZO"
   const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 75); 
   doc.text(domicilioCortado, val1X, 73);
-
   doc.text(`${cuotas} ${modalidad}(s)`, val2X, 73);
 
-  // FILA 3: AVAL / REPRESENTANTE
-  // Bajamos la Y a 88 por si el domicilio ocupó 2 renglones
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 88);
   
   doc.setFont("helvetica", "normal");
-  const xAval = esGrupal ? 58 : 45; // Ajuste dinámico según la etiqueta
+  const xAval = esGrupal ? 58 : 45; 
   doc.text(`${nombreAval.toUpperCase()}`, xAval, 88);
 
-  // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
+  // --- 4. BANNER SOLIDARIO ---
   if (esGrupal) {
-    doc.setFillColor(124, 58, 237); // Púrpura
+    doc.setFillColor(124, 58, 237); 
     doc.rect(15, 100, 180, 10, 'F');
     doc.setTextColor(255);
     doc.setFontSize(9);
@@ -115,7 +119,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
       `$${f(interesCuota)}`,
       `$${f(pagoPorCuota)}`,
       `$${f(saldoCapitalInsoluto)}`,
-      "" // Celda vacía para firma
+      "" 
     ];
   });
 
@@ -125,7 +129,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     body: tableBody,
     theme: 'grid',
     headStyles: { 
-      fillColor: [0, 51, 102], // Azul Marino
+      fillColor: [0, 51, 102], 
       textColor: [255, 255, 255], 
       fontStyle: 'bold', 
       halign: 'center' 
@@ -138,11 +142,10 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     columnStyles: {
       0: { cellWidth: 15 },
       1: { cellWidth: 25 },
-      4: { fontStyle: 'bold', textColor: [0, 0, 0] }, // Pago resaltado
-      5: { fontStyle: 'bold', textColor: [20, 150, 80] }, // Saldo en Verde
-      6: { cellWidth: 35 } // Espacio generoso para firma
+      4: { fontStyle: 'bold', textColor: [0, 0, 0] }, 
+      5: { fontStyle: 'bold', textColor: [20, 150, 80] }, 
+      6: { cellWidth: 35 } 
     },
-    // Si la tabla es muy larga, evita que se encime con el final de la página
     margin: { bottom: 20 } 
   });
 
