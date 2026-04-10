@@ -25,31 +25,31 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     year: 'numeric'
   });
 
-  // --- 1. LOGO (Centrado) ---
+  // --- 1. LOGO (REGRESA A SU LUGAR ORIGINAL) ---
   try {
-    // Calculamos el centro para el logo (Ancho de página / 2 - Mitad del ancho del logo)
-    doc.addImage(LOGO_DATA, 'PNG', (pageWidth / 2) - 15, 8, 30, 38);
+    doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
   } catch (e) {
     console.warn("Logo no encontrado");
   }
 
-  // --- 2. ENCABEZADO CENTRADO (Reducción de espacios) ---
+  // --- 2. ENCABEZADO CENTRADO (MÁS COMPACTO) ---
   doc.setFontSize(22);
   doc.setTextColor(0, 71, 171); // Azul Rey
   doc.setFont("helvetica", "bold");
-  // Centrado horizontal usando el ancho de la página
-  doc.text("PRÉSTAMOS EXPRESS", pageWidth / 2, 52, { align: 'center' });
+  // Centrado, pero bajamos un poco la Y porque ya no tiene el logo arriba
+  doc.text("PRÉSTAMOS EXPRESS", pageWidth / 2, 25, { align: 'center' });
   
   doc.setFontSize(11);
   doc.setTextColor(100);
   doc.setFont("helvetica", "normal");
-  doc.text("GENTE QUE AYUDA A LA GENTE", pageWidth / 2, 58, { align: 'center' });
+  // Reducimos espacio entre título y subtítulo (de 32 a 31)
+  doc.text("GENTE QUE AYUDA A LA GENTE", pageWidth / 2, 31, { align: 'center' });
 
 
-  // --- 3. CUADRO DE INFORMACIÓN (Más cerca del título) ---
-  // Subimos el recuadro a Y=65 para reducir el hueco
+  // --- 3. CUADRO DE INFORMACIÓN (SUBE PARA CERRAR ESPACIOS) ---
+  // Subimos el recuadro de 55 a 48 para pegarlo más al encabezado
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 65, 180, 35, 'F'); 
+  doc.rect(15, 48, 180, 35, 'F'); 
   
   doc.setFontSize(9);
   doc.setTextColor(40);
@@ -59,52 +59,51 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   const col2X = 135;  
   const val2X = 155;  
 
-  // Ajustamos las Y relativas al nuevo inicio (65)
-  // FILA 1: CLIENTE Y FECHA
+  // --- FILA 1: CLIENTE Y FECHA ---
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 74);
-  doc.text("FECHA DE", col2X, 72); 
-  doc.text("PRÉSTAMO:", col2X, 76);
+  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 58);
+  doc.text("FECHA DE", col2X, 56); 
+  doc.text("PRÉSTAMO:", col2X, 60);
 
   doc.setFont("helvetica", "normal");
-  doc.text(`${nombreCliente.toUpperCase()}`, val1X, 74);
+  doc.text(`${nombreCliente.toUpperCase()}`, val1X, 58);
   doc.setFontSize(8.5);
-  doc.text(fechaHoy.toUpperCase(), val2X, 74);
+  doc.text(fechaHoy.toUpperCase(), val2X, 58);
   doc.setFontSize(9);
 
-  // FILA 2: DOMICILIO Y MONTO
+  // --- FILA 2: DOMICILIO Y MONTO ---
   doc.setFont("helvetica", "bold");
-  doc.text(`DOMICILIO:`, col1X, 83);
-  doc.text(`MONTO:`, col2X, 83);
+  doc.text(`DOMICILIO:`, col1X, 67);
+  doc.text(`MONTO:`, col2X, 67);
 
   doc.setFont("helvetica", "normal");
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
   const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); 
-  doc.text(domicilioCortado, val1X, 83);
-  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 83);
+  doc.text(domicilioCortado, val1X, 67);
+  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 67);
 
-  // FILA 3: AVAL Y PLAZO
+  // --- FILA 3: AVAL Y PLAZO ---
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 93);
-  doc.text(`PLAZO:`, col2X, 93);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 77);
+  doc.text(`PLAZO:`, col2X, 77);
   
   doc.setFont("helvetica", "normal");
   const xAval = esGrupal ? 55 : 42; 
-  doc.text(`${nombreAval.toUpperCase()}`, xAval, 93);
-  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 93);
+  doc.text(`${nombreAval.toUpperCase()}`, xAval, 77);
+  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 77);
 
-  // --- 4. BANNER SOLIDARIO (Más compacto) ---
-  let finalYInfo = 100;
+  // --- 4. BANNER SOLIDARIO (COMPACTO) ---
+  let finalYInfo = 83; // Punto final del cuadro gris
   if (esGrupal) {
     doc.setFillColor(124, 58, 237); 
-    doc.rect(15, 102, 180, 8, 'F');
+    doc.rect(15, 87, 180, 8, 'F');
     doc.setTextColor(255);
     doc.setFontSize(8.5);
-    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, pageWidth / 2, 107, { align: 'center' });
-    finalYInfo = 112;
+    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, pageWidth / 2, 92, { align: 'center' });
+    finalYInfo = 95;
   }
 
-  // --- 5. TABLA DE AMORTIZACIÓN (Pegada al cuadro/banner) ---
+  // --- 5. TABLA DE AMORTIZACIÓN (PEGADA) ---
   const etiquetaPeriodo = modalidad.toLowerCase() === 'semanal' ? 'SEM' : modalidad.toLowerCase() === 'quincenal' ? 'QUIN' : 'MES';
 
   const tableBody = fechas.map((item, index) => {
@@ -112,7 +111,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     const interesCuota = monto * (interes / 100);
     const saldoCapitalInsoluto = Math.max(0, monto - (capitalCuota * (index + 1)));
     
-    const f = (num: number) => num.toLocaleString('es-MX', { 
+    const f = (num:number) => num.toLocaleString('es-MX', { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
     });
@@ -135,8 +134,8 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   });
 
   autoTable(doc, {
-    // Usamos finalYInfo para que la tabla suba si el cuadro subió
-    startY: finalYInfo + 2, 
+    // Reducimos el espacio a solo 4mm después del cuadro
+    startY: finalYInfo + 4, 
     head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA']],
     body: tableBody,
     theme: 'grid',
