@@ -160,38 +160,46 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     margin: { bottom: 15 } 
   });
 
-  // --- 6. SECCIÓN DE FIRMAS (ETIQUETAS ARRIBA DE LA LÍNEA) ---
+  // --- 6. SECCIÓN DE FIRMAS (CON ESPACIO AMPLIO PARA FIRMAR) ---
   const finalY = (doc as any).lastAutoTable.finalY || 150;
-  const firmaY = finalY + 30; // Damos 30mm de espacio desde la tabla
+  
+  // Verificamos si la tabla terminó muy abajo para evitar que las firmas se salgan de la página
+  const espacioRestante = 297 - finalY; // 297 es el alto de una hoja A4
+  const baseFirmaY = espacioRestante < 50 ? finalY + 20 : finalY + 35; 
 
-  doc.setFontSize(9);
-  doc.setTextColor(40);
+  doc.setFontSize(8.5);
+  doc.setTextColor(60);
 
   // --- CLIENTE (Izquierda) ---
   doc.setFont("helvetica", "bold");
-  // Etiqueta arriba de la línea
-  doc.text("FIRMA DEL CLIENTE", 55, firmaY - 5, { align: 'center' }); 
+  // Subimos la etiqueta a -12mm de la línea para dar mucho espacio
+  doc.text("FIRMA DEL CLIENTE", 55, baseFirmaY - 12, { align: 'center' }); 
   
   // Línea de firma
-  doc.setDrawColor(100);
-  doc.line(20, firmaY, 90, firmaY); 
+  doc.setDrawColor(180); // Un gris más suave para la línea
+  doc.line(20, baseFirmaY, 90, baseFirmaY); 
   
-  // Nombre abajo de la línea
+  // Nombre abajo de la línea como pie de firma
   doc.setFont("helvetica", "normal");
-  doc.text(nombreCliente.toUpperCase(), 55, firmaY + 5, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setTextColor(40);
+  doc.text(nombreCliente.toUpperCase(), 55, baseFirmaY + 5, { align: 'center' });
 
   // --- AVAL / REPRESENTANTE (Derecha) ---
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(60);
   const etiquetaFirmaAval = esGrupal ? 'FIRMA REPRESENTANTE' : 'FIRMA DEL AVAL';
-  // Etiqueta arriba de la línea
-  doc.text(etiquetaFirmaAval, 155, firmaY - 5, { align: 'center' });
+  doc.text(etiquetaFirmaAval, 155, baseFirmaY - 12, { align: 'center' });
   
   // Línea de firma
-  doc.line(120, firmaY, 190, firmaY); 
+  doc.line(120, baseFirmaY, 190, baseFirmaY); 
   
   // Nombre abajo de la línea
   doc.setFont("helvetica", "normal");
-  doc.text(nombreAval.toUpperCase(), 155, firmaY + 5, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setTextColor(40);
+  doc.text(nombreAval.toUpperCase(), 155, baseFirmaY + 5, { align: 'center' });
   // --- 6. GUARDAR ---
   const nombreArchivo = nombreCliente.replace(/\s+/g, '_');
   doc.save(`Proyeccion_${nombreArchivo}.pdf`);
