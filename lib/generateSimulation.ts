@@ -41,27 +41,27 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setFont("helvetica", "normal");
   doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
 
-  // --- 3. CUADRO DE INFORMACIÓN (REESTRUCTURADO) ---
+  // --- 3. CUADRO DE INFORMACIÓN (AJUSTE DE ALINEACIÓN FINAL) ---
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 50, 180, 45, 'F'); // Subimos un poco y damos más altura (45mm)
+  doc.rect(15, 50, 180, 42, 'F'); // Altura ajustada a 42mm para mayor balance
   
   doc.setFontSize(9);
   doc.setTextColor(40);
   
-  // Coordenadas de Columnas
+  // Coordenadas de Columnas Perfeccionadas
   const col1X = 20;   // Etiquetas Izquierda
-  const val1X = 45;   // Valores Izquierda
-  const col2X = 132;  // Etiquetas Derecha
+  const val1X = 42;   // Valores Izquierda (Más cerca de la etiqueta)
+  const col2X = 135;  // Etiquetas Derecha (Más espacio al centro)
   const val2X = 152;  // Valores Derecha
 
   // --- FILA 0: FECHA (ARRIBA DE MONTO) ---
   doc.setFont("helvetica", "bold");
   doc.text("FECHA:", col2X, 58);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5); // Un poco más pequeña para que quepa bien
+  doc.setFontSize(8); // Sutilmente más pequeña para elegancia
   doc.text(fechaHoy.toUpperCase(), val2X, 58);
 
-  doc.setFontSize(10); // Regresamos a tamaño normal
+  doc.setFontSize(9.5); // Regresamos a tamaño estándar
 
   // --- FILA 1: CLIENTE Y MONTO ---
   doc.setFont("helvetica", "bold");
@@ -79,26 +79,27 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
 
   doc.setFont("helvetica", "normal");
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
-  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 75); 
+  // Limitamos a 85mm para asegurar que el texto salte antes de tocar la columna derecha
+  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); 
   doc.text(domicilioCortado, val1X, 73);
   doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 73);
 
   // --- FILA 3: AVAL / REPRESENTANTE ---
-  // Bajamos a 88 para dar aire si el domicilio tuvo 2 líneas
+  // Subimos el Aval a 85 para compactar el diseño y evitar que flote
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 88);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 85);
   
   doc.setFont("helvetica", "normal");
-  const xAval = esGrupal ? 58 : 45; 
-  doc.text(`${nombreAval.toUpperCase()}`, xAval, 88);
+  const xAval = esGrupal ? 55 : 42; 
+  doc.text(`${nombreAval.toUpperCase()}`, xAval, 85);
 
   // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
   if (esGrupal) {
     doc.setFillColor(124, 58, 237); 
-    doc.rect(15, 102, 180, 10, 'F');
+    doc.rect(15, 98, 180, 10, 'F');
     doc.setTextColor(255);
     doc.setFontSize(9);
-    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 108, { align: 'center' });
+    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 104, { align: 'center' });
   }
 
   // --- 5. TABLA DE AMORTIZACIÓN ---
@@ -132,7 +133,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   });
 
   autoTable(doc, {
-    startY: esGrupal ? 118 : 108,
+    startY: esGrupal ? 112 : 102, // Subimos la tabla proporcionalmente al cuadro
     head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA']],
     body: tableBody,
     theme: 'grid',
