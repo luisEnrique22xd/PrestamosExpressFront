@@ -41,57 +41,51 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setFont("helvetica", "normal");
   doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
 
-  // --- 3. CUADRO DE INFORMACIÓN (AJUSTE DE ALINEACIÓN FINAL) ---
+
+  // --- 3. CUADRO DE INFORMACIÓN
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 50, 180, 42, 'F'); // Altura ajustada a 42mm para mayor balance
+  doc.rect(15, 55, 180, 35, 'F'); 
   
   doc.setFontSize(9);
   doc.setTextColor(40);
   
-  // Coordenadas de Columnas Perfeccionadas
+  // Ejes X Perfeccionados
   const col1X = 20;   // Etiquetas Izquierda
-  const val1X = 42;   // Valores Izquierda (Más cerca de la etiqueta)
-  const col2X = 135;  // Etiquetas Derecha (Más espacio al centro)
+  const val1X = 42;   // Valores Izquierda
+  const col2X = 135;  // Etiquetas Derecha
   const val2X = 152;  // Valores Derecha
 
-  // --- FILA 0: FECHA (ARRIBA DE MONTO) ---
-  doc.setFont("helvetica", "bold");
-  doc.text("FECHA:", col2X, 58);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8); // Sutilmente más pequeña para elegancia
-  doc.text(fechaHoy.toUpperCase(), val2X, 58);
-
-  doc.setFontSize(9.5); // Regresamos a tamaño estándar
-
-  // --- FILA 1: CLIENTE Y MONTO ---
+  // --- FILA 1: CLIENTE Y FECHA (Nivelados) ---
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
-  doc.text(`MONTO:`, col2X, 65);
+  doc.text("FECHA:", col2X, 65); // 👈 Ahora están en la misma Y (65)
 
   doc.setFont("helvetica", "normal");
   doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
-  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 65);
+  doc.setFontSize(8); // Fecha un poco más discreta
+  doc.text(fechaHoy.toUpperCase(), val2X, 65);
+  doc.setFontSize(9); // Volvemos a tamaño normal
 
-  // --- FILA 2: DOMICILIO Y PLAZO ---
+  // --- FILA 2: DOMICILIO Y MONTO ---
   doc.setFont("helvetica", "bold");
   doc.text(`DOMICILIO:`, col1X, 73);
-  doc.text(`PLAZO:`, col2X, 73);
+  doc.text(`MONTO:`, col2X, 73);
 
   doc.setFont("helvetica", "normal");
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
-  // Limitamos a 85mm para asegurar que el texto salte antes de tocar la columna derecha
   const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); 
   doc.text(domicilioCortado, val1X, 73);
-  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 73);
+  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 73);
 
-  // --- FILA 3: AVAL / REPRESENTANTE ---
-  // Subimos el Aval a 85 para compactar el diseño y evitar que flote
+  // --- FILA 3: AVAL Y PLAZO ---
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 85);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 83);
+  doc.text(`PLAZO:`, col2X, 83);
   
   doc.setFont("helvetica", "normal");
   const xAval = esGrupal ? 55 : 42; 
-  doc.text(`${nombreAval.toUpperCase()}`, xAval, 85);
+  doc.text(`${nombreAval.toUpperCase()}`, xAval, 83);
+  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 83);
 
   // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
   if (esGrupal) {
