@@ -43,50 +43,55 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
 
 
 // --- 3. CUADRO DE INFORMACIÓN
+// --- 3. CUADRO DE INFORMACIÓN (ETIQUETA EN DOS LÍNEAS) ---
   doc.setFillColor(245, 247, 250);
   doc.rect(15, 55, 180, 35, 'F'); 
   
   doc.setFontSize(9);
   doc.setTextColor(40);
   
-  // Ejes X Ajustados para textos largos
+  // Ejes X que ya sabemos que funcionan bien
   const col1X = 20;   // Etiquetas Izquierda
   const val1X = 42;   // Valores Izquierda
-  const col2X = 125;  // 👈 Lo movimos de 135 a 125 para dar más espacio a "Fecha de Préstamo"
-  const val2X = 162;  // 👈 Lo movimos de 152 a 162 para que el valor empiece después del texto largo
+  const col2X = 135;  // Etiquetas Derecha
+  const val2X = 155;  // Valores Derecha (Alineado con los demás valores)
 
-  // --- FILA 1: CLIENTE Y FECHA (Nivelados) ---
+  // --- FILA 1: CLIENTE Y FECHA (FECHA EN DOS LÍNEAS) ---
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
-  doc.text("FECHA DE PRÉSTAMO:", col2X, 65); // Ahora tiene espacio suficiente
+  
+  // Dibujamos la etiqueta en dos partes
+  doc.text("FECHA DE", col2X, 63); 
+  doc.text("PRÉSTAMO:", col2X, 67);
 
   doc.setFont("helvetica", "normal");
   doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
-  doc.setFontSize(7.5); // Un pelín más pequeña para asegurar que no choque con el borde
+  
+  // La fecha real queda centrada verticalmente respecto a las dos líneas de la etiqueta
+  doc.setFontSize(8.5);
   doc.text(fechaHoy.toUpperCase(), val2X, 65);
-  doc.setFontSize(9); // Volvemos a tamaño normal
+  doc.setFontSize(9);
 
   // --- FILA 2: DOMICILIO Y MONTO ---
   doc.setFont("helvetica", "bold");
-  doc.text(`DOMICILIO:`, col1X, 73);
-  doc.text(`MONTO:`, col2X, 73);
+  doc.text(`DOMICILIO:`, col1X, 74); // Bajamos 1mm para dar aire a la fecha de arriba
+  doc.text(`MONTO:`, col2X, 74);
 
   doc.setFont("helvetica", "normal");
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
-  // Bajamos el límite de 85 a 80 para que el domicilio no choque con el nuevo col2X
-  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 80); 
-  doc.text(domicilioCortado, val1X, 73);
-  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 73);
+  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); 
+  doc.text(domicilioCortado, val1X, 74);
+  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 74);
 
   // --- FILA 3: AVAL Y PLAZO ---
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 83);
-  doc.text(`PLAZO:`, col2X, 83);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 84);
+  doc.text(`PLAZO:`, col2X, 84);
   
   doc.setFont("helvetica", "normal");
   const xAval = esGrupal ? 55 : 42; 
-  doc.text(`${nombreAval.toUpperCase()}`, xAval, 83);
-  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 83);
+  doc.text(`${nombreAval.toUpperCase()}`, xAval, 84);
+  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 84);
 
   // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
   if (esGrupal) {
