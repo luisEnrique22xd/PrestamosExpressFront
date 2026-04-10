@@ -58,7 +58,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   // --- FILA 1: CLIENTE Y FECHA (Nivelados) ---
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
-  doc.text("FECHA:", col2X, 65); // 👈 Ahora están en la misma Y (65)
+  doc.text("Fecha de Préstamo:", col2X, 65); // 👈 Ahora están en la misma Y (65)
 
   doc.setFont("helvetica", "normal");
   doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
@@ -154,5 +154,5 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
 
   // --- 6. GUARDAR ---
   const nombreArchivo = nombreCliente.replace(/\s+/g, '_');
-  doc.save(`Simulacion_${nombreArchivo}.pdf`);
+  doc.save(`Proyeccion_${nombreArchivo}.pdf`);
 };
