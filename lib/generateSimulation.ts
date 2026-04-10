@@ -27,7 +27,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   try {
     doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
   } catch (e) {
-    console.warn("Logo no encontrado o no definido");
+    console.warn("Logo no encontrado");
   }
 
   // --- 2. ENCABEZADO ---
@@ -41,24 +41,29 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setFont("helvetica", "normal");
   doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
 
-  // --- 🔥 NUEVO: FECHA DE EMISIÓN (Alineada a la derecha) ---
-  doc.setFontSize(9);
-  doc.setTextColor(150);
-  // La ponemos en x=195 (derecha) con alineación derecha
-  doc.text(`Fecha de Préstamo: ${fechaHoy}`, 195, 15, { align: 'right' });
-
-  // --- 3. CUADRO DE INFORMACIÓN (DISEÑO ANTI-ENCIMADO) ---
+  // --- 3. CUADRO DE INFORMACIÓN (REESTRUCTURADO) ---
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 55, 180, 40, 'F');
+  doc.rect(15, 50, 180, 45, 'F'); // Subimos un poco y damos más altura (45mm)
   
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(40);
   
-  const col1X = 20;   
-  const val1X = 45;   
-  const col2X = 132;  
-  const val2X = 155;  
+  // Coordenadas de Columnas
+  const col1X = 20;   // Etiquetas Izquierda
+  const val1X = 45;   // Valores Izquierda
+  const col2X = 132;  // Etiquetas Derecha
+  const val2X = 152;  // Valores Derecha
 
+  // --- FILA 0: FECHA (ARRIBA DE MONTO) ---
+  doc.setFont("helvetica", "bold");
+  doc.text("FECHA:", col2X, 58);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5); // Un poco más pequeña para que quepa bien
+  doc.text(fechaHoy.toUpperCase(), val2X, 58);
+
+  doc.setFontSize(10); // Regresamos a tamaño normal
+
+  // --- FILA 1: CLIENTE Y MONTO ---
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
   doc.text(`MONTO:`, col2X, 65);
@@ -67,6 +72,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
   doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 65);
 
+  // --- FILA 2: DOMICILIO Y PLAZO ---
   doc.setFont("helvetica", "bold");
   doc.text(`DOMICILIO:`, col1X, 73);
   doc.text(`PLAZO:`, col2X, 73);
@@ -75,8 +81,10 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
   const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 75); 
   doc.text(domicilioCortado, val1X, 73);
-  doc.text(`${cuotas} ${modalidad}(s)`, val2X, 73);
+  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 73);
 
+  // --- FILA 3: AVAL / REPRESENTANTE ---
+  // Bajamos a 88 para dar aire si el domicilio tuvo 2 líneas
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 88);
   
@@ -84,17 +92,17 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   const xAval = esGrupal ? 58 : 45; 
   doc.text(`${nombreAval.toUpperCase()}`, xAval, 88);
 
-  // --- 4. BANNER SOLIDARIO ---
+  // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
   if (esGrupal) {
     doc.setFillColor(124, 58, 237); 
-    doc.rect(15, 100, 180, 10, 'F');
+    doc.rect(15, 102, 180, 10, 'F');
     doc.setTextColor(255);
     doc.setFontSize(9);
-    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 106, { align: 'center' });
+    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 108, { align: 'center' });
   }
 
   // --- 5. TABLA DE AMORTIZACIÓN ---
-  const etiquetaPeriodo = modalidad === 'semanal' ? 'SEM' : modalidad === 'quincenal' ? 'QUIN' : 'MES';
+  const etiquetaPeriodo = modalidad.toLowerCase() === 'semanal' ? 'SEM' : modalidad.toLowerCase() === 'quincenal' ? 'QUIN' : 'MES';
 
   const tableBody = fechas.map((item, index) => {
     const capitalCuota = monto / cuotas;
@@ -124,7 +132,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   });
 
   autoTable(doc, {
-    startY: esGrupal ? 115 : 105,
+    startY: esGrupal ? 118 : 108,
     head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA']],
     body: tableBody,
     theme: 'grid',
