@@ -90,7 +90,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   }
 
   // --- 5. TABLA DE AMORTIZACIÓN ---
-  const etiquetaPeriodo = modalidad === 'Semanal' ? 'SEM' : modalidad === 'Quincenal' ? 'QUIN' : 'MES';
+  const etiquetaPeriodo = modalidad === 'semanal' ? 'SEM' : modalidad === 'quincenal' ? 'QUIN' : 'MES';
 
   const tableBody = fechas.map((item, index) => {
     const capitalCuota = monto / cuotas;
