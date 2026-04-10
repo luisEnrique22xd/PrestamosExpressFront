@@ -16,16 +16,15 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     numIntegrantes, cuotaPorSocio 
   } = datos;
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  // --- 1. LOGO CORREGIDO (30x38 para que no se vea aplastado) ---
+  // --- 1. LOGO (Asegúrate de que LOGO_DATA esté definido o importado) ---
   try {
+    // 30x38 para mantener proporción circular/ovalada
     doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
   } catch (e) {
-    console.warn("Logo no encontrado");
+    console.warn("Logo no encontrado o no definido");
   }
 
-  // --- 2. ENCABEZADO (Alineado a la derecha del logo) ---
+  // --- 2. ENCABEZADO ---
   doc.setFontSize(22);
   doc.setTextColor(0, 71, 171); // Azul Rey
   doc.setFont("helvetica", "bold");
@@ -35,47 +34,59 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setTextColor(100);
   doc.setFont("helvetica", "normal");
   doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
-  // --- 3. CUADRO DE INFORMACIÓN (AJUSTADO PARA NO ENCIMARSE) ---
-  // Fondo gris tenue (Lo hacemos un poco más alto por si el domicilio salta de línea)
+
+  // --- 3. CUADRO DE INFORMACIÓN (DISEÑO ANTI-ENCIMADO) ---
+  // Aumentamos ligeramente la altura del fondo por si hay saltos de línea
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 55, 180, 38, 'F');
+  doc.rect(15, 55, 180, 40, 'F');
   
   doc.setFontSize(10);
   doc.setTextColor(40);
   
-  // Columna Izquierda (Etiquetas)
-  doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, 20, 65);
-  doc.text(`DOMICILIO:`, 20, 73);
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, 20, 85); // Bajamos un poco el Aval
-  
-  // Datos Izquierda (Valores con Límite de Ancho)
-  doc.setFont("helvetica", "normal");
-  doc.text(`${nombreCliente.toUpperCase()}`, 50, 65);
-  
-  // USAMOS splitTextToSize para que el domicilio no choque con la derecha
-  const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
-  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); // Límite de 85mm
-  doc.text(domicilioCortado, 50, 73);
-  
-  doc.text(`${nombreAval.toUpperCase()}`, 55, 85);
+  // Definición de columnas para orden perfecto
+  const col1X = 20;   // Etiquetas izquierda
+  const val1X = 45;   // Valores izquierda
+  const col2X = 132;  // Etiquetas derecha (Más espacio para el domicilio)
+  const val2X = 155;  // Valores derecha
 
-  // Columna Derecha (Etiquetas y Valores movidos a la derecha x=140)
+  // FILA 1: NOMBRE Y MONTO
   doc.setFont("helvetica", "bold");
-  doc.text(`MONTO:`, 140, 65);
-  doc.text(`PLAZO:`, 140, 73);
+  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
+  doc.text(`MONTO:`, col2X, 65);
+
+  doc.setFont("helvetica", "normal");
+  doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
+  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 65);
+
+  // FILA 2: DOMICILIO Y PLAZO (Aquí corregimos el choque)
+  doc.setFont("helvetica", "bold");
+  doc.text(`DOMICILIO:`, col1X, 73);
+  doc.text(`PLAZO:`, col2X, 73);
+
+  doc.setFont("helvetica", "normal");
+  const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
+  // Limitamos el ancho a 75mm para que el domicilio salte de línea antes de tocar a "PLAZO"
+  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 75); 
+  doc.text(domicilioCortado, val1X, 73);
+
+  doc.text(`${cuotas} ${modalidad}(s)`, val2X, 73);
+
+  // FILA 3: AVAL / REPRESENTANTE
+  // Bajamos la Y a 88 por si el domicilio ocupó 2 renglones
+  doc.setFont("helvetica", "bold");
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 88);
   
   doc.setFont("helvetica", "normal");
-  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, 160, 65);
-  doc.text(`${cuotas} ${modalidad}(s)`, 160, 73);
+  const xAval = esGrupal ? 58 : 45; // Ajuste dinámico según la etiqueta
+  doc.text(`${nombreAval.toUpperCase()}`, xAval, 88);
 
   // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
   if (esGrupal) {
     doc.setFillColor(124, 58, 237); // Púrpura
-    doc.rect(15, 95, 180, 10, 'F');
+    doc.rect(15, 100, 180, 10, 'F');
     doc.setTextColor(255);
     doc.setFontSize(9);
-    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} CLIENTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 101, { align: 'center' });
+    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 106, { align: 'center' });
   }
 
   // --- 5. TABLA DE AMORTIZACIÓN ---
@@ -85,8 +96,17 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     const capitalCuota = monto / cuotas;
     const interesCuota = monto * (interes / 100);
     const saldoCapitalInsoluto = Math.max(0, monto - (capitalCuota * (index + 1)));
-    const f = (num: number) => num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const fechaFormateada = item.fechaCobro.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    const f = (num: number) => num.toLocaleString('es-MX', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
+
+    const fechaFormateada = item.fechaCobro.toLocaleDateString('es-MX', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
 
     return [
       index + 1,
@@ -95,17 +115,17 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
       `$${f(interesCuota)}`,
       `$${f(pagoPorCuota)}`,
       `$${f(saldoCapitalInsoluto)}`,
-      "" 
+      "" // Celda vacía para firma
     ];
   });
 
   autoTable(doc, {
-    startY: esGrupal ? 110 : 100,
+    startY: esGrupal ? 115 : 105,
     head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA']],
     body: tableBody,
     theme: 'grid',
     headStyles: { 
-      fillColor: [0, 51, 102], // Azul Marino fuerte
+      fillColor: [0, 51, 102], // Azul Marino
       textColor: [255, 255, 255], 
       fontStyle: 'bold', 
       halign: 'center' 
@@ -116,11 +136,17 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
       cellPadding: 2.5
     },
     columnStyles: {
-      4: { fontStyle: 'bold', textColor: [0, 0, 0] }, // Pago
+      0: { cellWidth: 15 },
+      1: { cellWidth: 25 },
+      4: { fontStyle: 'bold', textColor: [0, 0, 0] }, // Pago resaltado
       5: { fontStyle: 'bold', textColor: [20, 150, 80] }, // Saldo en Verde
-      6: { cellWidth: 30 } // Espacio para firma
-    }
+      6: { cellWidth: 35 } // Espacio generoso para firma
+    },
+    // Si la tabla es muy larga, evita que se encime con el final de la página
+    margin: { bottom: 20 } 
   });
 
-  doc.save(`Calendario_de_Pagos_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
+  // --- 6. GUARDAR ---
+  const nombreArchivo = nombreCliente.replace(/\s+/g, '_');
+  doc.save(`Simulacion_${nombreArchivo}.pdf`);
 };
