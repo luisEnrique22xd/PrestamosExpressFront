@@ -42,27 +42,27 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
 
 
-  // --- 3. CUADRO DE INFORMACIÓN
+// --- 3. CUADRO DE INFORMACIÓN
   doc.setFillColor(245, 247, 250);
   doc.rect(15, 55, 180, 35, 'F'); 
   
   doc.setFontSize(9);
   doc.setTextColor(40);
   
-  // Ejes X Perfeccionados
+  // Ejes X Ajustados para textos largos
   const col1X = 20;   // Etiquetas Izquierda
   const val1X = 42;   // Valores Izquierda
-  const col2X = 135;  // Etiquetas Derecha
-  const val2X = 152;  // Valores Derecha
+  const col2X = 125;  // 👈 Lo movimos de 135 a 125 para dar más espacio a "Fecha de Préstamo"
+  const val2X = 162;  // 👈 Lo movimos de 152 a 162 para que el valor empiece después del texto largo
 
   // --- FILA 1: CLIENTE Y FECHA (Nivelados) ---
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
-  doc.text("Fecha de Préstamo:", col2X, 65); // 👈 Ahora están en la misma Y (65)
+  doc.text("FECHA DE PRÉSTAMO:", col2X, 65); // Ahora tiene espacio suficiente
 
   doc.setFont("helvetica", "normal");
   doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
-  doc.setFontSize(8); // Fecha un poco más discreta
+  doc.setFontSize(7.5); // Un pelín más pequeña para asegurar que no choque con el borde
   doc.text(fechaHoy.toUpperCase(), val2X, 65);
   doc.setFontSize(9); // Volvemos a tamaño normal
 
@@ -73,7 +73,8 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
 
   doc.setFont("helvetica", "normal");
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
-  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); 
+  // Bajamos el límite de 85 a 80 para que el domicilio no choque con el nuevo col2X
+  const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 80); 
   doc.text(domicilioCortado, val1X, 73);
   doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 73);
 
