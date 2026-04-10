@@ -16,6 +16,8 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     numIntegrantes, cuotaPorSocio 
   } = datos;
 
+  const pageWidth = doc.internal.pageSize.getWidth();
+
   // --- 0. OBTENER FECHA ACTUAL ---
   const fechaHoy = new Date().toLocaleDateString('es-MX', {
     day: '2-digit',
@@ -23,86 +25,86 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     year: 'numeric'
   });
 
-  // --- 1. LOGO ---
+  // --- 1. LOGO (Centrado) ---
   try {
-    doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
+    // Calculamos el centro para el logo (Ancho de página / 2 - Mitad del ancho del logo)
+    doc.addImage(LOGO_DATA, 'PNG', (pageWidth / 2) - 15, 8, 30, 38);
   } catch (e) {
     console.warn("Logo no encontrado");
   }
 
-  // --- 2. ENCABEZADO ---
+  // --- 2. ENCABEZADO CENTRADO (Reducción de espacios) ---
   doc.setFontSize(22);
   doc.setTextColor(0, 71, 171); // Azul Rey
   doc.setFont("helvetica", "bold");
-  doc.text("PRÉSTAMOS EXPRESS", 55, 25);
+  // Centrado horizontal usando el ancho de la página
+  doc.text("PRÉSTAMOS EXPRESS", pageWidth / 2, 52, { align: 'center' });
   
   doc.setFontSize(11);
   doc.setTextColor(100);
   doc.setFont("helvetica", "normal");
-  doc.text("GENTE QUE AYUDA A LA GENTE", 55, 32);
+  doc.text("GENTE QUE AYUDA A LA GENTE", pageWidth / 2, 58, { align: 'center' });
 
 
-// --- 3. CUADRO DE INFORMACIÓN
-// --- 3. CUADRO DE INFORMACIÓN (ETIQUETA EN DOS LÍNEAS) ---
+  // --- 3. CUADRO DE INFORMACIÓN (Más cerca del título) ---
+  // Subimos el recuadro a Y=65 para reducir el hueco
   doc.setFillColor(245, 247, 250);
-  doc.rect(15, 55, 180, 35, 'F'); 
+  doc.rect(15, 65, 180, 35, 'F'); 
   
   doc.setFontSize(9);
   doc.setTextColor(40);
   
-  // Ejes X que ya sabemos que funcionan bien
-  const col1X = 20;   // Etiquetas Izquierda
-  const val1X = 42;   // Valores Izquierda
-  const col2X = 135;  // Etiquetas Derecha
-  const val2X = 155;  // Valores Derecha (Alineado con los demás valores)
+  const col1X = 20;   
+  const val1X = 42;   
+  const col2X = 135;  
+  const val2X = 155;  
 
-  // --- FILA 1: CLIENTE Y FECHA (FECHA EN DOS LÍNEAS) ---
+  // Ajustamos las Y relativas al nuevo inicio (65)
+  // FILA 1: CLIENTE Y FECHA
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 65);
-  
-  // Dibujamos la etiqueta en dos partes
-  doc.text("FECHA DE", col2X, 63); 
-  doc.text("PRÉSTAMO:", col2X, 67);
+  doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 74);
+  doc.text("FECHA DE", col2X, 72); 
+  doc.text("PRÉSTAMO:", col2X, 76);
 
   doc.setFont("helvetica", "normal");
-  doc.text(`${nombreCliente.toUpperCase()}`, val1X, 65);
-  
-  // La fecha real queda centrada verticalmente respecto a las dos líneas de la etiqueta
+  doc.text(`${nombreCliente.toUpperCase()}`, val1X, 74);
   doc.setFontSize(8.5);
-  doc.text(fechaHoy.toUpperCase(), val2X, 65);
+  doc.text(fechaHoy.toUpperCase(), val2X, 74);
   doc.setFontSize(9);
 
-  // --- FILA 2: DOMICILIO Y MONTO ---
+  // FILA 2: DOMICILIO Y MONTO
   doc.setFont("helvetica", "bold");
-  doc.text(`DOMICILIO:`, col1X, 74); // Bajamos 1mm para dar aire a la fecha de arriba
-  doc.text(`MONTO:`, col2X, 74);
+  doc.text(`DOMICILIO:`, col1X, 83);
+  doc.text(`MONTO:`, col2X, 83);
 
   doc.setFont("helvetica", "normal");
   const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
   const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); 
-  doc.text(domicilioCortado, val1X, 74);
-  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 74);
+  doc.text(domicilioCortado, val1X, 83);
+  doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 83);
 
-  // --- FILA 3: AVAL Y PLAZO ---
+  // FILA 3: AVAL Y PLAZO
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 84);
-  doc.text(`PLAZO:`, col2X, 84);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 93);
+  doc.text(`PLAZO:`, col2X, 93);
   
   doc.setFont("helvetica", "normal");
   const xAval = esGrupal ? 55 : 42; 
-  doc.text(`${nombreAval.toUpperCase()}`, xAval, 84);
-  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 84);
+  doc.text(`${nombreAval.toUpperCase()}`, xAval, 93);
+  doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 93);
 
-  // --- 4. BANNER SOLIDARIO (Solo Grupos) ---
+  // --- 4. BANNER SOLIDARIO (Más compacto) ---
+  let finalYInfo = 100;
   if (esGrupal) {
     doc.setFillColor(124, 58, 237); 
-    doc.rect(15, 98, 180, 10, 'F');
+    doc.rect(15, 102, 180, 8, 'F');
     doc.setTextColor(255);
-    doc.setFontSize(9);
-    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, 105, 104, { align: 'center' });
+    doc.setFontSize(8.5);
+    doc.text(`CUOTA GRUPAL DIVIDIDA ENTRE ${numIntegrantes} INTEGRANTES. CADA UNO APORTA: $${parseFloat(cuotaPorSocio).toFixed(2)}`, pageWidth / 2, 107, { align: 'center' });
+    finalYInfo = 112;
   }
 
-  // --- 5. TABLA DE AMORTIZACIÓN ---
+  // --- 5. TABLA DE AMORTIZACIÓN (Pegada al cuadro/banner) ---
   const etiquetaPeriodo = modalidad.toLowerCase() === 'semanal' ? 'SEM' : modalidad.toLowerCase() === 'quincenal' ? 'QUIN' : 'MES';
 
   const tableBody = fechas.map((item, index) => {
@@ -133,7 +135,8 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   });
 
   autoTable(doc, {
-    startY: esGrupal ? 112 : 102, // Subimos la tabla proporcionalmente al cuadro
+    // Usamos finalYInfo para que la tabla suba si el cuadro subió
+    startY: finalYInfo + 2, 
     head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA']],
     body: tableBody,
     theme: 'grid',
@@ -146,16 +149,16 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     styles: { 
       fontSize: 8, 
       halign: 'center', 
-      cellPadding: 2.5
+      cellPadding: 2
     },
     columnStyles: {
-      0: { cellWidth: 15 },
+      0: { cellWidth: 12 },
       1: { cellWidth: 25 },
       4: { fontStyle: 'bold', textColor: [0, 0, 0] }, 
       5: { fontStyle: 'bold', textColor: [20, 150, 80] }, 
       6: { cellWidth: 35 } 
     },
-    margin: { bottom: 20 } 
+    margin: { bottom: 15 } 
   });
 
   // --- 6. GUARDAR ---
