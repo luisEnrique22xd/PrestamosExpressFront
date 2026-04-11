@@ -160,48 +160,86 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     margin: { bottom: 15 } 
   });
 
-  // --- 6. SECCIÓN DE FIRMAS (AJUSTADA PARA EVITAR TRASLAPE) ---
-  // Forzamos la obtención del punto final de la tabla
+  // --- 6. SECCIÓN DE FIRMAS (DINÁMICA PARA GRUPOS) ---
   const autoTableState = (doc as any).lastAutoTable;
-  const finalY = autoTableState ? autoTableState.finalY : 150;
-  
-  // Aumentamos el margen de separación a 25mm para que las etiquetas no toquen la tabla
-  const baseFirmaY = finalY + 25; 
+  let currentY = autoTableState ? autoTableState.finalY + 25 : 150;
 
-  doc.setFontSize(8);
-  doc.setTextColor(100);
+  if (!esGrupal) {
+    // --- DISEÑO PARA CLIENTE INDIVIDUAL (EL QUE YA TENÍAMOS) ---
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "bold");
+    doc.text("FIRMA DEL CLIENTE", 55, currentY - 12, { align: 'center' });
+    doc.setDrawColor(180);
+    doc.line(20, currentY, 90, currentY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(40);
+    doc.text(nombreCliente.toUpperCase(), 55, currentY + 5, { align: 'center' });
 
-  // --- CLIENTE (Izquierda) ---
-  doc.setFont("helvetica", "bold");
-  // Subimos la etiqueta respecto a la línea
-  doc.text("FIRMA DEL CLIENTE", 55, baseFirmaY - 12, { align: 'center' }); 
-  
-  // Línea de firma
-  doc.setDrawColor(180);
-  doc.setLineWidth(0.5);
-  doc.line(20, baseFirmaY, 90, baseFirmaY); 
-  
-  // Nombre del cliente
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(40);
-  doc.text(nombreCliente.toUpperCase(), 55, baseFirmaY + 5, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "bold");
+    doc.text("FIRMA DEL AVAL", 155, currentY - 12, { align: 'center' });
+    doc.line(120, currentY, 190, currentY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(40);
+    doc.text(nombreAval.toUpperCase(), 155, currentY + 5, { align: 'center' });
 
-  // --- AVAL / REPRESENTANTE (Derecha) ---
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(100);
-  const etiquetaFirmaAval = esGrupal ? 'FIRMA REPRESENTANTE' : 'FIRMA DEL AVAL';
-  doc.text(etiquetaFirmaAval, 155, baseFirmaY - 12, { align: 'center' });
-  
-  // Línea de firma
-  doc.line(120, baseFirmaY, 190, baseFirmaY); 
-  
-  // Nombre del aval
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(40);
-  doc.text(nombreAval.toUpperCase(), 155, baseFirmaY + 5, { align: 'center' });
+  } else {
+    // --- DISEÑO PARA PRÉSTAMO GRUPAL ---
+    // 1. Firma del Representante (Centrada y destacada)
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "bold");
+    doc.text("FIRMA DEL REPRESENTANTE LEGAL", pageWidth / 2, currentY - 12, { align: 'center' });
+    
+    doc.setDrawColor(180);
+    doc.line(60, currentY, 150, currentY);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(40);
+    doc.text(nombreAval.toUpperCase(), pageWidth / 2, currentY + 5, { align: 'center' });
+
+    // 2. Firmas de los Integrantes (En cuadrícula de 2 columnas)
+    currentY += 25; // Espacio después de la firma del representante
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("FIRMAS DE CONFORMIDAD DE LOS INTEGRANTES", pageWidth / 2, currentY, { align: 'center' });
+    
+    currentY += 15; // Bajamos para empezar las líneas de los socios
+
+    // Simulamos un array de integrantes basado en el número que tienes en 'datos'
+    // Si ya tienes los nombres de los socios en un array, úsalo aquí.
+    for (let i = 0; i < numIntegrantes; i++) {
+      const isColumn2 = i % 2 !== 0;
+      const xPos = isColumn2 ? 155 : 55;
+      const lineStart = isColumn2 ? 120 : 20;
+      const lineEnd = isColumn2 ? 190 : 90;
+
+      // Dibujar línea
+      doc.setDrawColor(200);
+      doc.line(lineStart, currentY, lineEnd, currentY);
+      
+      // Texto de apoyo
+      doc.setFontSize(7);
+      doc.setTextColor(120);
+      doc.text(`INTEGRANTE ${i + 1}`, xPos, currentY + 4, { align: 'center' });
+
+      // Si terminamos una fila (después de la columna 2), bajamos la Y para la siguiente fila
+      if (isColumn2) {
+        currentY += 18; // Espacio vertical entre filas de firmas
+      }
+      
+      // Verificación de seguridad por si hay demasiados integrantes y saltamos de página
+      if (currentY > 270) {
+        doc.addPage();
+        currentY = 20;
+      }
+    }
+  }
   // --- 6. GUARDAR ---
   const nombreArchivo = nombreCliente.replace(/\s+/g, '_');
   doc.save(`Proyeccion_${nombreArchivo}.pdf`);
