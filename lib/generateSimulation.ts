@@ -204,41 +204,44 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     doc.text(nombreAval.toUpperCase(), pageWidth / 2, currentY + 5, { align: 'center' });
 
     // 2. Firmas de los Integrantes (En cuadrícula de 2 columnas)
-    currentY += 25; // Espacio después de la firma del representante
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text("FIRMAS DE CONFORMIDAD DE LOS INTEGRANTES", pageWidth / 2, currentY, { align: 'center' });
-    
-    currentY += 15; // Bajamos para empezar las líneas de los socios
+currentY += 25; // Espacio después de la firma del representante
+doc.setFont("helvetica", "bold");
+doc.setFontSize(10);
+doc.text("FIRMAS DE CONFORMIDAD DE LOS INTEGRANTES RESTANTES", pageWidth / 2, currentY, { align: 'center' });
 
-    // Simulamos un array de integrantes basado en el número que tienes en 'datos'
-    // Si ya tienes los nombres de los socios en un array, úsalo aquí.
-    for (let i = 0; i < numIntegrantes; i++) {
-      const isColumn2 = i % 2 !== 0;
-      const xPos = isColumn2 ? 155 : 55;
-      const lineStart = isColumn2 ? 120 : 20;
-      const lineEnd = isColumn2 ? 190 : 90;
+currentY += 15; // Bajamos para empezar las líneas de los socios
 
-      // Dibujar línea
-      doc.setDrawColor(200);
-      doc.line(lineStart, currentY, lineEnd, currentY);
-      
-      // Texto de apoyo
-      doc.setFontSize(7);
-      doc.setTextColor(120);
-      doc.text(`INTEGRANTE ${i + 1}`, xPos, currentY + 4, { align: 'center' });
+// 🚨 LA CLAVE ESTÁ AQUÍ:
+// Empezamos el ciclo en i = 1 (que es el Integrante 2)
+// Así, si numIntegrantes es 4, solo dibujará espacios para el 2, 3 y 4.
+for (let i = 1; i < numIntegrantes; i++) {
+  // Calculamos la columna basada en el índice ajustado (para que el 2 vaya a la izq, el 3 der, etc.)
+  const isColumn2 = (i - 1) % 2 !== 0; 
+  const xPos = isColumn2 ? 155 : 55;
+  const lineStart = isColumn2 ? 120 : 20;
+  const lineEnd = isColumn2 ? 190 : 90;
 
-      // Si terminamos una fila (después de la columna 2), bajamos la Y para la siguiente fila
-      if (isColumn2) {
-        currentY += 18; // Espacio vertical entre filas de firmas
-      }
-      
-      // Verificación de seguridad por si hay demasiados integrantes y saltamos de página
-      if (currentY > 270) {
-        doc.addPage();
-        currentY = 20;
-      }
-    }
+  // Dibujar línea gris suave
+  doc.setDrawColor(200);
+  doc.line(lineStart, currentY, lineEnd, currentY);
+  
+  // Texto de apoyo (Integrante 2, Integrante 3, etc.)
+  doc.setFontSize(7);
+  doc.setTextColor(120);
+  doc.text(`INTEGRANTE ${i + 1}`, xPos, currentY + 4, { align: 'center' });
+
+  // Si terminamos una fila (después de la columna 2), bajamos la Y para la siguiente fila
+  // OJO: Ajustamos la lógica de bajada de Y también
+  if (isColumn2 || (i + 1 === numIntegrantes)) {
+    currentY += 18; // Espacio vertical entre filas de firmas
+  }
+  
+  // Verificación de seguridad por si hay demasiados integrantes y saltamos de página
+  if (currentY > 270) {
+    doc.addPage();
+    currentY = 20;
+  }
+}
   }
   // --- 6. GUARDAR ---
   const nombreArchivo = nombreCliente.replace(/\s+/g, '_');
