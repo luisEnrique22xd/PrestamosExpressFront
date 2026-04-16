@@ -17,7 +17,7 @@ import {
   Calculator, 
   LogOut,
   User,
-  Menu, // <--- Este es para el Perfil
+  Menu, 
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -40,7 +40,6 @@ export default function Sidebar() {
     { name: 'Pagos', path: '/dashboard/pagos', icon: Receipt, roles: ['admin', 'cobrador'] },
     { name: 'Calendario', path: '/dashboard/calendario', icon: Calendar, roles: ['admin', 'cobrador'] },
     { name: 'Simulador', path: '/dashboard/simulador', icon: Calculator, roles: ['admin', 'cobrador'] },
-    // 🔥 REINTEGRADO: Perfil de Usuario (Acceso para todos)
     { name: 'Mi Perfil', path: '/dashboard/usuario', icon: User, roles: ['admin', 'cobrador'] },
   ];
 
@@ -72,15 +71,7 @@ export default function Sidebar() {
       w-72 h-screen bg-[#050533] p-8 flex flex-col 
       transition-transform duration-300 ease-in-out
       ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-    `}>      <style jsx>{`
-        nav::-webkit-scrollbar {
-          display: none;
-        }
-        nav {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
+    `}>
       {/* LOGO SECTION */}
       <div className="flex flex-col items-center gap-4 mb-12 border-b border-white/5 pb-8">
         <Image src="/images/logo.png" alt="Logo" width={80} height={80} className="object-contain" priority />

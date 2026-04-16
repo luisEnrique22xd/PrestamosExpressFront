@@ -1,8 +1,6 @@
 'use client';
 import  Sidebar  from "../components/sidebar"
 import { Topbar } from "../components/topbar"
-import "../globals.css"
-
 export default function RootLayout({
   children,
 }: {

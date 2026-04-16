@@ -15,7 +15,7 @@ export default function LoginPage() {
     try {
       const response = await api.post('/auth/login/', { username, password });
       const userRole = response.data.role || (username === 'admin' ? 'admin' : 'cobrador');
-      Cookies.set('access_token', response.data.access, { expires: 1 }); // Expira en 1 día
+      Cookies.set('access_token', response.data.access, { expires: 1 }); 
       Cookies.set('user_role', userRole, { expires: 1 });
       localStorage.setItem('user_role', userRole);
       // Guardamos los tokens en el storage
@@ -23,11 +23,11 @@ export default function LoginPage() {
       localStorage.setItem('refresh_token', response.data.refresh);
       
       // Redirigimos al Dashboard
-      // En tu lógica de Login después de Cookies.set
+      
 if (userRole === 'admin') {
   router.push('/dashboard'); // Dashboard General
 } else {
-  router.push('/dashboard/clientes'); // O una nueva ruta '/dashboard/hoja-de-cobro'
+  router.push('/dashboard/clientes'); 
 }
     } catch (err) {
       setError('Credenciales incorrectas. Intenta de nuevo.');

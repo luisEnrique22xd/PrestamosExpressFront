@@ -68,11 +68,10 @@ export default function PrestamosPage() {
 
   // --- BUSCADOR POR NOMBRE (INDIVIDUAL) ---
   const buscarClientePorNombre = async (val: string) => {
-    setFormData({ ...formData, cliente: val }); // Mostramos lo que escribe Alexander
+    setFormData({ ...formData, cliente: val }); 
     if (val.length > 2) {
       try {
         const res = await api.get(`/clientes/directorio-hibrido/?search=${val}`);
-        // Solo mostramos personas, no grupos
         setSugerenciasIndividual(res.data.filter((c: any) => !c.es_grupo).slice(0, 5));
       } catch (e) { console.error(e); }
     } else {
