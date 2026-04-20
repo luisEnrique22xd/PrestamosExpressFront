@@ -305,7 +305,7 @@ export default function PrestamosPage() {
   </div>
 
   {/* AVAL 2 (Condicional: Solo si Capital > 7500) */}
-  {Number(formData.monto_capital) > 7500 && (
+  {Number(formData.monto_capital) >= 7500 && (
     <div className="p-8 bg-purple-50/30 rounded-[2.5rem] border border-purple-100 space-y-6 animate-in slide-in-from-top duration-500">
       <div className="flex items-center justify-between">
         <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-2 italic">
