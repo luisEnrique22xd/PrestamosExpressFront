@@ -146,14 +146,22 @@ export default function PrestamosPage() {
     setLoading(true);
     setConfirmando(false);
     try {
+      const capitalNum = Number(formData.monto_capital);
       const payload = {
         ...formData,
         tipo: tipoPrestamo,
         integrantes: tipoPrestamo === 'G' ? integrantes.map(i => i.id) : [],
-        monto_capital: Number(formData.monto_capital),
+        monto_capital: capitalNum,
         monto_total_pagar: calculos.totalPagar,
         fecha_inicio: new Date().toISOString().split('T')[0],
       };
+      if (capitalNum < 7499) {
+        payload.nombre_aval_2 = '';
+        payload.telefono_aval_2 = '';
+        payload.direccion_aval_2 = '';
+        payload.curp_aval_2 = '';
+        payload.parentesco_aval_2 = '';
+      }
       await api.post('/prestamos/', payload);
       lanzarAlerta('success', "Crédito autorizado correctamente.");
       handleReset();
