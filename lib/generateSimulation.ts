@@ -13,7 +13,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   const { 
     monto, modalidad, cuotas, interes, pagoPorCuota, 
     nombreCliente, nombreAval, esGrupal, 
-    numIntegrantes, cuotaPorSocio 
+    numIntegrantes, cuotaPorSocio, nombre_aval_2 
   } = datos;
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -25,29 +25,26 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     year: 'numeric'
   });
 
-  // --- 1. LOGO (REGRESA A SU LUGAR ORIGINAL) ---
+  // --- 1. LOGO ---
   try {
-    doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
+    // Asegúrate de que LOGO_DATA esté disponible en este scope
+    doc.addImage(datos.LOGO_DATA, 'PNG', 15, 10, 30, 38);
   } catch (e) {
     console.warn("Logo no encontrado");
   }
 
-  // --- 2. ENCABEZADO CENTRADO (MÁS COMPACTO) ---
+  // --- 2. ENCABEZADO ---
   doc.setFontSize(22);
   doc.setTextColor(0, 71, 171); // Azul Rey
   doc.setFont("helvetica", "bold");
-  // Centrado, pero bajamos un poco la Y porque ya no tiene el logo arriba
   doc.text("PRÉSTAMOS EXPRESS", pageWidth / 2, 25, { align: 'center' });
   
   doc.setFontSize(11);
   doc.setTextColor(100);
   doc.setFont("helvetica", "normal");
-  // Reducimos espacio entre título y subtítulo (de 32 a 31)
   doc.text("GENTE QUE AYUDA A LA GENTE", pageWidth / 2, 31, { align: 'center' });
 
-
-  // --- 3. CUADRO DE INFORMACIÓN (SUBE PARA CERRAR ESPACIOS) ---
-  // Subimos el recuadro de 55 a 48 para pegarlo más al encabezado
+  // --- 3. CUADRO DE INFORMACIÓN ---
   doc.setFillColor(245, 247, 250);
   doc.rect(15, 48, 180, 35, 'F'); 
   
@@ -55,45 +52,45 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.setTextColor(40);
   
   const col1X = 20;   
-  const val1X = 42;   
+  const val1X = 45;   
   const col2X = 135;  
   const val2X = 155;  
 
-  // --- FILA 1: CLIENTE Y FECHA ---
+  // FILA 1: CLIENTE Y FECHA
   doc.setFont("helvetica", "bold");
   doc.text(`${esGrupal ? 'GRUPO:' : 'CLIENTE:'}`, col1X, 58);
-  doc.text("FECHA DE", col2X, 56); 
-  doc.text("PRÉSTAMO:", col2X, 60);
+  doc.text("FECHA:", col2X, 58);
 
   doc.setFont("helvetica", "normal");
   doc.text(`${nombreCliente.toUpperCase()}`, val1X, 58);
-  doc.setFontSize(8.5);
   doc.text(fechaHoy.toUpperCase(), val2X, 58);
-  doc.setFontSize(9);
 
-  // --- FILA 2: DOMICILIO Y MONTO ---
+  // FILA 2: DOMICILIO Y MONTO
   doc.setFont("helvetica", "bold");
   doc.text(`DOMICILIO:`, col1X, 67);
   doc.text(`MONTO:`, col2X, 67);
 
   doc.setFont("helvetica", "normal");
-  const domicilioLimpio = (datos.direccion || 'No proporcionada').toUpperCase();
+  const domicilioLimpio = (datos.direccion || 'No proporcionado').toUpperCase();
   const domicilioCortado = doc.splitTextToSize(domicilioLimpio, 85); 
   doc.text(domicilioCortado, val1X, 67);
   doc.text(`$${Number(monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, val2X, 67);
 
-  // --- FILA 3: AVAL Y PLAZO ---
+  // FILA 3: AVAL(ES) Y PLAZO
   doc.setFont("helvetica", "bold");
-  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL:'}`, col1X, 77);
+  doc.text(`${esGrupal ? 'REPRESENTANTE:' : 'AVAL(ES):'}`, col1X, 77);
   doc.text(`PLAZO:`, col2X, 77);
   
   doc.setFont("helvetica", "normal");
-  const xAval = esGrupal ? 55 : 42; 
-  doc.text(`${nombreAval.toUpperCase()}`, xAval, 77);
+  const textoAvales = nombre_aval_2 
+    ? `${nombreAval.toUpperCase()} / ${nombre_aval_2.toUpperCase()}`
+    : nombreAval.toUpperCase();
+    
+  doc.text(doc.splitTextToSize(textoAvales, 85), val1X, 77);
   doc.text(`${cuotas} ${modalidad.toUpperCase()}(S)`, val2X, 77);
 
-  // --- 4. BANNER SOLIDARIO (COMPACTO) ---
-  let finalYInfo = 83; // Punto final del cuadro gris
+  // --- 4. BANNER SOLIDARIO ---
+  let finalYInfo = 83;
   if (esGrupal) {
     doc.setFillColor(124, 58, 237); 
     doc.rect(15, 87, 180, 8, 'F');
@@ -103,7 +100,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     finalYInfo = 95;
   }
 
-  // --- 5. TABLA DE AMORTIZACIÓN (PEGADA) ---
+  // --- 5. TABLA DE AMORTIZACIÓN ---
   const etiquetaPeriodo = modalidad.toLowerCase() === 'semanal' ? 'SEM' : modalidad.toLowerCase() === 'quincenal' ? 'QUIN' : 'MES';
 
   const tableBody = fechas.map((item, index) => {
@@ -111,20 +108,11 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
     const interesCuota = monto * (interes / 100);
     const saldoCapitalInsoluto = Math.max(0, monto - (capitalCuota * (index + 1)));
     
-    const f = (num:number) => num.toLocaleString('es-MX', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    });
-
-    const fechaFormateada = item.fechaCobro.toLocaleDateString('es-MX', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    });
+    const f = (num:number) => num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return [
       index + 1,
-      fechaFormateada,
+      item.fechaCobro.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       `$${f(capitalCuota)}`,
       `$${f(interesCuota)}`,
       `$${f(pagoPorCuota)}`,
@@ -134,116 +122,90 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   });
 
   autoTable(doc, {
-    // Reducimos el espacio a solo 4mm después del cuadro
     startY: finalYInfo + 4, 
     head: [[etiquetaPeriodo, 'FECHA', 'ABONO', 'INTERÉS', 'PAGO', 'SALDO', 'FIRMA']],
     body: tableBody,
     theme: 'grid',
-    headStyles: { 
-      fillColor: [0, 51, 102], 
-      textColor: [255, 255, 255], 
-      fontStyle: 'bold', 
-      halign: 'center' 
-    },
-    styles: { 
-      fontSize: 8, 
-      halign: 'center', 
-      cellPadding: 2
-    },
-    columnStyles: {
-      0: { cellWidth: 12 },
-      1: { cellWidth: 25 },
-      4: { fontStyle: 'bold', textColor: [0, 0, 0] }, 
-      5: { fontStyle: 'bold', textColor: [20, 150, 80] }, 
-      6: { cellWidth: 35 } 
-    },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+    styles: { fontSize: 8, halign: 'center', cellPadding: 2 },
+    columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 25 }, 4: { fontStyle: 'bold' }, 5: { textColor: [20, 150, 80] }, 6: { cellWidth: 35 } },
     margin: { bottom: 15 } 
   });
 
-  // --- 6. SECCIÓN DE FIRMAS (DINÁMICA PARA GRUPOS) ---
+  // --- 6. SECCIÓN DE FIRMAS ---
   const autoTableState = (doc as any).lastAutoTable;
   let currentY = autoTableState ? autoTableState.finalY + 25 : 150;
 
   if (!esGrupal) {
-    // --- DISEÑO PARA CLIENTE INDIVIDUAL (EL QUE YA TENÍAMOS) ---
+    const hayAval2 = parseFloat(monto) >= 7500 && nombre_aval_2;
     doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.setFont("helvetica", "bold");
-    doc.text("FIRMA DEL CLIENTE", 55, currentY - 12, { align: 'center' });
-    doc.setDrawColor(180);
-    doc.line(20, currentY, 90, currentY);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
     doc.setTextColor(40);
-    doc.text(nombreCliente.toUpperCase(), 55, currentY + 5, { align: 'center' });
 
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.setFont("helvetica", "bold");
-    doc.text("FIRMA DEL AVAL", 155, currentY - 12, { align: 'center' });
-    doc.line(120, currentY, 190, currentY);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(40);
-    doc.text(nombreAval.toUpperCase(), 155, currentY + 5, { align: 'center' });
+    if (hayAval2) {
+      // DISEÑO 3 FIRMAS
+      const yFirma = currentY;
+      doc.setDrawColor(180);
+      
+      // Cliente
+      doc.line(15, yFirma, 65, yFirma);
+      doc.setFont("helvetica", "bold");
+      doc.text("FIRMA CLIENTE", 40, yFirma - 4, { align: 'center' });
+      doc.setFont("helvetica", "normal");
+      doc.text(nombreCliente.toUpperCase(), 40, yFirma + 5, { align: 'center', maxWidth: 45 });
 
+      // Aval 1
+      doc.line(75, yFirma, 125, yFirma);
+      doc.setFont("helvetica", "bold");
+      doc.text("FIRMA AVAL 1", 100, yFirma - 4, { align: 'center' });
+      doc.setFont("helvetica", "normal");
+      doc.text(nombreAval.toUpperCase(), 100, yFirma + 5, { align: 'center', maxWidth: 45 });
+
+      // Aval 2
+      doc.line(135, yFirma, 185, yFirma);
+      doc.setFont("helvetica", "bold");
+      doc.text("FIRMA AVAL 2", 160, yFirma - 4, { align: 'center' });
+      doc.setFont("helvetica", "normal");
+      doc.text(nombre_aval_2.toUpperCase(), 160, yFirma + 5, { align: 'center', maxWidth: 45 });
+    } else {
+      // DISEÑO 2 FIRMAS (ORIGINAL)
+      doc.setFont("helvetica", "bold");
+      doc.text("FIRMA DEL CLIENTE", 55, currentY - 12, { align: 'center' });
+      doc.line(20, currentY, 90, currentY);
+      doc.setFont("helvetica", "normal");
+      doc.text(nombreCliente.toUpperCase(), 55, currentY + 5, { align: 'center' });
+
+      doc.setFont("helvetica", "bold");
+      doc.text("FIRMA DEL AVAL", 155, currentY - 12, { align: 'center' });
+      doc.line(120, currentY, 190, currentY);
+      doc.setFont("helvetica", "normal");
+      doc.text(nombreAval.toUpperCase(), 155, currentY + 5, { align: 'center' });
+    }
   } else {
-    // --- DISEÑO PARA PRÉSTAMO GRUPAL ---
-    // 1. Firma del Representante (Centrada y destacada)
-    doc.setFontSize(8);
-    doc.setTextColor(100);
+    // DISEÑO GRUPAL (MANTENIDO)
     doc.setFont("helvetica", "bold");
     doc.text("FIRMA DEL REPRESENTANTE LEGAL", pageWidth / 2, currentY - 12, { align: 'center' });
-    
-    doc.setDrawColor(180);
     doc.line(60, currentY, 150, currentY);
-    
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(40);
     doc.text(nombreAval.toUpperCase(), pageWidth / 2, currentY + 5, { align: 'center' });
 
-    // 2. Firmas de los Integrantes (En cuadrícula de 2 columnas)
-currentY += 25; // Espacio después de la firma del representante
-doc.setFont("helvetica", "bold");
-doc.setFontSize(10);
-doc.text("FIRMAS DE CONFORMIDAD DE LOS INTEGRANTES RESTANTES", pageWidth / 2, currentY, { align: 'center' });
+    currentY += 30;
+    doc.setFont("helvetica", "bold");
+    doc.text("FIRMAS DE CONFORMIDAD DE LOS INTEGRANTES", pageWidth / 2, currentY, { align: 'center' });
+    currentY += 15;
 
-currentY += 15; // Bajamos para empezar las líneas de los socios
-
-// 🚨 LA CLAVE ESTÁ AQUÍ:
-// Empezamos el ciclo en i = 1 (que es el Integrante 2)
-// Así, si numIntegrantes es 4, solo dibujará espacios para el 2, 3 y 4.
-for (let i = 1; i < numIntegrantes; i++) {
-  // Calculamos la columna basada en el índice ajustado (para que el 2 vaya a la izq, el 3 der, etc.)
-  const isColumn2 = (i - 1) % 2 !== 0; 
-  const xPos = isColumn2 ? 155 : 55;
-  const lineStart = isColumn2 ? 120 : 20;
-  const lineEnd = isColumn2 ? 190 : 90;
-
-  // Dibujar línea gris suave
-  doc.setDrawColor(200);
-  doc.line(lineStart, currentY, lineEnd, currentY);
-  
-  // Texto de apoyo (Integrante 2, Integrante 3, etc.)
-  doc.setFontSize(7);
-  doc.setTextColor(120);
-  doc.text(`INTEGRANTE ${i + 1}`, xPos, currentY + 4, { align: 'center' });
-
-  // Si terminamos una fila (después de la columna 2), bajamos la Y para la siguiente fila
-  // OJO: Ajustamos la lógica de bajada de Y también
-  if (isColumn2 || (i + 1 === numIntegrantes)) {
-    currentY += 18; // Espacio vertical entre filas de firmas
+    for (let i = 1; i < numIntegrantes; i++) {
+      const isColumn2 = (i - 1) % 2 !== 0; 
+      const xPos = isColumn2 ? 155 : 55;
+      const lineStart = isColumn2 ? 120 : 20;
+      const lineEnd = isColumn2 ? 190 : 90;
+      doc.line(lineStart, currentY, lineEnd, currentY);
+      doc.setFontSize(7);
+      doc.text(`INTEGRANTE ${i + 1}`, xPos, currentY + 4, { align: 'center' });
+      if (isColumn2 || (i + 1 === numIntegrantes)) currentY += 18;
+      if (currentY > 275) { doc.addPage(); currentY = 20; }
+    }
   }
-  
-  // Verificación de seguridad por si hay demasiados integrantes y saltamos de página
-  if (currentY > 270) {
-    doc.addPage();
-    currentY = 20;
-  }
-}
-  }
-  // --- 6. GUARDAR ---
+
   const nombreArchivo = nombreCliente.replace(/\s+/g, '_');
   doc.save(`Proyeccion_${nombreArchivo}.pdf`);
 };
