@@ -29,6 +29,11 @@ export default function ProyeccionPage() {
   const [telefonoAval, setTelefonoAval] = useState('');
   const [esGrupal, setEsGrupal] = useState(false);
   const [numIntegrantes, setNumIntegrantes] = useState(1);
+  const [nombreAval2, setNombreAval2] = useState('');
+const [telefonoAval2, setTelefonoAval2] = useState('');
+// Opcionales por si quieres mandarlos al PDF de una vez:
+const [curpAval2, setCurpAval2] = useState('');
+const [direccionAval2, setDireccionAval2] = useState('');
 
   const [busqueda, setBusqueda] = useState('');
   const [sugerencias, setSugerencias] = useState<any[]>([]);
@@ -81,9 +86,13 @@ export default function ProyeccionPage() {
     if (c.es_grupo) {
       setNombreAval(c.nombre_aval || '');
       setTelefonoAval(c.telefono_aval || '');
+      setNombreAval2('');
+      setTelefonoAval2('');
     } else if (c.datos_ultimo_aval) {
       setNombreAval(c.datos_ultimo_aval.nombre_aval || '');
       setTelefonoAval(c.datos_ultimo_aval.telefono_aval || '');
+      setNombreAval2('');
+      setTelefonoAval2('');
     }
     setMostrarSugerencias(false);
     setBusqueda('');
@@ -148,13 +157,18 @@ export default function ProyeccionPage() {
   const exportarDocumentacion = async () => {
     setLoading(true);
     try {
+      if (monto > 7500 && (!nombreAval2 || !telefonoAval2)) {
+        lanzarAlerta('error', "❌ Para montos > $7,500 se requieren los datos del Segundo Aval.");
+        setLoading(false);
+        return;
+      }
       const res = await api.post('/proximo-folio/');
       const folioOficial = res.data.folio;
       const ultimaFecha = fechasPago[fechasPago.length - 1]?.fechaCobro;
 
       const datosFinales = {
         nombreCliente, direccion, poblacion, curp, telefono,
-        nombreAval, telefonoAval, monto, modalidad, cuotas,
+        nombreAval, telefonoAval, nombreAval2, telefonoAval2,monto, modalidad, cuotas,
         interes, pagoPorCuota, montoTotal, esGrupal,
         numIntegrantes, cuotaPorSocio,
         fechaVencimiento: ultimaFecha,
@@ -229,10 +243,35 @@ export default function ProyeccionPage() {
               <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
               <input placeholder="Domicilio / Ubicación" value={direccion} onChange={e => setDireccion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-50 pt-4">
-              <input placeholder="Presidente / Aval" value={nombreAval} onChange={e => setNombreAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs uppercase" />
-              <input placeholder="Tel. Contacto" value={telefonoAval} onChange={e => setTelefonoAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs" />
+            {/* PANEL IZQUIERDO: CONFIGURACIÓN (Dentro del panel de inputs) */}
+<div className="space-y-3 pt-4 border-t border-slate-50">
+    {/* Aval 1 (Ya lo tienes) */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-50 pt-4">
+        <input placeholder="Presidente / Aval 1" value={nombreAval} onChange={e => setNombreAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs uppercase" />
+        <input placeholder="Tel. Aval 1" value={telefonoAval} onChange={e => setTelefonoAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs" />
+    </div>
+
+    {/* SEGUNDO AVAL (Condicional) */}
+    {monto > 7500 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t-2 border-dashed border-purple-100 pt-4 animate-in slide-in-from-top duration-300">
+            <div className="col-span-2">
+                <p className="text-[8px] font-black text-purple-500 uppercase tracking-[0.2em] mb-2 ml-2">Aval Solidario Requerido (Monto &gt; 7.5k)</p>
             </div>
+            <input 
+                placeholder="Nombre Aval 2" 
+                value={nombreAval2} 
+                onChange={e => setNombreAval2(e.target.value)} 
+                className="w-full p-4 bg-purple-50/50 rounded-2xl outline-none border border-purple-100 focus:ring-2 focus:ring-purple-500 font-bold text-xs uppercase" 
+            />
+            <input 
+                placeholder="Tel. Aval 2" 
+                value={telefonoAval2} 
+                onChange={e => setTelefonoAval2(e.target.value)} 
+                className="w-full p-4 bg-purple-50/50 rounded-2xl outline-none border border-purple-100 focus:ring-2 focus:ring-purple-500 font-bold text-xs" 
+            />
+        </div>
+    )}
+</div>
           </div>
 
           <div className="space-y-4 pt-4 border-t border-slate-50">

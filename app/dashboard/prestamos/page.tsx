@@ -40,7 +40,12 @@ export default function PrestamosPage() {
     telefono_aval: '',
     curp_aval: '',
     parentesco_aval: '',
-    garantia_descripcion: ''
+    garantia_descripcion: '',
+    nombre_aval_2: '',
+    direccion_aval_2: '',
+    telefono_aval_2: '',
+    curp_aval_2: '',
+    parentesco_aval_2: '',
   });
 
   const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
@@ -161,7 +166,8 @@ export default function PrestamosPage() {
     setFormData({
       cliente: '', nombre_grupo: '', grupo_id: '', monto_capital: '', tasa_interes: '2.5', cuotas: '8',
       modalidad: 'S', nombre_aval: '', direccion_aval: '', telefono_aval: '',
-      curp_aval: '', parentesco_aval: '', garantia_descripcion: ''
+      curp_aval: '', parentesco_aval: '', garantia_descripcion: '', nombre_aval_2: '', direccion_aval_2: '', telefono_aval_2: '',
+    curp_aval_2: '', parentesco_aval_2: '',
     });
     setIntegrantes([]);
     setClienteEncontrado(null);
@@ -282,18 +288,46 @@ export default function PrestamosPage() {
           )}
 
           {/* FORMULARIO DE AVAL */}
-          <div className="col-span-1 md:col-span-2 p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-6">
-            <h3 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2 italic">
-              <ShieldCheck size={18} /> Información del Aval / Respaldo
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">              <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
-              <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
-              <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" required />
-              <input type="text" placeholder="CURP" value={formData.curp_aval} onChange={(e) => setFormData({ ...formData, curp_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
-              <input type="text" placeholder="Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
-              <input type="text" placeholder="Garantía" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" />
-            </div>
-          </div>
+          {/* SECCIÓN DE AVALES */}
+<div className="col-span-1 md:col-span-2 space-y-6">
+  {/* AVAL 1 (Siempre visible) */}
+  <div className="p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-6">
+    <h3 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2 italic">
+      <ShieldCheck size={18} /> Información del Aval Principal
+    </h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+      <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
+      <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
+      <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" required />
+      <input type="text" placeholder="CURP" value={formData.curp_aval} onChange={(e) => setFormData({ ...formData, curp_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
+      <input type="text" placeholder="Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
+    </div>
+  </div>
+
+  {/* AVAL 2 (Condicional: Solo si Capital > 7500) */}
+  {Number(formData.monto_capital) > 7500 && (
+    <div className="p-8 bg-purple-50/30 rounded-[2.5rem] border border-purple-100 space-y-6 animate-in slide-in-from-top duration-500">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-2 italic">
+          <UserPlus size={18} />
+        </h3>
+        <span className="text-[8px] bg-purple-200 text-purple-700 px-2 py-1 rounded-full font-black">OBLIGATORIO</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+        <input type="text" placeholder="Nombre completo del segundo aval" value={formData.nombre_aval_2} onChange={(e) => setFormData({ ...formData, nombre_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
+        <input type="tel" placeholder="Teléfono" value={formData.telefono_aval_2} onChange={(e) => setFormData({ ...formData, telefono_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
+        <input type="text" placeholder="Dirección" value={formData.direccion_aval_2} onChange={(e) => setFormData({ ...formData, direccion_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm md:col-span-2" required />
+        <input type="text" placeholder="CURP" value={formData.curp_aval_2} onChange={(e) => setFormData({ ...formData, curp_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
+        <input type="text" placeholder="Parentesco" value={formData.parentesco_aval_2} onChange={(e) => setFormData({ ...formData, parentesco_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" />
+      </div>
+    </div>
+  )}
+
+  {/* GARANTÍA (Se mantiene abajo) */}
+  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+    <input type="text" placeholder="Descripción de la Garantía (Ej. Laptop, Factura de Moto...)" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="w-full p-2 bg-transparent outline-none font-bold text-sm" />
+  </div>
+</div>
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Frecuencia</label>
