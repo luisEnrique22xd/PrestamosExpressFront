@@ -88,6 +88,7 @@ export default function PagosPage() {
 
     return Math.max(0, resultado);
   }, [clienteSel, montoAbono, montoPenalizacion]);
+  
   // 3. Selección de Entidad
   const seleccionarEntidad = (entidad: any) => {
     setClienteSel(entidad);
