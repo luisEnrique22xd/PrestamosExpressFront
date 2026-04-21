@@ -44,15 +44,16 @@ export default function PagosPage() {
   // --- 🔥 CORRECCIÓN DE RUTAS PARA CUOTA SUGERIDA ---
   useEffect(() => {
     if (clienteSel && semanaSeleccionada) {
-      // Accedemos al primer préstamo activo de la lista (donde está el monto_total de 3600 o 6500)
-      const pActivo = clienteSel.prestamos_activos?.[0];
-      
-      if (pActivo) {
-        const totalPrestamo = Number(pActivo.monto_total) || 0;
-        // Si el backend no manda cuotas, usamos 12 por defecto para Nancy/Luis
-        const numCuotas = Number(pActivo.cuotas) || 12; 
-        const sugerencia = totalPrestamo / numCuotas;
+      const prestamo = clienteSel.prestamos_activos?.[0];
 
+      if (prestamo) {
+        const montoTotal = Number(prestamo.monto_total) || 0;
+        
+        // 🔥 CAMBIO AQUÍ: Usamos las cuotas que vienen del backend
+        // Si no vienen (mientras actualizas el back), 12 para Nancy y 8 para Luis
+        const numCuotas = Number(prestamo.cuotas) || (montoTotal === 3600 ? 8 : 12); 
+
+        const sugerencia = montoTotal / numCuotas;
         setMontoAbono(sugerencia.toFixed(2));
       }
     }
