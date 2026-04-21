@@ -157,7 +157,7 @@ const [direccionAval2, setDireccionAval2] = useState('');
   const exportarDocumentacion = async () => {
     setLoading(true);
     try {
-      if (monto > 7500 && (!nombreAval2 || !telefonoAval2)) {
+      if (monto >= 7500 && (!nombreAval2 || !telefonoAval2)) {
         lanzarAlerta('error', "❌ Para montos > $7,500 se requieren los datos del Segundo Aval.");
         setLoading(false);
         return;
@@ -252,7 +252,7 @@ const [direccionAval2, setDireccionAval2] = useState('');
     </div>
 
     {/* SEGUNDO AVAL (Condicional) */}
-    {monto > 7500 && (
+    {monto >= 7500 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t-2 border-dashed border-purple-100 pt-4 animate-in slide-in-from-top duration-300">
             <div className="col-span-2">
                 <p className="text-[8px] font-black text-purple-500 uppercase tracking-[0.2em] mb-2 ml-2">Aval Solidario Requerido (Monto &gt; 7.5k)</p>
