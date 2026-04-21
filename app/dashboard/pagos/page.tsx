@@ -24,9 +24,9 @@ export default function PagosPage() {
   const [semanaSeleccionada, setSemanaSeleccionada] = useState<string>('');
   const [modalidadPago, setModalidadPago] = useState('E'); 
 
+  // 1. LÓGICA DE PENALIZACIONES
   useEffect(() => {
     if (clienteSel) {
-      // Usamos el total_penalizaciones que ya manda tu nuevo serializer
       const totalMultas = Number(clienteSel.total_penalizaciones) || 0;
       if (totalMultas > 0) {
         setTienePenalizaciones(true);
@@ -41,16 +41,21 @@ export default function PagosPage() {
     }
   }, [clienteSel]);
 
+  // 2. 🔥 CORRECCIÓN: Cálculo de sugerencia de abono
   useEffect(() => {
     if (clienteSel && semanaSeleccionada) {
-      // 🔥 Buscamos el préstamo activo para calcular la cuota (Nancy: 6500 / 12 = 541.67)
-      const pActivo = clienteSel.prestamos_activos?.[0] || clienteSel.progreso_pagos;
+      // Buscamos el préstamo en la lista de activos que envía el backend
+      const prestamo = clienteSel.prestamos_activos?.[0];
       
-      if (pActivo) {
-        const total = Number(pActivo.monto_total || pActivo.monto_total_pagar) || 0;
-        const cuotas = Number(pActivo.cuotas || clienteSel.progreso_pagos?.total_cuotas) || 1;
+      if (prestamo) {
+        const total = Number(prestamo.monto_total) || 0;
+        // Buscamos las cuotas en el préstamo o en progreso_pagos
+        const cuotas = Number(prestamo.cuotas || clienteSel.progreso_pagos?.total_cuotas) || 1;
+        
         const sugerencia = total / cuotas;
         setMontoAbono(sugerencia.toFixed(2));
+      } else {
+        setMontoAbono('0.00');
       }
     }
   }, [semanaSeleccionada, clienteSel]);
@@ -83,16 +88,20 @@ export default function PagosPage() {
     setSugerencias([]);
     setBusqueda(entidad.nombre);
     setSemanaSeleccionada('');
+    setMontoAbono('');
   };
 
   const handleAplicarPago = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clienteSel || !montoAbono) return;
+    if (!clienteSel || !montoAbono || !semanaSeleccionada) return;
 
     setLoading(true);
     try {
+      // Usamos el ID del primer préstamo activo disponible
+      const prestamoId = clienteSel.prestamos_activos?.[0]?.id || clienteSel.ultimo_prestamo_id;
+      
       const res = await api.post('/abonos/', {
-        prestamo: clienteSel.ultimo_prestamo_id,
+        prestamo: prestamoId,
         monto: Number(montoAbono),
         semana_numero: Number(semanaSeleccionada),
         monto_penalizacion: Number(montoPenalizacion),
@@ -116,6 +125,7 @@ export default function PagosPage() {
       setBusqueda('');
       setMontoAbono('');
       setMontoPenalizacion(0);
+      setSemanaSeleccionada('');
 
     } catch (error) {
       lanzarAlerta('error', "❌ Error al procesar el pago");
@@ -171,7 +181,7 @@ export default function PagosPage() {
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Número de Cuota a Liquidar</label>
               <select required value={semanaSeleccionada} onChange={(e) => setSemanaSeleccionada(e.target.value)} className="w-full p-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-[#0047AB] font-bold text-slate-700 cursor-pointer">
                 <option value="">Selecciona el periodo de pago...</option>
-                {[...Array(clienteSel?.progreso_pagos?.total_cuotas || 20)].map((_, i) => (
+                {[...Array(clienteSel?.prestamos_activos?.[0]?.cuotas || clienteSel?.progreso_pagos?.total_cuotas || 20)].map((_, i) => (
                   <option key={i + 1} value={i + 1}>Abono #{i + 1}</option>
                 ))}
               </select>
@@ -184,6 +194,7 @@ export default function PagosPage() {
                   <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-emerald-500 text-xl">$</span>
                   <input
                     type="number"
+                    step="0.01"
                     min={0}
                     required
                     value={montoAbono}
@@ -196,11 +207,8 @@ export default function PagosPage() {
                 {clienteSel && (
                   <div className="flex justify-between px-2 text-[10px] text-[#0047AB] font-black uppercase italic animate-in fade-in duration-300">
                     <span>Cuota sugerida:</span>
-                    <span>
-                      {/* 🔥 Cálculo blindado Nancy: 6500 / 12 = 541.67 */}
-                      ${(Number(clienteSel.prestamos_activos?.[0]?.monto_total || clienteSel.progreso_pagos?.monto_total || 0) / 
-                         Number(clienteSel.prestamos_activos?.[0]?.cuotas || clienteSel.progreso_pagos?.total_cuotas || 1)
-                        ).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    <span className="underline decoration-dotted">
+                      ${(Number(clienteSel.prestamos_activos?.[0]?.monto_total || 0) / Number(clienteSel.prestamos_activos?.[0]?.cuotas || 1)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 )}
@@ -231,11 +239,7 @@ export default function PagosPage() {
             <div className="space-y-3">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Modalidad de Pago</label>
               <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'E', label: 'Efectivo' },
-                  { id: 'D', label: 'Depósito' },
-                  { id: 'T', label: 'Transferencia' }
-                ].map((m) => (
+                {[{id:'E', l:'Efectivo'}, {id:'D', l:'Depósito'}, {id:'T', l:'Transf.'}].map((m) => (
                   <button
                     key={m.id}
                     type="button"
@@ -245,7 +249,7 @@ export default function PagosPage() {
                       : `border-slate-100 bg-slate-50 text-slate-400`
                       }`}
                   >
-                    {m.label}
+                    {m.l}
                   </button>
                 ))}
               </div>
@@ -253,7 +257,7 @@ export default function PagosPage() {
 
             {/* RESUMEN */}
             {clienteSel && (
-              <div className={`p-6 md:p-8 rounded-3xl md:rounded-[3rem] border animate-in slide-in-from-bottom-2 duration-500 ${clienteSel.es_grupo ? 'bg-purple-50 border-purple-100' : 'bg-emerald-50 border-emerald-100'}`}>
+              <div className={`p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] border animate-in slide-in-from-bottom-2 duration-500 ${clienteSel.es_grupo ? 'bg-purple-50 border-purple-100' : 'bg-emerald-50 border-emerald-100'}`}>
                 <div className="space-y-3">
                   <div className="flex justify-between text-slate-500 font-bold text-xs">
                     <span>SALDO TOTAL (CON MORA):</span>
@@ -265,7 +269,6 @@ export default function PagosPage() {
                       <span>Capital actual: ${Number(clienteSel.saldo_actual - (Number(clienteSel.total_penalizaciones) || 0)).toLocaleString()}</span>
                       <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
                     </div>
-
                     <div className="flex justify-between text-rose-500 text-[10px] font-black uppercase tracking-tighter pt-1">
                       <span>Abono a aplicar:</span>
                       <span>- ${(Number(montoAbono) + Number(montoPenalizacion)).toLocaleString('es-MX')}</span>
@@ -282,25 +285,12 @@ export default function PagosPage() {
               </div>
             )}
 
-            <button type="submit" disabled={loading || !clienteSel || !montoAbono} className={`w-full py-5 md:py-6 text-white font-black rounded-2xl md:rounded-[2rem] shadow-xl transition-all uppercase text-[10px] md:text-xs tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30 ${clienteSel?.es_grupo ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#050533] hover:bg-[#0047AB]'}`}>
+            <button type="submit" disabled={loading || !clienteSel || !montoAbono || !semanaSeleccionada} className={`w-full py-5 md:py-6 text-white font-black rounded-2xl md:rounded-[2rem] shadow-xl transition-all uppercase text-[10px] md:text-xs tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30 ${clienteSel?.es_grupo ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#050533] hover:bg-[#0047AB]'}`}>
               {loading ? <Loader2 className="animate-spin" /> : <>Confirmar y Emitir Recibo <CheckCircle2 size={18} /></>}
             </button>
           </form>
         </div>
       </div>
-      
-      {/* ALERTA */}
-      {alerta && (
-        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'}`}>
-          <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
-            {alerta.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Sistema Express</p>
-            <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
