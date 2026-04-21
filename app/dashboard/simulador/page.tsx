@@ -22,7 +22,7 @@ export default function ProyeccionPage() {
   // --- ESTADOS DE DATOS ---
   const [nombreCliente, setNombreCliente] = useState('');
   const [direccion, setDireccion] = useState('');
-  const [poblacion, setPoblacion] = useState('Acuitlapilco, TLAXCALA');
+  const [poblacion, setPoblacion] = useState('');
   const [curp, setCurp] = useState('');
   const [telefono, setTelefono] = useState('');
   const [nombreAval, setNombreAval] = useState('');
