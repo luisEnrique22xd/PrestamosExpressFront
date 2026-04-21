@@ -13,6 +13,8 @@ const TASAS_POR_MODALIDAD = {
 };
 
 export default function PrestamosPage() {
+
+
   const [tipoPrestamo, setTipoPrestamo] = useState<'I' | 'G'>('I');
   const [clienteEncontrado, setClienteEncontrado] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -54,6 +56,17 @@ export default function PrestamosPage() {
     setAlerta({ type, msg });
     setTimeout(() => setAlerta(null), 6000);
   };
+  const [esUrgente, setEsUrgente] = useState(false);
+  const [user, setUser] = useState({ role: '' });
+
+  useEffect(() => {
+    // Leemos el rol del localStorage
+    const savedRole = localStorage.getItem('user_role');
+    setUser({ role: savedRole || '' });
+  }, []);
+
+  // Variable auxiliar para scannability
+  const isAdmin = user.role === 'admin';
 
   // REGLA DE BLOQUEO: Si el cliente seleccionado ya debe (Individual o Grupal)
   const tieneBloqueo = useMemo(() => {
@@ -73,7 +86,7 @@ export default function PrestamosPage() {
 
   // --- BUSCADOR POR NOMBRE (INDIVIDUAL) ---
   const buscarClientePorNombre = async (val: string) => {
-    setFormData({ ...formData, cliente: val }); 
+    setFormData({ ...formData, cliente: val });
     if (val.length > 2) {
       try {
         const res = await api.get(`/clientes/directorio-hibrido/?search=${val}`);
@@ -150,6 +163,7 @@ export default function PrestamosPage() {
       const payload = {
         ...formData,
         tipo: tipoPrestamo,
+        es_urgente: esUrgente,
         integrantes: tipoPrestamo === 'G' ? integrantes.map(i => i.id) : [],
         monto_capital: capitalNum,
         monto_total_pagar: calculos.totalPagar,
@@ -164,6 +178,7 @@ export default function PrestamosPage() {
       }
       await api.post('/prestamos/', payload);
       lanzarAlerta('success', "Crédito autorizado correctamente.");
+      setEsUrgente(false); // Resetear el bypass tras el éxito
       handleReset();
     } catch (error: any) {
       lanzarAlerta('error', error.response?.data?.error || "Error al procesar crédito.");
@@ -175,7 +190,7 @@ export default function PrestamosPage() {
       cliente: '', nombre_grupo: '', grupo_id: '', monto_capital: '', tasa_interes: '2.5', cuotas: '8',
       modalidad: 'S', nombre_aval: '', direccion_aval: '', telefono_aval: '',
       curp_aval: '', parentesco_aval: '', garantia_descripcion: '', nombre_aval_2: '', direccion_aval_2: '', telefono_aval_2: '',
-    curp_aval_2: '', parentesco_aval_2: '',
+      curp_aval_2: '', parentesco_aval_2: '',
     });
     setIntegrantes([]);
     setClienteEncontrado(null);
@@ -231,11 +246,41 @@ export default function PrestamosPage() {
                 </div>
               )}
 
-              {clienteEncontrado && (
-                <p className={`text-[10px] font-black uppercase ml-2 italic flex items-center gap-1 ${tieneBloqueo ? 'text-red-500' : 'text-emerald-500'}`}>
-                  {tieneBloqueo ? <X size={12} /> : <Check size={12} />}
-                  {tieneBloqueo ? 'RESTRINGIDO: POSEE DEUDA' : 'CLIENTE SELECCIONADO'}
-                </p>
+              {clienteEncontrado && tieneBloqueo && (
+                <div className="mt-4 space-y-3">
+                  {/* Mensaje de error visual */}
+                  <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-red-600">
+                    <X size={16} className="shrink-0" />
+                    <p className="text-[10px] font-black uppercase italic">
+                      Restricción: El cliente posee una deuda activa
+                    </p>
+                  </div>
+
+                  {/* 🔥 SECCIÓN DE DESBLOQUEO (Solo para Admin) */}
+                  {isAdmin && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-3xl border-dashed animate-in zoom-in-95 duration-300">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 text-amber-700">
+                          <AlertCircle size={20} />
+                          <div className="flex flex-col">
+                            <span className="text-[9px] font-black uppercase leading-tight">Autorización Especial</span>
+                            <span className="text-[8px] font-bold opacity-70">¿Permitir segundo préstamo?</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEsUrgente(!esUrgente)}
+                          className={`px-5 py-2.5 rounded-2xl text-[9px] font-black transition-all shadow-sm ${esUrgente
+                            ? 'bg-red-600 text-white ring-4 ring-red-100'
+                            : 'bg-white text-amber-600 border border-amber-200 hover:bg-amber-100'
+                            }`}
+                        >
+                          {esUrgente ? 'BLOQUEO ANULADO' : 'ACTIVAR EXCEPCIÓN'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ) : (
@@ -297,45 +342,45 @@ export default function PrestamosPage() {
 
           {/* FORMULARIO DE AVAL */}
           {/* SECCIÓN DE AVALES */}
-<div className="col-span-1 md:col-span-2 space-y-6">
-  {/* AVAL 1 (Siempre visible) */}
-  <div className="p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-6">
-    <h3 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2 italic">
-      <ShieldCheck size={18} /> Información del Aval Principal
-    </h3>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-      <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
-      <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
-      <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" required />
-      <input type="text" placeholder="CURP" value={formData.curp_aval} onChange={(e) => setFormData({ ...formData, curp_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
-      <input type="text" placeholder="Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
-    </div>
-  </div>
+          <div className="col-span-1 md:col-span-2 space-y-6">
+            {/* AVAL 1 (Siempre visible) */}
+            <div className="p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-6">
+              <h3 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2 italic">
+                <ShieldCheck size={18} /> Información del Aval Principal
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                <input type="text" placeholder="Nombre completo" value={formData.nombre_aval} onChange={(e) => setFormData({ ...formData, nombre_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
+                <input type="tel" placeholder="Teléfono" value={formData.telefono_aval} onChange={(e) => setFormData({ ...formData, telefono_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" required />
+                <input type="text" placeholder="Dirección" value={formData.direccion_aval} onChange={(e) => setFormData({ ...formData, direccion_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm md:col-span-2" required />
+                <input type="text" placeholder="CURP" value={formData.curp_aval} onChange={(e) => setFormData({ ...formData, curp_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
+                <input type="text" placeholder="Parentesco" value={formData.parentesco_aval} onChange={(e) => setFormData({ ...formData, parentesco_aval: e.target.value })} className="p-4 rounded-xl border border-blue-100 outline-none font-bold text-sm" />
+              </div>
+            </div>
 
-  {/* AVAL 2 (Condicional: Solo si Capital > 7500) */}
-  {Number(formData.monto_capital) >= 7500 && (
-    <div className="p-8 bg-purple-50/30 rounded-[2.5rem] border border-purple-100 space-y-6 animate-in slide-in-from-top duration-500">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-2 italic">
-          <UserPlus size={18} />
-        </h3>
-        <span className="text-[8px] bg-purple-200 text-purple-700 px-2 py-1 rounded-full font-black">OBLIGATORIO</span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-        <input type="text" placeholder="Nombre completo del segundo aval" value={formData.nombre_aval_2} onChange={(e) => setFormData({ ...formData, nombre_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
-        <input type="tel" placeholder="Teléfono" value={formData.telefono_aval_2} onChange={(e) => setFormData({ ...formData, telefono_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
-        <input type="text" placeholder="Dirección" value={formData.direccion_aval_2} onChange={(e) => setFormData({ ...formData, direccion_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm md:col-span-2" required />
-        <input type="text" placeholder="CURP" value={formData.curp_aval_2} onChange={(e) => setFormData({ ...formData, curp_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
-        <input type="text" placeholder="Parentesco" value={formData.parentesco_aval_2} onChange={(e) => setFormData({ ...formData, parentesco_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" />
-      </div>
-    </div>
-  )}
+            {/* AVAL 2 (Condicional: Solo si Capital > 7500) */}
+            {Number(formData.monto_capital) >= 7500 && (
+              <div className="p-8 bg-purple-50/30 rounded-[2.5rem] border border-purple-100 space-y-6 animate-in slide-in-from-top duration-500">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-2 italic">
+                    <UserPlus size={18} />
+                  </h3>
+                  <span className="text-[8px] bg-purple-200 text-purple-700 px-2 py-1 rounded-full font-black">OBLIGATORIO</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                  <input type="text" placeholder="Nombre completo del segundo aval" value={formData.nombre_aval_2} onChange={(e) => setFormData({ ...formData, nombre_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
+                  <input type="tel" placeholder="Teléfono" value={formData.telefono_aval_2} onChange={(e) => setFormData({ ...formData, telefono_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
+                  <input type="text" placeholder="Dirección" value={formData.direccion_aval_2} onChange={(e) => setFormData({ ...formData, direccion_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm md:col-span-2" required />
+                  <input type="text" placeholder="CURP" value={formData.curp_aval_2} onChange={(e) => setFormData({ ...formData, curp_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
+                  <input type="text" placeholder="Parentesco" value={formData.parentesco_aval_2} onChange={(e) => setFormData({ ...formData, parentesco_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" />
+                </div>
+              </div>
+            )}
 
-  {/* GARANTÍA (Se mantiene abajo) */}
-  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-    <input type="text" placeholder="Descripción de la Garantía (Ej. Laptop, Factura de Moto...)" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="w-full p-2 bg-transparent outline-none font-bold text-sm" />
-  </div>
-</div>
+            {/* GARANTÍA (Se mantiene abajo) */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <input type="text" placeholder="Descripción de la Garantía (Ej. Laptop, Factura de Moto...)" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="w-full p-2 bg-transparent outline-none font-bold text-sm" />
+            </div>
+          </div>
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Frecuencia</label>
@@ -366,12 +411,17 @@ export default function PrestamosPage() {
 
           <button
             type="submit"
-            disabled={tieneBloqueo || loading || !formData.monto_capital}
-            className={`col-span-1 md:col-span-2 mt-4 py-5 md:py-6 rounded-2xl md:rounded-[2.2rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl flex items-center justify-center gap-4 ${tieneBloqueo ? 'bg-slate-200 text-slate-400 cursor-not-allowed border-2 border-slate-300' : 'bg-[#050533] text-white hover:bg-[#0047AB]'
+            // El botón se habilita si: (No hay bloqueo) O (Si hay bloqueo pero activaste esUrgente)
+            disabled={(!esUrgente && tieneBloqueo) || loading || !formData.monto_capital}
+            className={`col-span-1 md:col-span-2 mt-4 py-5 md:py-6 rounded-2xl md:rounded-[2.2rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all shadow-2xl flex items-center justify-center gap-4 ${(!esUrgente && tieneBloqueo)
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : esUrgente
+                  ? 'bg-red-700 text-white animate-pulse shadow-red-200'
+                  : 'bg-[#050533] text-white hover:bg-[#0047AB]'
               }`}
           >
             <ShieldCheck size={18} />
-            <span>{loading ? 'Sincronizando...' : 'Autorizar Crédito'}</span>
+            <span>{loading ? 'Procesando...' : esUrgente ? 'AUTORIZAR COMO ADMIN' : 'Autorizar Crédito'}</span>
           </button>
         </form>
       </div>
