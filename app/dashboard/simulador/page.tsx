@@ -243,6 +243,10 @@ const [direccionAval2, setDireccionAval2] = useState('');
               <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
               <input placeholder="Domicilio / Ubicación" value={direccion} onChange={e => setDireccion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
             </div>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
+              <input placeholder="Población" value={poblacion} onChange={e => setPoblacion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
+            </div>
             {/* PANEL IZQUIERDO: CONFIGURACIÓN (Dentro del panel de inputs) */}
 <div className="space-y-3 pt-4 border-t border-slate-50">
     {/* Aval 1 (Ya lo tienes) */}
