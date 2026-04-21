@@ -41,24 +41,20 @@ export default function PagosPage() {
     }
   }, [clienteSel]);
 
-  // 2. 🔥 CORRECCIÓN: Cálculo de sugerencia de abono
-  useEffect(() => {
-    if (clienteSel && semanaSeleccionada) {
-      // Buscamos el préstamo en la lista de activos que envía el backend
-      const prestamo = clienteSel.prestamos_activos?.[0];
-      
-      if (prestamo) {
-        const total = Number(prestamo.monto_total) || 0;
-        // Buscamos las cuotas en el préstamo o en progreso_pagos
-        const cuotas = Number(prestamo.cuotas || clienteSel.progreso_pagos?.total_cuotas) || 1;
-        
-        const sugerencia = total / cuotas;
-        setMontoAbono(sugerencia.toFixed(2));
-      } else {
-        setMontoAbono('0.00');
-      }
-    }
-  }, [semanaSeleccionada, clienteSel]);
+  // 2. CORRECCIÓN: Cálculo de sugerencia de abono
+ useEffect(() => {
+  if (clienteSel && semanaSeleccionada) {
+    // 🔥 CAMBIO AQUÍ: Accedemos a través de progreso_pagos que es donde viene la info en tu JSON
+    const totalPrestamo = Number(clienteSel.progreso_pagos?.monto_total) || 0;
+    const numCuotas = Number(clienteSel.progreso_pagos?.total_cuotas) || 1;
+    
+    // Calculamos la sugerencia (Nancy: 6500 / 12 = 541.666...)
+    const sugerencia = totalPrestamo / numCuotas;
+
+    // Lo pasamos a string con 2 decimales para que se vea limpio en el input
+    setMontoAbono(sugerencia.toFixed(2));
+  }
+}, [semanaSeleccionada, clienteSel]);
 
   const buscarEntidades = async (val: string) => {
     setBusqueda(val);
