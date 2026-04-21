@@ -161,19 +161,20 @@ export const generarPagare = (data: any) => {
 
   // --- AREA DE FIRMAS DINÁMICA ---
   doc.setFontSize(7);
-  const hayAval2 = capital >= 7500 && nombre_aval_2;
+  // --- AREA DE FIRMAS DINÁMICA ---
+  doc.setFontSize(7);
+  // Validamos contra el capital y que el nombre 2 no venga vacío
+  const hayAval2 = capital >= 7500 && data.nombreAval2;
 
   if (hayAval2) {
     doc.setFontSize(6.5);
-    // Aval 1
     doc.text(avalNombre, 136, yBase + 15, { align: 'center', maxWidth: 45 });
-    // Aval 2
-    doc.text(nombre_aval_2.toUpperCase(), 136, yBase + 24, { align: 'center', maxWidth: 45 });
+    // Usamos data.nombreAval2 que es lo que envías desde el simulador
+    doc.text(data.nombreAval2.toUpperCase(), 136, yBase + 24, { align: 'center', maxWidth: 45 });
     
     doc.line(117, yBase + 32, 155, yBase + 32); 
     doc.text("FIRMAS AVALES", 136, yBase + 35, { align: 'center' });
   } else {
-    // Caso un solo aval
     doc.setFont("helvetica", "bold");
     doc.text(avalNombre, 136, yBase + 20, { align: 'center', maxWidth: 45 });
     doc.setFont("helvetica", "normal");

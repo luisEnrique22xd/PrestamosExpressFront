@@ -135,21 +135,18 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   // --- 6. SECCIÓN DE FIRMAS ---
   const autoTableState = (doc as any).lastAutoTable;
   let currentY = autoTableState ? autoTableState.finalY + 25 : 150;
-
   if (!esGrupal) {
-    const hayAval2 = parseFloat(monto) >= 7500 && nombre_aval_2;
+  // REGLA: Si el monto es >= 7500 y existe el dato del segundo aval
+  const hayAval2 = parseFloat(monto) >= 7500 && datos.nombreAval2;
     doc.setFontSize(8);
     doc.setTextColor(40);
 
     if (hayAval2) {
-      // DISEÑO 3 FIRMAS
       const yFirma = currentY;
-      doc.setDrawColor(180);
-      
       // Cliente
       doc.line(15, yFirma, 65, yFirma);
       doc.setFont("helvetica", "bold");
-      doc.text("FIRMA CLIENTE", 40, yFirma - 4, { align: 'center' });
+      doc.text("FIRMA DEL CLIENTE", 40, yFirma - 4, { align: 'center' });
       doc.setFont("helvetica", "normal");
       doc.text(nombreCliente.toUpperCase(), 40, yFirma + 5, { align: 'center', maxWidth: 45 });
 
@@ -165,11 +162,12 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
       doc.setFont("helvetica", "bold");
       doc.text("FIRMA AVAL 2", 160, yFirma - 4, { align: 'center' });
       doc.setFont("helvetica", "normal");
-      doc.text(nombre_aval_2.toUpperCase(), 160, yFirma + 5, { align: 'center', maxWidth: 45 });
+      doc.text(datos.nombreAval2.toUpperCase(), 160, yFirma + 5, { align: 'center', maxWidth: 45 });
     } else {
-      // DISEÑO 2 FIRMAS (ORIGINAL)
+      // DISEÑO INDIVIDUAL NORMAL (2 FIRMAS)
       doc.setFont("helvetica", "bold");
       doc.text("FIRMA DEL CLIENTE", 55, currentY - 12, { align: 'center' });
+      doc.setDrawColor(180);
       doc.line(20, currentY, 90, currentY);
       doc.setFont("helvetica", "normal");
       doc.text(nombreCliente.toUpperCase(), 55, currentY + 5, { align: 'center' });
@@ -179,8 +177,8 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
       doc.line(120, currentY, 190, currentY);
       doc.setFont("helvetica", "normal");
       doc.text(nombreAval.toUpperCase(), 155, currentY + 5, { align: 'center' });
-    }
-  } else {
+    }}
+   else {
     // DISEÑO GRUPAL (MANTENIDO)
     doc.setFont("helvetica", "bold");
     doc.text("FIRMA DEL REPRESENTANTE LEGAL", pageWidth / 2, currentY - 12, { align: 'center' });
