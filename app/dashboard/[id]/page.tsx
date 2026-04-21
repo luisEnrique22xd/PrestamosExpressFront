@@ -33,9 +33,7 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 
 
 export default function ClienteDashboard({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-  // 🔥 ESTADO PARA CONTROL DE CUENTA SELECCIONADA
   const [selectedPrestamoId, setSelectedPrestamoId] = useState<number | null>(null);
-  
   const params = use(paramsPromise);
   const router = useRouter();
   const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
@@ -75,6 +73,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     setUser({ role: savedRole });
   }, []);
 
+  // --- 1. CARGA DE DATOS DEL EXPEDIENTE ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -94,6 +93,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     fetchData();
   }, [params.id]);
 
+  // --- 2. CARGA DE DIRECTORIO HÍBRIDO ---
   useEffect(() => {
     const cargarDirectorio = async () => {
       try {
@@ -104,6 +104,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     cargarDirectorio();
   }, []);
 
+  // --- 3. LÓGICA DEL BUSCADOR ---
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value;
     setBusqueda(valor);
@@ -126,10 +127,10 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     router.push(`/dashboard/${path}`);
   };
 
+  // --- 4. LÓGICA DE ABONO (Ajustada para ID Seleccionado) ---
   const handleRegistrarPago = async () => {
     if (!montoAbono) return lanzarAlerta('error', "❌ Ingresa un monto válido");
-    // 🔥 USAMOS EL ID SELECCIONADO ESPECÍFICAMENTE
-    if (!selectedPrestamoId) return lanzarAlerta('error', "❌ Seleccione una cuenta para abonar");
+    if (!selectedPrestamoId) return lanzarAlerta('error', "❌ Error: Seleccione una cuenta.");
 
     try {
       setLoading(true);
@@ -139,11 +140,11 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
         semana_numero: semanaAbono
       });
 
-      // Lógica de recibo (usando el préstamo seleccionado de la lista de data)
-      const prestamoActual = data.prestamos_activos?.find((p:any) => p.id === selectedPrestamoId);
-      const capitalOriginal = parseFloat(prestamoActual?.capital || 0);
+      // Cálculos para el ticket basados en la deuda seleccionada
+      const pActual = data.prestamos_activos?.find((p:any) => p.id === selectedPrestamoId);
+      const capitalOriginal = parseFloat(pActual?.capital || 0);
       const abonoActual = parseFloat(montoAbono);
-      const saldoAnteriorManual = parseFloat(prestamoActual?.total_pagar || 0);
+      const saldoAnteriorManual = parseFloat(pActual?.monto_total || 0);
       const nuevoSaldoCapital = saldoAnteriorManual - abonoActual;
 
       setDatosRecibo({
@@ -160,7 +161,6 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
       setPagoExitoso(true);
       setMontoAbono('');
       
-      // Recarga
       const endpoint = params.id.startsWith('grupo-') 
         ? `/grupos/${params.id.replace('grupo-', '')}/detalle/` 
         : `/clientes/${params.id}/`;
@@ -172,22 +172,22 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
   };
 
   const handleCondonar = async () => {
-    if (motivoCondonacion.length < 10) return lanzarAlerta('error', "⚠️ Justificación muy corta.");
-    try {
-      setProcesandoCondonacion(true);
-      await api.post(`/penalizaciones/${selectedPenalizacion.id}/condonar/`, { 
-        motivo: motivoCondonacion 
-      });
-      setShowCondonarModal(false);
-      const res = await api.get(`/clientes/${params.id}/`);
-      setData(res.data);
-      lanzarAlerta('success', "✅ Recargos condonados. El saldo ha sido actualizado.");
-    } catch (error) { 
-      lanzarAlerta('error', "❌ Error al condonar la mora."); 
-    } finally { 
-      setProcesandoCondonacion(false); 
-    }
-  };
+  if (motivoCondonacion.length < 10) return lanzarAlerta('error', "⚠️ Justificación muy corta.");
+  try {
+    setProcesandoCondonacion(true);
+    await api.post(`/penalizaciones/${selectedPenalizacion.id}/condonar/`, { 
+      motivo: motivoCondonacion 
+    });
+    setShowCondonarModal(false);
+    const res = await api.get(`/clientes/${params.id}/`);
+    setData(res.data);
+    lanzarAlerta('success', "✅ Recargos condonados. El saldo ha sido actualizado.");
+  } catch (error) { 
+    lanzarAlerta('error', "❌ Error al condonar la mora."); 
+  } finally { 
+    setProcesandoCondonacion(false); 
+  }
+};
 
   if (loading && !data) return <div className="p-10 flex items-center gap-3 font-black italic text-slate-400"><Loader2 className="animate-spin"/> Sincronizando Acuitlapilco...</div>;
   if (!data) return <div className="p-10 font-black italic text-red-400 text-center">⚠️ Error: Entidad no localizada en el sistema.</div>;
@@ -259,7 +259,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100">
                   <TrendingUp size={12} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Deuda Total de Cliente</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Saldo Total Cliente</span>
                 </div>
                 <StatusBadge data={data} />
               </div>
@@ -269,30 +269,33 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
               <p className="text-slate-400 text-sm font-medium mt-1">{data.direccion}</p>
             </div>
           </div>
-          <div className="bg-red-50 px-8 py-4 rounded-[2rem] border border-red-100 text-center">
-             <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-1">Saldo Total Deudor</p>
+          {/* Mostramos el saldo total global del cliente a la derecha */}
+          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center min-w-[200px]">
+             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Deuda Consolidada</p>
              <p className="text-3xl font-black text-red-600 italic tracking-tighter">${(data.saldo_actual || 0).toLocaleString()}</p>
           </div>
         </header>
 
-        {/* 🔥 SECCIÓN DE CUENTAS INDEPENDIENTES */}
+        {/* 🔥 SECCIÓN DE DEUDAS SEPARADAS (REEMPLAZA LAS 4 CARDS FIJAS) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
           {data.prestamos_activos && data.prestamos_activos.length > 0 ? (
             data.prestamos_activos.map((p: any) => (
-              <div key={p.id} className="bg-white p-8 rounded-[2.5rem] border-l-[12px] border-[#0047AB] shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div key={p.id} className="bg-white p-8 rounded-[3rem] border-l-[12px] border-[#0047AB] shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div className="absolute top-0 right-0 bg-[#050533] text-white px-5 py-2 rounded-bl-2xl text-[9px] font-black uppercase tracking-widest">
                   Folio: PR-{p.folio.toString().padStart(5, '0')}
                 </div>
+                
                 <div className="space-y-6">
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase italic tracking-tighter mb-1">Saldo de esta cuenta ({p.modalidad})</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase italic mb-1">Saldo de esta cuenta ({p.modalidad})</p>
                     <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter">
-                      ${p.total_pagar.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      ${p.monto_total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                     </h2>
                   </div>
+
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
                     <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">Capital Inicial</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase">Capital</p>
                       <p className="font-bold text-slate-600 text-sm">${p.capital.toLocaleString()}</p>
                     </div>
                     <div>
@@ -300,6 +303,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                       <p className="font-bold text-slate-600 text-[10px] uppercase">{p.aval}</p>
                     </div>
                   </div>
+
                   <button 
                     onClick={() => {
                       setSelectedPrestamoId(p.id);
@@ -314,13 +318,13 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
               </div>
             ))
           ) : (
-            <div className="col-span-full p-10 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 text-center">
-              <p className="text-slate-400 font-black italic uppercase text-xs">No hay cuentas activas</p>
+            <div className="col-span-full p-10 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 text-center">
+              <p className="text-slate-400 font-black italic uppercase text-xs">No hay préstamos activos</p>
             </div>
           )}
         </div>
 
-        {/* GRAFICAS Y LIQUIDACIÓN */}
+        {/* GRAFICAS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-50 shadow-sm">
             <h4 className="font-black text-slate-800 text-lg uppercase italic mb-8">Flujo de Abonos</h4>
@@ -336,6 +340,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
               </ResponsiveContainer>
             </div>
           </div>
+
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-50 shadow-sm flex flex-col items-center">
             <h4 className="font-black text-slate-800 mb-2 uppercase italic">Liquidación Global</h4>
             <div className="flex-1 relative w-full flex items-center justify-center">
@@ -394,7 +399,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                   <h2 className="text-2xl font-black text-slate-800 italic uppercase">
                     Registrar Abono 
                     {selectedPrestamoId && (
-                      <span className="text-[#0047AB] ml-2 font-black italic">
+                      <span className="text-[#0047AB] ml-2">
                         #{data.prestamos_activos?.find((p:any) => p.id === selectedPrestamoId)?.folio}
                       </span>
                     )}
@@ -453,7 +458,6 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
           </div>
         </div>
       )}
-      
       {alerta && (
         <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${
           alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
