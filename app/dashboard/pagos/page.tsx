@@ -45,17 +45,26 @@ export default function PagosPage() {
   }, [clienteSel]);
 
   useEffect(() => {
-    if (clienteSel && semanaSeleccionada) {
-      // Calculamos la cuota base (Monto total del préstamo / número de cuotas)
-      // Usamos los datos que ya vienen en el objeto del cliente
-      const totalPrestamo = Number(clienteSel.monto_total_pagar) || 0;
-      const numCuotas = Number(clienteSel.cuotas) || 8;
-      const sugerencia = totalPrestamo / numCuotas;
+  if (clienteSel && semanaSeleccionada) {
+    // 1. Buscamos el préstamo activo del JSON que me pasaste
+    const prestamo = clienteSel.prestamos_activos?.[0];
 
-      // Solo lo autocompletamos si el campo de monto está vacío o Alexander acaba de cambiar la semana
-      setMontoAbono(sugerencia.toString());
+    if (prestamo) {
+      // 2. Extraemos el monto_total (Nancy: 6500, Luis: 3600)
+      const montoTotal = Number(prestamo.monto_total) || 0;
+
+      // 3. OJO: Como en tu JSON no viene el campo "cuotas", 
+      // definimos 12 por defecto (o el número que uses en tu negocio)
+      // Si logras que el backend mande "cuotas": 12 en la lista, cámbialo aquí.
+      const numCuotas = 12; 
+
+      const sugerencia = montoTotal / numCuotas;
+
+      // Seteamos el abono con 2 decimales
+      setMontoAbono(sugerencia.toFixed(2));
     }
-  }, [semanaSeleccionada, clienteSel]);
+  }
+}, [semanaSeleccionada, clienteSel]);
 
   // 1. Buscador Híbrido
   const buscarEntidades = async (val: string) => {
