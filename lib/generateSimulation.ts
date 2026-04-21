@@ -13,7 +13,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   const { 
     monto, modalidad, cuotas, interes, pagoPorCuota, 
     nombreCliente, nombreAval, esGrupal, 
-    numIntegrantes, cuotaPorSocio, nombre_aval_2 
+    numIntegrantes, cuotaPorSocio, nombreAval2 
   } = datos;
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -82,8 +82,8 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   doc.text(`PLAZO:`, col2X, 77);
   
   doc.setFont("helvetica", "normal");
-  const textoAvales = nombre_aval_2 
-    ? `${nombreAval.toUpperCase()} / ${nombre_aval_2.toUpperCase()}`
+  const textoAvales = nombreAval2 
+    ? `${nombreAval.toUpperCase()} / ${nombreAval2.toUpperCase()}`
     : nombreAval.toUpperCase();
     
   doc.text(doc.splitTextToSize(textoAvales, 85), val1X, 77);
