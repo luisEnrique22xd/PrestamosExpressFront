@@ -33,15 +33,15 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 
 
 export default function ClienteDashboard({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-  const [selectedPrestamoId, setSelectedPrestamoId] = useState<number | null>(null);
   const params = use(paramsPromise);
   const router = useRouter();
   const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
-  const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
-    setAlerta({ type, msg });
-    setTimeout(() => setAlerta(null), 5000);
-  };
+// Función auxiliar para auto-limpiar la alerta
+const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+  setAlerta({ type, msg });
+  setTimeout(() => setAlerta(null), 5000);
+};
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -66,9 +66,10 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
   const [motivoCondonacion, setMotivoCondonacion] = useState('');
   const [procesandoCondonacion, setProcesandoCondonacion] = useState(false);
 
-  const [user, setUser] = useState<{ role: string | null }>({ role: null });
+ const [user, setUser] = useState<{ role: string | null }>({ role: null });
 
   useEffect(() => {
+    // 2. Leemos el rol cuando el componente se monta
     const savedRole = localStorage.getItem('user_role');
     setUser({ role: savedRole });
   }, []);
@@ -93,7 +94,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     fetchData();
   }, [params.id]);
 
-  // --- 2. CARGA DE DIRECTORIO HÍBRIDO ---
+  // --- 2. CARGA DE DIRECTORIO HÍBRIDO PARA BUSCADOR ---
   useEffect(() => {
     const cargarDirectorio = async () => {
       try {
@@ -127,24 +128,21 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     router.push(`/dashboard/${path}`);
   };
 
-  // --- 4. LÓGICA DE ABONO (Ajustada para ID Seleccionado) ---
+  // --- 4. LÓGICA DE ABONO ---
   const handleRegistrarPago = async () => {
     if (!montoAbono) return lanzarAlerta('error', "❌ Ingresa un monto válido");
-    if (!selectedPrestamoId) return lanzarAlerta('error', "❌ Error: Seleccione una cuenta.");
-
     try {
       setLoading(true);
       const response = await api.post('/abonos/', {
-        prestamo: selectedPrestamoId, 
+        prestamo: data.ultimo_prestamo_id,
         monto: montoAbono,
         semana_numero: semanaAbono
       });
 
-      // Cálculos para el ticket basados en la deuda seleccionada
-      const pActual = data.prestamos_activos?.find((p:any) => p.id === selectedPrestamoId);
-      const capitalOriginal = parseFloat(pActual?.capital || 0);
+      const capitalOriginal = parseFloat(data.progreso_pagos?.monto_capital || 0);
       const abonoActual = parseFloat(montoAbono);
-      const saldoAnteriorManual = parseFloat(pActual?.monto_total || 0);
+      const pagadoAnterior = parseFloat(data.progreso_pagos?.monto_pagado || 0);
+      const saldoAnteriorManual = capitalOriginal - pagadoAnterior;
       const nuevoSaldoCapital = saldoAnteriorManual - abonoActual;
 
       setDatosRecibo({
@@ -175,12 +173,17 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
   if (motivoCondonacion.length < 10) return lanzarAlerta('error', "⚠️ Justificación muy corta.");
   try {
     setProcesandoCondonacion(true);
+    // Usamos el ID de la mora que seleccionamos al abrir el modal
     await api.post(`/penalizaciones/${selectedPenalizacion.id}/condonar/`, { 
       motivo: motivoCondonacion 
     });
+    
     setShowCondonarModal(false);
+    
+    // 🔥 IMPORTANTE: Recarga los datos para que el saldo baje de $1,115 a $1,100
     const res = await api.get(`/clientes/${params.id}/`);
     setData(res.data);
+    
     lanzarAlerta('success', "✅ Recargos condonados. El saldo ha sido actualizado.");
   } catch (error) { 
     lanzarAlerta('error', "❌ Error al condonar la mora."); 
@@ -198,22 +201,26 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
   ];
 
   const StatusBadge = ({ data }: { data: any }) => {
-    const isLiquidado = !data.tiene_prestamo_activo && Number(data.saldo_actual) <= 0;
-    if (isLiquidado) {
-      return (
-        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-in zoom-in duration-500">
-          <CheckCircle2 size={14} className="animate-bounce" />
-          <span className="text-[10px] font-black uppercase tracking-[0.15em]">Préstamo Liquidado</span>
-        </div>
-      );
-    }
+  // 1. Si no tiene préstamo activo y el saldo es 0, está LIBRE/LIQUIDADO
+  const isLiquidado = !data.tiene_prestamo_activo && Number(data.saldo_actual) <= 0;
+
+  if (isLiquidado) {
     return (
-      <div className="flex items-center gap-2 bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full border border-blue-100 shadow-sm">
-        <div className="w-1.5 h-1.5 bg-[#0047AB] rounded-full animate-pulse" />
-        <span className="text-[10px] font-black uppercase tracking-[0.15em]">Cuenta en Cobro</span>
+      <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-in zoom-in duration-500">
+        <CheckCircle2 size={14} className="animate-bounce" />
+        <span className="text-[10px] font-black uppercase tracking-[0.15em]">Préstamo Liquidado</span>
       </div>
     );
-  };
+  }
+
+  // 2. Si tiene préstamo activo o saldo pendiente, está EN COBRO
+  return (
+    <div className="flex items-center gap-2 bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full border border-blue-100 shadow-sm">
+      <div className="w-1.5 h-1.5 bg-[#0047AB] rounded-full animate-pulse" />
+      <span className="text-[10px] font-black uppercase tracking-[0.15em]">Cuenta en Cobro</span>
+    </div>
+  );
+};
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFE]">
@@ -259,69 +266,48 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100">
                   <TrendingUp size={12} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Saldo Total Cliente</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Préstamo #{data.numero_prestamos || 1}</span>
                 </div>
                 <StatusBadge data={data} />
+                {data.tiene_prestamo_activo && (
+                  <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                    {data.progreso_pagos?.modalidad === 'Q' ? 'Quincenal' : data.progreso_pagos?.modalidad === 'M' ? 'Mensual' : 'Semanal'}
+                  </span>
+                )}
               </div>
               <h1 className="text-4xl font-black text-slate-800 italic tracking-tighter">
                 {data.tipo === 'G' ? `Grupo: ${data.nombre}` : data.nombre}
               </h1>
               <p className="text-slate-400 text-sm font-medium mt-1">{data.direccion}</p>
+              
+              {data.tipo === 'G' && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {data.integrantes_detalle?.map((socio: any) => (
+                    <div key={socio.id} className="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 shadow-sm">
+                      <User size={10} className="text-purple-600" />
+                      <span className="text-[9px] font-black uppercase text-slate-500">{socio.nombre}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          {/* Mostramos el saldo total global del cliente a la derecha */}
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center min-w-[200px]">
-             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Deuda Consolidada</p>
-             <p className="text-3xl font-black text-red-600 italic tracking-tighter">${(data.saldo_actual || 0).toLocaleString()}</p>
-          </div>
+          {/* <button onClick={() => { setPagoExitoso(false); setShowModal(true); }} className="bg-[#0047AB] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:scale-105 transition-all">
+            <DollarSign size={16} className="inline mr-1" /> Registrar Pago
+          </button> */}
         </header>
 
-        {/* 🔥 SECCIÓN DE DEUDAS SEPARADAS (REEMPLAZA LAS 4 CARDS FIJAS) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          {data.prestamos_activos && data.prestamos_activos.length > 0 ? (
-            data.prestamos_activos.map((p: any) => (
-              <div key={p.id} className="bg-white p-8 rounded-[3rem] border-l-[12px] border-[#0047AB] shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                <div className="absolute top-0 right-0 bg-[#050533] text-white px-5 py-2 rounded-bl-2xl text-[9px] font-black uppercase tracking-widest">
-                  Folio: PR-{p.folio.toString().padStart(5, '0')}
-                </div>
-                
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase italic mb-1">Saldo de esta cuenta ({p.modalidad})</p>
-                    <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter">
-                      ${p.monto_total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                    </h2>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">Capital</p>
-                      <p className="font-bold text-slate-600 text-sm">${p.capital.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">Aval</p>
-                      <p className="font-bold text-slate-600 text-[10px] uppercase">{p.aval}</p>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      setSelectedPrestamoId(p.id);
-                      setPagoExitoso(false);
-                      setShowModal(true);
-                    }}
-                    className="w-full py-4 bg-slate-50 hover:bg-[#0047AB] hover:text-white rounded-2xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2"
-                  >
-                    <DollarSign size={14} /> Registrar Abono
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full p-10 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 text-center">
-              <p className="text-slate-400 font-black italic uppercase text-xs">No hay préstamos activos</p>
-            </div>
-          )}
+        {/* STATS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <StatCard title="Saldo Actual" value={`$${(data.saldo_actual || 0).toLocaleString()}`} icon={DollarSign} color={COLORS.rojoAlerta} />
+          <StatCard title="Pagado" value={`$${(data.progreso_pagos?.monto_pagado || 0).toLocaleString()}`} icon={UserCheck} color={COLORS.verdeExito} />
+          <StatCard title="Contratado" value={`$${(data.progreso_pagos?.monto_capital || 0).toLocaleString()}`} icon={TrendingUp} color={COLORS.azulRey} />
+          <StatCard 
+            title={data.tipo === 'G' ? "Integrantes" : "Teléfono"} 
+            value={data.tipo === 'G' ? `${data.integrantes_detalle?.length || 0} Clientes` : (data.telefono !== 'N/A' ? data.telefono : data.datos_ultimo_aval?.telefono_aval || 'S/N')} 
+            icon={data.tipo === 'G' ? Users : Phone} 
+            color={data.tipo === 'G' ? '#7C3AED' : COLORS.amarilloCuidado} 
+          />
         </div>
 
         {/* GRAFICAS */}
@@ -342,7 +328,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
           </div>
 
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-50 shadow-sm flex flex-col items-center">
-            <h4 className="font-black text-slate-800 mb-2 uppercase italic">Liquidación Global</h4>
+            <h4 className="font-black text-slate-800 mb-2 uppercase italic">Liquidación</h4>
             <div className="flex-1 relative w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <RePie data={cumplimientoData} innerRadius={70} outerRadius={90} dataKey="value" startAngle={90} endAngle={450}>
@@ -357,35 +343,55 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
           </div>
         </div>
 
-        {/* RECARGOS */}
-        <div className="mt-8">
-           <div className="bg-[#050533] p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-900/20">
-              <h4 className="font-black mb-6 uppercase italic text-sky-400">Recargos Activos (1.5%)</h4>
-              <div className="space-y-4 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
-                {data.total_penalizaciones > 0 ? (
-                  <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/10">
-                    <div>
-                      <p className="text-[9px] text-red-400 font-black uppercase">Mora Detectada</p>
-                      <p className="text-sm font-bold text-white">${parseFloat(data.total_penalizaciones).toFixed(2)}</p>
-                    </div>
-                    <button 
-                      onClick={() => { 
-                        setSelectedPenalizacion({ id: data.id_mora_activa, monto_penalizado: data.total_penalizaciones }); 
-                        setShowCondonarModal(true); 
-                      }} 
-                      className="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"
-                    >
-                      Condonar
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-4 text-emerald-400 py-4 italic font-bold">
-                    <CheckCircle2 size={18} />
-                    <span>✓ El cliente está al corriente</span>
-                  </div>
-                )}
-              </div>
+        {/* AVAL Y RECARGOS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+          <div className="space-y-4">
+            <div className="flex justify-between p-5 bg-white rounded-2xl border border-slate-50 shadow-sm">
+              <span className="text-[10px] font-black text-slate-400 uppercase">{data.tipo === 'G' ? 'Representante:' : 'Aval:'}</span>
+              <span className="text-sm font-bold text-slate-800">{data.nombre_aval || data.datos_ultimo_aval?.nombre_aval || 'S/N'}</span>
             </div>
+            <div className="flex justify-between p-5 bg-white rounded-2xl border border-slate-50 shadow-sm">
+              <span className="text-[10px] font-black text-slate-400 uppercase">{data.tipo === 'G' ? 'Cargo:' : 'Parentesco:'}</span>
+              <span className="text-sm font-bold text-slate-800">{data.parentesco_aval || data.datos_ultimo_aval?.parentesco_aval || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between p-5 bg-white rounded-2xl border border-slate-50 shadow-sm">
+              <span className="text-[10px] font-black text-slate-400 uppercase">Garantía:</span>
+              <span className="text-sm font-bold text-slate-800">{data.garantia_descripcion || data.datos_ultimo_aval?.garantia_descripcion || 'S/N'}</span>
+            </div>
+          </div>
+
+         <div className="bg-[#050533] p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-900/20">
+  <h4 className="font-black mb-6 uppercase italic text-sky-400">Recargos Activos (1.5%)</h4>
+  <div className="space-y-4 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+    
+    {/* Cambiamos la validación: si el total de penalizaciones es mayor a 0 */}
+    {data.total_penalizaciones > 0 ? (
+      <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-right-4">
+        <div>
+          <p className="text-[9px] text-red-400 font-black uppercase">Mora Detectada</p>
+          <p className="text-sm font-bold text-white">${parseFloat(data.total_penalizaciones).toFixed(2)}</p>
+          <p className="text-[8px] text-slate-400 italic">Recargo por atraso en cuota</p>
+        </div>
+        <button 
+          onClick={() => { 
+            // Usamos el id_mora_activa que ya nos manda el backend
+            setSelectedPenalizacion({ id: data.id_mora_activa, monto_penalizado: data.total_penalizaciones }); 
+            setShowCondonarModal(true); 
+          }} 
+          className="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"
+        >
+          Condonar
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-4 text-emerald-400 py-4 italic font-bold animate-in zoom-in">
+        <CheckCircle2 size={18} />
+        <span>✓ El cliente está al corriente</span>
+      </div>
+    )}
+
+  </div>
+</div>
         </div>
       </main>
 
@@ -396,15 +402,8 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
             {!pagoExitoso ? (
               <div className="animate-in fade-in">
                 <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-2xl font-black text-slate-800 italic uppercase">
-                    Registrar Abono 
-                    {selectedPrestamoId && (
-                      <span className="text-[#0047AB] ml-2">
-                        #{data.prestamos_activos?.find((p:any) => p.id === selectedPrestamoId)?.folio}
-                      </span>
-                    )}
-                  </h2>
-                  <button onClick={() => {setShowModal(false); setSelectedPrestamoId(null);}} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
+                  <h2 className="text-2xl font-black text-slate-800 italic uppercase">Registrar Abono</h2>
+                  <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
                 </div>
                 <div className="space-y-6">
                   <div>
@@ -414,7 +413,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                   <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Número de Cuota</label>
                     <select value={semanaAbono} onChange={(e) => setSemanaAbono(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700">
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
+                      {Array.from({ length: data.progreso_pagos?.total_cuotas || 12 }, (_, i) => i + 1).map(num => (
                         <option key={num} value={num}>Cuota {num}</option>
                       ))}
                     </select>
@@ -433,7 +432,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                   <p className="text-4xl font-black text-[#0047AB] tracking-tighter italic">${datosRecibo?.saldoRestante}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-4">
-                  <button onClick={() => { setShowModal(false); setPagoExitoso(false); setSelectedPrestamoId(null); }} className="py-4 text-slate-400 font-black uppercase text-[10px]">Cerrar</button>
+                  <button onClick={() => { setShowModal(false); setPagoExitoso(false); }} className="py-4 text-slate-400 font-black uppercase text-[10px]">Cerrar</button>
                   <button onClick={() => generarPDFRecibo(datosRecibo)} className="py-4 bg-[#050533] text-white rounded-2xl font-black uppercase text-[10px] shadow-xl flex items-center justify-center gap-2"><Printer size={16} /> Recibo</button>
                 </div>
               </div>
