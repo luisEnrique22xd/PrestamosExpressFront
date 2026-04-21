@@ -222,15 +222,22 @@ export default function ClientesPage() {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-center">
-                    <span className={`font-black text-sm ${parseFloat(c.saldo_actual) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                      {/* Usamos solo saldo_actual igual que en el dashboard */}
-                      ${parseFloat(c.saldo_actual || '0').toLocaleString('es-MX')}
-                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className={`font-black text-sm ${parseFloat(c.saldo_actual) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                        ${parseFloat(c.saldo_actual || '0').toLocaleString('es-MX')}
+                      </span>
 
-                    {/* La mora solo se muestra como texto informativo, no se suma al número de arriba */}
-                    {parseFloat(c.total_penalizaciones) > 0 && (
-                      <p className="text-[8px] text-red-400 font-bold uppercase italic">+ Mora Detectada</p>
-                    )}
+                      {/* 🔥 ETIQUETA DE CUENTAS MÚLTIPLES */}
+                      {c.prestamos_activos && c.prestamos_activos.length > 1 && (
+                        <span className="mt-1 text-[7px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter border border-amber-200">
+                          {c.prestamos_activos.length} Cuentas Activas
+                        </span>
+                      )}
+
+                      {parseFloat(c.total_penalizaciones) > 0 && (
+                        <p className="text-[8px] text-red-400 font-bold uppercase italic">+ Mora Detectada</p>
+                      )}
+                    </div>
                   </td>
                   <td className="px-8 py-6 text-center">
                     <div className={`mx-auto w-fit px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border-2 ${c.tiene_prestamo_activo ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
@@ -243,6 +250,21 @@ export default function ClientesPage() {
                 {expandedId === `${c.es_grupo ? 'G' : 'I'}-${c.id}` && (
                   <tr className="bg-slate-50/30">
                     <td colSpan={4} className="px-16 py-8 animate-in slide-in-from-top-4 duration-300">
+                      <div className="flex flex-col gap-6">
+                        {/* LISTA RAPIDA DE PRESTAMOS SI HAY MÁS DE UNO */}
+        {c.prestamos_activos && c.prestamos_activos.length > 1 && (
+          <div className="bg-white/60 p-4 rounded-2xl border border-slate-100 space-y-2">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Desglose de Cuentas</p>
+            <div className="flex flex-wrap gap-4">
+              {c.prestamos_activos.map((p: any) => (
+                <div key={p.id} className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-50">
+                  <span className="text-[9px] font-black text-[#0047AB]">#PR-{p.folio.toString().padStart(3, '0')}</span>
+                  <span className="text-[10px] font-bold text-red-500">${p.monto_total.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-center">                        <div className="space-y-1">
                         <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Información Base</p>
                         <p className="text-xs text-slate-600 font-bold leading-tight">{c.es_grupo ? `Integrantes: ${c.num_integrantes}` : c.direccion}</p>
@@ -269,6 +291,7 @@ export default function ClientesPage() {
                             Expediente <ExternalLink size={14} />
                           </button>
                         </div>
+                      </div>
                       </div>
                     </td>
                   </tr>
