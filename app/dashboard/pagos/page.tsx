@@ -24,7 +24,7 @@ export default function PagosPage() {
   const [semanaSeleccionada, setSemanaSeleccionada] = useState<string>('');
   const [modalidadPago, setModalidadPago] = useState('E');
 
-  // --- LÓGICA DINÁMICA DE PENALIZACIONES ---
+  // 1. LÓGICA DINÁMICA DE PENALIZACIONES
   useEffect(() => {
     if (clienteSel) {
       const penalizacionesActivas = clienteSel.penalizaciones?.filter((p: any) => p.activa) || [];
@@ -41,24 +41,23 @@ export default function PagosPage() {
     }
   }, [clienteSel]);
 
-  // --- 🔥 CORRECCIÓN DE RUTAS PARA CUOTA SUGERIDA ---
+  // 2. CÁLCULO DE CUOTA SUGERIDA (FORMATO 2 DECIMALES)
   useEffect(() => {
     if (clienteSel && semanaSeleccionada) {
       const prestamo = clienteSel.prestamos_activos?.[0];
 
       if (prestamo) {
         const montoTotal = Number(prestamo.monto_total) || 0;
-
-        // 🔥 CAMBIO AQUÍ: Usamos las cuotas que vienen del backend
-        // Si no vienen (mientras actualizas el back), 12 para Nancy y 8 para Luis
         const numCuotas = Number(prestamo.cuotas) || (montoTotal === 3600 ? 8 : 12);
-
         const sugerencia = montoTotal / numCuotas;
+        
+        // .toFixed(2) asegura que Alexander vea 541.67 y no 541.666
         setMontoAbono(sugerencia.toFixed(2));
       }
     }
   }, [semanaSeleccionada, clienteSel]);
 
+  // 3. BUSCADOR HÍBRIDO (CON SOPORTE MULTI-PRESTAMO PARA PLACIDO)
   const buscarEntidades = async (val: string) => {
     setBusqueda(val);
     if (val.length > 1) {
@@ -70,41 +69,44 @@ export default function PagosPage() {
     } else { setSugerencias([]); }
   };
 
+  const seleccionarEntidadConFolio = (cliente: any, prestamo: any) => {
+    const entidadConfigurada = {
+      ...cliente,
+      // Usamos el saldo real calculado en el backend (ej. Luis 2700)
+      saldo_actual: prestamo.saldo_restante || prestamo.monto_total, 
+      prestamos_activos: [prestamo],
+      ultimo_prestamo_id: prestamo.id
+    };
+    setClienteSel(entidadConfigurada);
+    setSugerencias([]);
+    setBusqueda(cliente.nombre);
+    setSemanaSeleccionada('');
+    setMontoAbono('');
+  };
+
+  // 4. CÁLCULOS DE SALDO PROYECTADO
   const saldoTotalAnterior = useMemo(() => {
     return Number(clienteSel?.saldo_actual) || 0;
   }, [clienteSel]);
 
   const nuevoSaldoCalculado = useMemo(() => {
-  // 1. Saldo actual que manda el servidor (Capital + Moras detectadas)
-  const saldoTotalConMora = Number(clienteSel?.saldo_actual) || 0;
-  
-  // 2. Lo que Alexander está cobrando en este momento
-  const abonoCuotaRecibido = montoAbono === '' ? 0 : Number(montoAbono);
-  const pagoMultaRecibido = Number(montoPenalizacion) || 0;
+    const saldoConMora = Number(clienteSel?.saldo_actual) || 0;
+    const abonoCuotaRecibido = montoAbono === '' ? 0 : Number(montoAbono);
+    const pagoMultaRecibido = Number(montoPenalizacion) || 0;
 
-  // 3. LA MATEMÁTICA REAL:
-  // Restamos la multa del saldo total para limpiar el capital, 
-  // y luego restamos el abono a capital.
-  // Ejemplo Luis: (3195 - 45) - 450 = 2700
-  const resultado = (saldoTotalConMora - pagoMultaRecibido) - abonoCuotaRecibido;
+    // MATEMÁTICA: (3195 - 45 de multa) - 450 de cuota = 2700
+    const resultado = (saldoConMora - pagoMultaRecibido) - abonoCuotaRecibido;
+    return Math.max(0, resultado);
+  }, [clienteSel, montoAbono, montoPenalizacion]);
 
-  return Math.max(0, resultado);
-}, [clienteSel, montoAbono, montoPenalizacion]);
-
-  const seleccionarEntidad = (entidad: any) => {
-    setClienteSel(entidad);
-    setSugerencias([]);
-    setBusqueda(entidad.nombre);
-    setSemanaSeleccionada('');
-  };
-
+  // 5. ENVÍO AL BACKEND Y EMISIÓN DE RECIBO
   const handleAplicarPago = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clienteSel || !montoAbono) return;
 
     setLoading(true);
     try {
-      const prestamoId = clienteSel.prestamos_activos?.[0]?.id || clienteSel.ultimo_prestamo_id;
+      const prestamoId = clienteSel.ultimo_prestamo_id;
 
       const res = await api.post('/abonos/', {
         prestamo: prestamoId,
@@ -114,18 +116,18 @@ export default function PagosPage() {
         modalidad: modalidadPago,
       });
 
-      // 🔥 USAMOS LA RESPUESTA DEL BACKEND (res.data) PARA EL TICKET
-    generarPDFRecibo({
-      folio: res.data.id.toString().padStart(8, '0'),
-      cliente: res.data.cliente,
-      monto: res.data.monto, // $450.0
-      semana: semanaSeleccionada,
-      saldoAnterior: res.data.saldo_anterior, // 🔥 Cambiado a res.data (3195)
-      nuevoSaldo: res.data.nuevo_saldo,       // 🔥 Cambiado a res.data (2700)
-      penalizacion: res.data.penalizaciones_pagadas, // $45.0
-      fecha: res.data.fecha,
-      hora: res.data.hora
-    });
+      // SINCRONIZACIÓN TOTAL: Usamos los datos calculados por el backend para el Ticket
+      generarPDFRecibo({
+        folio: res.data.id.toString().padStart(8, '0'),
+        cliente: res.data.cliente,
+        monto: res.data.monto,
+        semana: semanaSeleccionada,
+        saldoAnterior: res.data.saldo_anterior, 
+        nuevoSaldo: res.data.nuevo_saldo,       
+        penalizacion: res.data.penalizaciones_pagadas,
+        fecha: res.data.fecha,
+        hora: res.data.hora
+      });
 
       lanzarAlerta('success', "✅ Pago aplicado con éxito");
       setClienteSel(null);
@@ -149,7 +151,7 @@ export default function PagosPage() {
           <p className="text-slate-400 text-sm mb-10 font-medium italic">Gestión de Abonos y Recuperación de Capital</p>
 
           <form onSubmit={handleAplicarPago} className="space-y-8">
-            {/* BUSCADOR */}
+            {/* BUSCADOR INTELIGENTE */}
             <div className="space-y-3 relative">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-[0.2em]">Localizar Deudor</label>
               <div className="relative group">
@@ -161,47 +163,35 @@ export default function PagosPage() {
                   placeholder="Escribe nombre o ID..."
                 />
               </div>
+              
               {sugerencias.length > 0 && (
-  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
-    {sugerencias.flatMap((c) => 
-      c.prestamos_activos?.map((p: any) => (
-        <button 
-          key={`${c.id}-${p.id}`} 
-          type="button" 
-          onClick={() => {
-            // Creamos una entidad virtual con UN SOLO préstamo para no confundir al componente
-            const entidadVirtual = { 
-              ...c, 
-              prestamos_activos: [p], 
-              saldo_actual: p.saldo_pendiente_con_mora || p.monto_total,
-              ultimo_prestamo_id: p.id // Aseguramos que el ID de envío sea el del folio elegido
-            };
-            seleccionarEntidad(entidadVirtual);
-          }} 
-          className="w-full p-4 flex justify-between items-center hover:bg-blue-50 border-b last:border-none group transition-colors"
-        >
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${c.es_grupo ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-              {c.es_grupo ? <Users size={20} /> : <User size={20} />}
-            </div>
-            <div className="text-left">
-              <p className="font-black text-slate-800 text-xs uppercase tracking-tight">{c.nombre}</p>
-              <div className="flex gap-2 mt-1">
-                <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black uppercase">
-                  Folio: #{p.folio}
-                </span>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-                  Saldo: ${Number(p.monto_total).toLocaleString('es-MX')}
-                </span>
-              </div>
-            </div>
-          </div>
-          <ArrowUpRight size={16} className="text-slate-300 group-hover:text-blue-600 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </button>
-      ))
-    )}
-  </div>
-)}
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
+                  {sugerencias.flatMap((c) => 
+                    c.prestamos_activos?.map((p: any) => (
+                      <button 
+                        key={`${c.id}-${p.id}`} 
+                        type="button" 
+                        onClick={() => seleccionarEntidadConFolio(c, p)} 
+                        className="w-full p-4 flex justify-between items-center hover:bg-blue-50 border-b last:border-none group transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`p-3 rounded-xl ${c.es_grupo ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {c.es_grupo ? <Users size={20} /> : <User size={20} />}
+                          </div>
+                          <div className="text-left">
+                            <p className="font-black text-slate-800 text-xs uppercase tracking-tight">{c.nombre}</p>
+                            <div className="flex gap-2 mt-1">
+                              <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black uppercase">Folio: #{p.folio}</span>
+                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Saldo: ${Number(p.saldo_restante || p.monto_total).toLocaleString('es-MX')}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <ArrowUpRight size={16} className="text-slate-300 group-hover:text-blue-600 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* SELECTOR DE SEMANA */}
@@ -231,13 +221,12 @@ export default function PagosPage() {
                   />
                 </div>
 
-                {/* 🔥 RESUMEN CORREGIDO ABAJO DEL INPUT */}
                 {clienteSel && (
                   <div className="flex justify-between px-2 text-[10px] text-[#0047AB] font-black uppercase italic animate-in fade-in duration-300">
                     <span>Cuota sugerida:</span>
                     <span>
                       {clienteSel.prestamos_activos?.[0]
-                        ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / (Number(clienteSel.prestamos_activos[0].cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits:2 })}`
+                        ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / (Number(clienteSel.prestamos_activos[0].cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : '---'}
                     </span>
                   </div>
@@ -259,30 +248,9 @@ export default function PagosPage() {
                     className={`w-full pl-12 pr-6 py-5 rounded-[1.5rem] outline-none border-2 font-black text-xl md:text-2xl transition-all ${tienePenalizaciones
                       ? 'bg-red-50 border-red-200 text-red-600 focus:border-red-500'
                       : 'bg-slate-100 border-transparent text-slate-400 cursor-not-allowed'
-                      }`}
-                    placeholder="0.00"
+                    }`}
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* MODALIDAD */}
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Modalidad de Pago</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[{ id: 'E', label: 'Efectivo' }, { id: 'D', label: 'Depósito' }, { id: 'T', label: 'Transferencia' }].map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setModalidadPago(m.id)}
-                    className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${modalidadPago === m.id
-                      ? `border-slate-800 bg-slate-800 text-white shadow-md`
-                      : `border-slate-100 bg-slate-50 text-slate-400`
-                      }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -305,7 +273,7 @@ export default function PagosPage() {
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-400 text-[10px] italic font-medium">
-                      <span>Capital actual: ${Number(clienteSel.saldo_actual).toLocaleString()}</span>
+                      <span>Capital actual: ${Number(clienteSel.saldo_actual - (Number(clienteSel.total_penalizaciones) || 0)).toLocaleString()}</span>
                       <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-rose-500 text-[10px] font-black uppercase tracking-tighter pt-1">
