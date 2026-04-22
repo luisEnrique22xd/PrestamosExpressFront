@@ -161,38 +161,45 @@ export default function PagosPage() {
                   placeholder="Escribe nombre o ID..."
                 />
               </div>
-              // Modifica la parte donde renderizas las sugerencias en el buscador:
-
-{sugerencias.length > 0 && (
+              {sugerencias.length > 0 && (
   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
-    {sugerencias.map((c) => {
-      // 🔥 Si el cliente tiene varios préstamos, creamos una sugerencia por cada uno
-      return c.prestamos_activos?.map((p: any) => (
+    {sugerencias.flatMap((c) => 
+      c.prestamos_activos?.map((p: any) => (
         <button 
           key={`${c.id}-${p.id}`} 
           type="button" 
           onClick={() => {
-            // Creamos un objeto "cliente" virtual que solo tenga ese préstamo activo
-            const entidadVirtual = { ...c, prestamos_activos: [p], saldo_actual: p.saldo_pendiente_con_mora || p.monto_total };
+            // Creamos una entidad virtual con UN SOLO préstamo para no confundir al componente
+            const entidadVirtual = { 
+              ...c, 
+              prestamos_activos: [p], 
+              saldo_actual: p.saldo_pendiente_con_mora || p.monto_total,
+              ultimo_prestamo_id: p.id // Aseguramos que el ID de envío sea el del folio elegido
+            };
             seleccionarEntidad(entidadVirtual);
           }} 
-          className="w-full p-4 flex justify-between items-center hover:bg-blue-50 border-b last:border-none group"
+          className="w-full p-4 flex justify-between items-center hover:bg-blue-50 border-b last:border-none group transition-colors"
         >
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${c.es_grupo ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-              {c.es_grupo ? <Users size={16} /> : <User size={16} />}
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-xl ${c.es_grupo ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+              {c.es_grupo ? <Users size={20} /> : <User size={20} />}
             </div>
             <div className="text-left">
-              <p className="font-black text-slate-800 text-xs uppercase">{c.nombre}</p>
-              <p className="text-[10px] text-blue-600 font-bold uppercase">
-                Folio: #{p.folio} — Saldo: ${Number(p.monto_total).toLocaleString()}
-              </p>
+              <p className="font-black text-slate-800 text-xs uppercase tracking-tight">{c.nombre}</p>
+              <div className="flex gap-2 mt-1">
+                <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black uppercase">
+                  Folio: #{p.folio}
+                </span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                  Saldo: ${Number(p.monto_total).toLocaleString('es-MX')}
+                </span>
+              </div>
             </div>
           </div>
-          <ArrowUpRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+          <ArrowUpRight size={16} className="text-slate-300 group-hover:text-blue-600 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </button>
       ))
-    })}
+    )}
   </div>
 )}
             </div>
