@@ -95,7 +95,7 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
     fetchData();
   }, [params.id]);
 
-  // --- 2. CARGA DE DIRECTORIO HÍBRIDO PARA BUSCADOR ---
+  // --- 2. CARGA DE DIRECTORIO PARA BUSCADOR ---
   useEffect(() => {
     const cargarDirectorio = async () => {
       try {

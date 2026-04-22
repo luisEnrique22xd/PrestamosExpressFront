@@ -75,12 +75,21 @@ export default function PagosPage() {
   }, [clienteSel]);
 
   const nuevoSaldoCalculado = useMemo(() => {
-    const saldoConMora = Number(clienteSel?.saldo_actual) || 0;
-    const abonoRecibido = montoAbono === '' ? 0 : Number(montoAbono);
-    const multaRecibida = Number(montoPenalizacion) || 0;
-    const resultado = saldoConMora - (abonoRecibido + multaRecibida);
-    return Math.max(0, resultado);
-  }, [clienteSel, montoAbono, montoPenalizacion]);
+  // 1. Saldo actual que manda el servidor (Capital + Moras detectadas)
+  const saldoTotalConMora = Number(clienteSel?.saldo_actual) || 0;
+  
+  // 2. Lo que Alexander está cobrando en este momento
+  const abonoCuotaRecibido = montoAbono === '' ? 0 : Number(montoAbono);
+  const pagoMultaRecibido = Number(montoPenalizacion) || 0;
+
+  // 3. LA MATEMÁTICA REAL:
+  // Restamos la multa del saldo total para limpiar el capital, 
+  // y luego restamos el abono a capital.
+  // Ejemplo Luis: (3195 - 45) - 450 = 2700
+  const resultado = (saldoTotalConMora - pagoMultaRecibido) - abonoCuotaRecibido;
+
+  return Math.max(0, resultado);
+}, [clienteSel, montoAbono, montoPenalizacion]);
 
   const seleccionarEntidad = (entidad: any) => {
     setClienteSel(entidad);
@@ -95,7 +104,6 @@ export default function PagosPage() {
 
     setLoading(true);
     try {
-      // Usamos el ID de la lista prestamos_activos
       const prestamoId = clienteSel.prestamos_activos?.[0]?.id || clienteSel.ultimo_prestamo_id;
 
       const res = await api.post('/abonos/', {
