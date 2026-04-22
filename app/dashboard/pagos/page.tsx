@@ -22,7 +22,7 @@ export default function PagosPage() {
   const [montoAbono, setMontoAbono] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [semanaSeleccionada, setSemanaSeleccionada] = useState<string>('');
-  const [modalidadPago, setModalidadPago] = useState('E'); 
+  const [modalidadPago, setModalidadPago] = useState('E');
 
   // --- LÓGICA DINÁMICA DE PENALIZACIONES ---
   useEffect(() => {
@@ -48,10 +48,10 @@ export default function PagosPage() {
 
       if (prestamo) {
         const montoTotal = Number(prestamo.monto_total) || 0;
-        
+
         // 🔥 CAMBIO AQUÍ: Usamos las cuotas que vienen del backend
         // Si no vienen (mientras actualizas el back), 12 para Nancy y 8 para Luis
-        const numCuotas = Number(prestamo.cuotas) || (montoTotal === 3600 ? 8 : 12); 
+        const numCuotas = Number(prestamo.cuotas) || (montoTotal === 3600 ? 8 : 12);
 
         const sugerencia = montoTotal / numCuotas;
         setMontoAbono(sugerencia.toFixed(2));
@@ -81,7 +81,7 @@ export default function PagosPage() {
     const resultado = saldoConMora - (abonoRecibido + multaRecibida);
     return Math.max(0, resultado);
   }, [clienteSel, montoAbono, montoPenalizacion]);
-  
+
   const seleccionarEntidad = (entidad: any) => {
     setClienteSel(entidad);
     setSugerencias([]);
@@ -227,7 +227,7 @@ export default function PagosPage() {
                     className={`w-full pl-12 pr-6 py-5 rounded-[1.5rem] outline-none border-2 font-black text-xl md:text-2xl transition-all ${tienePenalizaciones
                       ? 'bg-red-50 border-red-200 text-red-600 focus:border-red-500'
                       : 'bg-slate-100 border-transparent text-slate-400 cursor-not-allowed'
-                    }`}
+                      }`}
                     placeholder="0.00"
                   />
                 </div>
@@ -246,7 +246,7 @@ export default function PagosPage() {
                     className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${modalidadPago === m.id
                       ? `border-slate-800 bg-slate-800 text-white shadow-md`
                       : `border-slate-100 bg-slate-50 text-slate-400`
-                    }`}
+                      }`}
                   >
                     {m.label}
                   </button>
@@ -267,8 +267,8 @@ export default function PagosPage() {
                     <div className="flex justify-between text-[10px] text-blue-600 font-black uppercase italic mb-1">
                       <span>Abono sugerido:</span>
                       <span>
-                         {clienteSel.prestamos_activos?.[0]
-                          ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / 12).toLocaleString('es-MX')}`
+                        {clienteSel.prestamos_activos?.[0]
+                          ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / (Number(clienteSel.prestamos_activos[0].cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           : '---'}
                       </span>
                     </div>
