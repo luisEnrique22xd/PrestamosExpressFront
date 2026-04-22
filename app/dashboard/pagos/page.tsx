@@ -114,17 +114,18 @@ export default function PagosPage() {
         modalidad: modalidadPago,
       });
 
-      generarPDFRecibo({
-        folio: res.data.id.toString().padStart(8, '0'),
-        cliente: res.data.cliente,
-        monto: res.data.monto,
-        semana: semanaSeleccionada,
-        saldoAnterior: saldoTotalAnterior,
-        nuevoSaldo: nuevoSaldoCalculado,
-        penalizacion: res.data.penalizaciones_pagadas || montoPenalizacion,
-        fecha: res.data.fecha,
-        hora: res.data.hora
-      });
+      // 🔥 USAMOS LA RESPUESTA DEL BACKEND (res.data) PARA EL TICKET
+    generarPDFRecibo({
+      folio: res.data.id.toString().padStart(8, '0'),
+      cliente: res.data.cliente,
+      monto: res.data.monto, // $450.0
+      semana: semanaSeleccionada,
+      saldoAnterior: res.data.saldo_anterior, // 🔥 Cambiado a res.data (3195)
+      nuevoSaldo: res.data.nuevo_saldo,       // 🔥 Cambiado a res.data (2700)
+      penalizacion: res.data.penalizaciones_pagadas, // $45.0
+      fecha: res.data.fecha,
+      hora: res.data.hora
+    });
 
       lanzarAlerta('success', "✅ Pago aplicado con éxito");
       setClienteSel(null);
@@ -160,24 +161,40 @@ export default function PagosPage() {
                   placeholder="Escribe nombre o ID..."
                 />
               </div>
-              {sugerencias.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
-                  {sugerencias.map((c) => (
-                    <button key={`${c.es_grupo ? 'G' : 'I'}-${c.id}`} type="button" onClick={() => seleccionarEntidad(c)} className="w-full p-4 flex justify-between items-center hover:bg-blue-50 border-b last:border-none group">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${c.es_grupo ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                          {c.es_grupo ? <Users size={16} /> : <User size={16} />}
-                        </div>
-                        <div className="text-left">
-                          <p className="font-black text-slate-700 text-xs uppercase">{c.nombre}</p>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Saldo: ${Number(c.saldo_actual).toLocaleString()}</p>
-                        </div>
-                      </div>
-                      <ArrowUpRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-                    </button>
-                  ))}
-                </div>
-              )}
+              // Modifica la parte donde renderizas las sugerencias en el buscador:
+
+{sugerencias.length > 0 && (
+  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
+    {sugerencias.map((c) => {
+      // 🔥 Si el cliente tiene varios préstamos, creamos una sugerencia por cada uno
+      return c.prestamos_activos?.map((p: any) => (
+        <button 
+          key={`${c.id}-${p.id}`} 
+          type="button" 
+          onClick={() => {
+            // Creamos un objeto "cliente" virtual que solo tenga ese préstamo activo
+            const entidadVirtual = { ...c, prestamos_activos: [p], saldo_actual: p.saldo_pendiente_con_mora || p.monto_total };
+            seleccionarEntidad(entidadVirtual);
+          }} 
+          className="w-full p-4 flex justify-between items-center hover:bg-blue-50 border-b last:border-none group"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${c.es_grupo ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+              {c.es_grupo ? <Users size={16} /> : <User size={16} />}
+            </div>
+            <div className="text-left">
+              <p className="font-black text-slate-800 text-xs uppercase">{c.nombre}</p>
+              <p className="text-[10px] text-blue-600 font-bold uppercase">
+                Folio: #{p.folio} — Saldo: ${Number(p.monto_total).toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <ArrowUpRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+        </button>
+      ))
+    })}
+  </div>
+)}
             </div>
 
             {/* SELECTOR DE SEMANA */}
