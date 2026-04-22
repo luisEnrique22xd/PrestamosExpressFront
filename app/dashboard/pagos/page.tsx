@@ -205,7 +205,7 @@ export default function PagosPage() {
                     <span>Cuota sugerida:</span>
                     <span>
                       {clienteSel.prestamos_activos?.[0]
-                        ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / (Number(clienteSel.prestamos_activos[0].cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+                        ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / (Number(clienteSel.prestamos_activos[0].cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits:2 })}`
                         : '---'}
                     </span>
                   </div>
