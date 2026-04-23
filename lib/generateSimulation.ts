@@ -28,7 +28,7 @@ export const generarPDFSimulacion = (datos: any, fechas: any[]) => {
   // --- 1. LOGO ---
   try {
     // Asegúrate de que LOGO_DATA esté disponible en este scope
-    doc.addImage(datos.LOGO_DATA, 'PNG', 15, 10, 30, 38);
+    doc.addImage(LOGO_DATA, 'PNG', 15, 10, 30, 38);
   } catch (e) {
     console.warn("Logo no encontrado");
   }
