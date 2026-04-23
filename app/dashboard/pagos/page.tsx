@@ -14,6 +14,7 @@ export default function PagosPage() {
     setAlerta({ type, msg });
     setTimeout(() => setAlerta(null), 5000);
   };
+
   const [montoPenalizacion, setMontoPenalizacion] = useState(0);
   const [tienePenalizaciones, setTienePenalizaciones] = useState(false);
   const [busqueda, setBusqueda] = useState('');
@@ -24,7 +25,7 @@ export default function PagosPage() {
   const [semanaSeleccionada, setSemanaSeleccionada] = useState<string>('');
   const [modalidadPago, setModalidadPago] = useState('E');
 
-  // 1. LÓGICA DINÁMICA DE PENALIZACIONES
+  // 1. LÓGICA DE PENALIZACIONES (Detecta si hay moras activas)
   useEffect(() => {
     if (clienteSel) {
       const penalizacionesActivas = clienteSel.penalizaciones?.filter((p: any) => p.activa) || [];
@@ -41,23 +42,20 @@ export default function PagosPage() {
     }
   }, [clienteSel]);
 
-  // 2. CÁLCULO DE CUOTA SUGERIDA (FORMATO 2 DECIMALES)
+  // 2. CUOTA SUGERIDA (Calculada dinámicamente)
   useEffect(() => {
     if (clienteSel && semanaSeleccionada) {
       const prestamo = clienteSel.prestamos_activos?.[0];
-
       if (prestamo) {
         const montoTotal = Number(prestamo.monto_total) || 0;
-        const numCuotas = Number(prestamo.cuotas) || (montoTotal === 3600 ? 8 : 12);
+        const numCuotas = Number(prestamo.cuotas) || 12;
         const sugerencia = montoTotal / numCuotas;
-        
-        // .toFixed(2) asegura que Alexander vea 541.67 y no 541.666
         setMontoAbono(sugerencia.toFixed(2));
       }
     }
   }, [semanaSeleccionada, clienteSel]);
 
-  // 3. BUSCADOR HÍBRIDO (CON SOPORTE MULTI-PRESTAMO PARA PLACIDO)
+  // 3. BUSCADOR HÍBRIDO (Soporte para múltiples préstamos por cliente)
   const buscarEntidades = async (val: string) => {
     setBusqueda(val);
     if (val.length > 1) {
@@ -72,8 +70,8 @@ export default function PagosPage() {
   const seleccionarEntidadConFolio = (cliente: any, prestamo: any) => {
     const entidadConfigurada = {
       ...cliente,
-      // Usamos el saldo real calculado en el backend (ej. Luis 2700)
-      saldo_actual: prestamo.saldo_restante || prestamo.monto_total, 
+      // 🔥 Prioridad al saldo real (ej. los $2,700 de Luis)
+      saldo_actual: prestamo.saldo_restante !== undefined ? prestamo.saldo_restante : (prestamo.saldo_real || prestamo.monto_total),
       prestamos_activos: [prestamo],
       ultimo_prestamo_id: prestamo.id
     };
@@ -84,46 +82,44 @@ export default function PagosPage() {
     setMontoAbono('');
   };
 
-  // 4. CÁLCULOS DE SALDO PROYECTADO
+  // 4. CÁLCULOS MATEMÁTICOS DE PANTALLA
   const saldoTotalAnterior = useMemo(() => {
-    return Number(clienteSel?.saldo_actual) || 0;
+    const principal = Number(clienteSel?.saldo_actual) || 0;
+    const moras = Number(clienteSel?.total_penalizaciones) || 0;
+    return principal + moras;
   }, [clienteSel]);
 
   const nuevoSaldoCalculado = useMemo(() => {
-    const saldoConMora = Number(clienteSel?.saldo_actual) || 0;
+    const capitalActual = Number(clienteSel?.saldo_actual) || 0;
     const abonoCuotaRecibido = montoAbono === '' ? 0 : Number(montoAbono);
-    const pagoMultaRecibido = Number(montoPenalizacion) || 0;
-
-    // MATEMÁTICA: (3195 - 45 de multa) - 450 de cuota = 2700
-    const resultado = (saldoConMora - pagoMultaRecibido) - abonoCuotaRecibido;
+    // El pago de multa NO baja el capital principal
+    const resultado = capitalActual - abonoCuotaRecibido;
     return Math.max(0, resultado);
-  }, [clienteSel, montoAbono, montoPenalizacion]);
+  }, [clienteSel, montoAbono]);
 
-  // 5. ENVÍO AL BACKEND Y EMISIÓN DE RECIBO
+  // 5. PROCESAR COBRO
   const handleAplicarPago = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clienteSel || !montoAbono) return;
 
     setLoading(true);
     try {
-      const prestamoId = clienteSel.ultimo_prestamo_id;
-
       const res = await api.post('/abonos/', {
-        prestamo: prestamoId,
+        prestamo: clienteSel.ultimo_prestamo_id,
         monto: Number(montoAbono),
         semana_numero: Number(semanaSeleccionada),
         monto_penalizacion: Number(montoPenalizacion),
         modalidad: modalidadPago,
       });
 
-      // SINCRONIZACIÓN TOTAL: Usamos los datos calculados por el backend para el Ticket
+      // Emitir Ticket con los datos reales que devolvió el Backend
       generarPDFRecibo({
         folio: res.data.id.toString().padStart(8, '0'),
         cliente: res.data.cliente,
         monto: res.data.monto,
         semana: semanaSeleccionada,
-        saldoAnterior: res.data.saldo_anterior, 
-        nuevoSaldo: res.data.nuevo_saldo,       
+        saldoAnterior: res.data.saldo_anterior,
+        nuevoSaldo: res.data.nuevo_saldo,
         penalizacion: res.data.penalizaciones_pagadas,
         fecha: res.data.fecha,
         hora: res.data.hora
@@ -151,7 +147,7 @@ export default function PagosPage() {
           <p className="text-slate-400 text-sm mb-10 font-medium italic">Gestión de Abonos y Recuperación de Capital</p>
 
           <form onSubmit={handleAplicarPago} className="space-y-8">
-            {/* BUSCADOR INTELIGENTE */}
+            {/* BUSCADOR */}
             <div className="space-y-3 relative">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-[0.2em]">Localizar Deudor</label>
               <div className="relative group">
@@ -163,15 +159,15 @@ export default function PagosPage() {
                   placeholder="Escribe nombre o ID..."
                 />
               </div>
-              
+
               {sugerencias.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden">
-                  {sugerencias.flatMap((c) => 
+                  {sugerencias.flatMap((c) =>
                     c.prestamos_activos?.map((p: any) => (
-                      <button 
-                        key={`${c.id}-${p.id}`} 
-                        type="button" 
-                        onClick={() => seleccionarEntidadConFolio(c, p)} 
+                      <button
+                        key={`${c.id}-${p.id}`}
+                        type="button"
+                        onClick={() => seleccionarEntidadConFolio(c, p)}
                         className="w-full p-4 flex justify-between items-center hover:bg-blue-50 border-b last:border-none group transition-colors"
                       >
                         <div className="flex items-center gap-4">
@@ -182,7 +178,9 @@ export default function PagosPage() {
                             <p className="font-black text-slate-800 text-xs uppercase tracking-tight">{c.nombre}</p>
                             <div className="flex gap-2 mt-1">
                               <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black uppercase">Folio: #{p.folio}</span>
-                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Saldo: ${Number(p.saldo_restante || p.monto_total).toLocaleString('es-MX')}</span>
+                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                                Saldo: ${Number(p.saldo_restante || p.saldo_real || p.monto_total).toLocaleString('es-MX')}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -217,18 +215,12 @@ export default function PagosPage() {
                     value={montoAbono}
                     onChange={(e) => setMontoAbono(e.target.value)}
                     className="w-full pl-12 pr-6 py-5 bg-slate-50 rounded-[1.5rem] outline-none border-2 border-transparent focus:border-emerald-500 font-black text-2xl md:text-3xl text-[#050533]"
-                    placeholder="0.00"
                   />
                 </div>
-
                 {clienteSel && (
-                  <div className="flex justify-between px-2 text-[10px] text-[#0047AB] font-black uppercase italic animate-in fade-in duration-300">
+                  <div className="flex justify-between px-2 text-[10px] text-[#0047AB] font-black uppercase italic">
                     <span>Cuota sugerida:</span>
-                    <span>
-                      {clienteSel.prestamos_activos?.[0]
-                        ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / (Number(clienteSel.prestamos_activos[0].cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : '---'}
-                    </span>
+                    <span>${(Number(clienteSel.prestamos_activos?.[0]?.monto_total) / (Number(clienteSel.prestamos_activos?.[0]?.cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
               </div>
@@ -241,50 +233,48 @@ export default function PagosPage() {
                   <span className={`absolute left-5 top-1/2 -translate-y-1/2 font-black text-xl ${tienePenalizaciones ? 'text-red-500' : 'text-slate-300'}`}>$</span>
                   <input
                     type="number"
-                    min={0}
                     value={montoPenalizacion}
                     onChange={(e) => setMontoPenalizacion(Number(e.target.value))}
                     disabled={!tienePenalizaciones}
-                    className={`w-full pl-12 pr-6 py-5 rounded-[1.5rem] outline-none border-2 font-black text-xl md:text-2xl transition-all ${tienePenalizaciones
-                      ? 'bg-red-50 border-red-200 text-red-600 focus:border-red-500'
-                      : 'bg-slate-100 border-transparent text-slate-400 cursor-not-allowed'
-                    }`}
+                    className={`w-full pl-12 pr-6 py-5 rounded-[1.5rem] outline-none border-2 font-black text-xl transition-all ${tienePenalizaciones ? 'bg-red-50 border-red-200 text-red-600 focus:border-red-500' : 'bg-slate-100 border-transparent text-slate-400'}`}
                   />
                 </div>
               </div>
             </div>
 
-            {/* RESUMEN ACTUALIZADO */}
+            {/* MODALIDAD */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Modalidad de Pago</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[{ id: 'E', label: 'Efectivo' }, { id: 'D', label: 'Depósito' }, { id: 'T', label: 'Transferencia' }].map((m) => (
+                  <button key={m.id} type="button" onClick={() => setModalidadPago(m.id)} className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${modalidadPago === m.id ? `border-slate-800 bg-slate-800 text-white shadow-md` : `border-slate-100 bg-slate-50 text-slate-400`}`}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* RESUMEN FINAL */}
             {clienteSel && (
-              <div className={`p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] border animate-in slide-in-from-bottom-2 duration-500 ${clienteSel.es_grupo ? 'bg-purple-50 border-purple-100' : 'bg-emerald-50 border-emerald-100'}`}>
+              <div className={`p-6 md:p-8 rounded-3xl border animate-in slide-in-from-bottom-2 ${clienteSel.es_grupo ? 'bg-purple-50 border-purple-100' : 'bg-emerald-50 border-emerald-100'}`}>
                 <div className="space-y-3">
                   <div className="flex justify-between text-slate-500 font-bold text-xs">
                     <span>SALDO TOTAL (CON MORA):</span>
                     <span className="text-slate-700 font-black">${saldoTotalAnterior.toLocaleString('es-MX')}</span>
                   </div>
-
                   <div className="space-y-1 px-1">
-                    <div className="flex justify-between text-[10px] text-blue-600 font-black uppercase italic mb-1">
-                      <span>Abono sugerido:</span>
-                      <span>
-                        {clienteSel.prestamos_activos?.[0]
-                          ? `$${(Number(clienteSel.prestamos_activos[0].monto_total) / (Number(clienteSel.prestamos_activos[0].cuotas) || 12)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                          : '---'}
-                      </span>
+                    <div className="flex justify-between text-slate-400 text-[10px] italic">
+                      <span>Capital actual: ${Number(clienteSel.saldo_actual).toLocaleString('es-MX')}</span>
+                      <span>+ Mora: ${Number(montoPenalizacion).toLocaleString('es-MX')}</span>
                     </div>
-                    <div className="flex justify-between text-slate-400 text-[10px] italic font-medium">
-                      <span>Capital actual: ${Number(clienteSel.saldo_actual - (Number(clienteSel.total_penalizaciones) || 0)).toLocaleString()}</span>
-                      <span>+ Mora detectada: ${Number(montoPenalizacion).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-rose-500 text-[10px] font-black uppercase tracking-tighter pt-1">
+                    <div className="flex justify-between text-rose-500 text-[10px] font-black uppercase pt-1">
                       <span>Abono a aplicar:</span>
                       <span>- ${(Number(montoAbono) + Number(montoPenalizacion)).toLocaleString('es-MX')}</span>
                     </div>
                   </div>
-
                   <div className={`flex justify-between pt-4 border-t ${clienteSel.es_grupo ? 'border-purple-200' : 'border-emerald-200'}`}>
                     <span className="text-xs font-black uppercase">NUEVO SALDO CAPITAL:</span>
-                    <span className={`text-xl md:text-2xl font-black tracking-tighter ${clienteSel.es_grupo ? 'text-purple-900' : 'text-emerald-900'}`}>
+                    <span className={`text-xl md:text-2xl font-black ${clienteSel.es_grupo ? 'text-purple-900' : 'text-emerald-900'}`}>
                       ${nuevoSaldoCalculado.toLocaleString('es-MX')}
                     </span>
                   </div>
@@ -292,7 +282,7 @@ export default function PagosPage() {
               </div>
             )}
 
-            <button type="submit" disabled={loading || !clienteSel || !montoAbono} className={`w-full py-5 md:py-6 text-white font-black rounded-2xl md:rounded-[2rem] shadow-xl transition-all uppercase text-[10px] md:text-xs tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30 ${clienteSel?.es_grupo ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#050533] hover:bg-[#0047AB]'}`}>
+            <button type="submit" disabled={loading || !clienteSel || !montoAbono} className={`w-full py-5 md:py-6 text-white font-black rounded-2xl md:rounded-[2rem] shadow-xl transition-all uppercase text-[10px] md:text-xs tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 disabled:opacity-30 ${clienteSel?.es_grupo ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#050533] hover:bg-[#0047AB]'}`}>
               {loading ? <Loader2 className="animate-spin" /> : <>Confirmar y Emitir Recibo <CheckCircle2 size={18} /></>}
             </button>
           </form>
