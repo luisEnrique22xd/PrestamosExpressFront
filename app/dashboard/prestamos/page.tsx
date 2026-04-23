@@ -431,7 +431,7 @@ export default function PrestamosPage() {
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#050533]/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-lg rounded-3xl md:rounded-[3rem] p-6 md:p-10 space-y-6 md:space-y-8 shadow-2xl border-t-8 border-[#0047AB] mx-4 max-h-[90vh] overflow-y-auto">            <h3 className="text-2xl font-black italic text-slate-800 uppercase leading-none text-center">Confirmar Datos</h3>
             <div className="bg-slate-50 p-8 rounded-[2.5rem] space-y-4 font-bold text-sm">
-              <div className="flex justify-between uppercase text-slate-500 text-[10px]"><span>Sujeto:</span> <span className="text-slate-800 text-xs">{clienteEncontrado?.nombre || formData.nombre_grupo}</span></div>
+              <div className="flex justify-between uppercase text-slate-500 text-[10px]"><span>Cliente:</span> <span className="text-slate-800 text-xs">{clienteEncontrado?.nombre || formData.nombre_grupo}</span></div>
               <div className="flex justify-between"><span>Capital:</span> <span>${Number(formData.monto_capital).toLocaleString()}</span></div>
               <div className="flex justify-between text-red-500"><span>Interés Total:</span> <span>${calculos.interesTotal.toLocaleString()}</span></div>
               <div className="flex justify-between text-xl font-black text-emerald-600 border-t pt-4"><span>Total a Pagar:</span> <span>${calculos.totalPagar.toLocaleString()}</span></div>

@@ -107,7 +107,7 @@ export default function CarteraVencidaPage() {
         <table className="min-w-[700px] md:w-full text-left">
           <thead className="bg-slate-50 text-slate-400 text-[9px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
             <tr>
-              <th className="px-4 md:px-8 py-4 md:py-6">Sujeto / Préstamo</th>
+              <th className="px-4 md:px-8 py-4 md:py-6">Cliente / Préstamo</th>
               <th className="px-4 md:px-8 py-4 md:py-6">Tipo</th>
               <th className="px-4 md:px-8 py-4 md:py-6 text-center">Monto Vencido</th>
               <th className="px-4 md:px-8 py-4 md:py-6 text-center">Días de Atraso</th>
