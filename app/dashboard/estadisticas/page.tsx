@@ -165,7 +165,7 @@ export default function EstadisticasPage() {
             <div className="absolute top-0 right-0 p-6 opacity-10">
               <Landmark size={100} />
             </div>
-            <p className="text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 italic">Capital en Calle</p>
+            <p className="text-sky-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 italic">Capital Colocado</p>
             <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-6 italic">
               {statsGenerales?.capital_en_calle || "$0.00"}
             </h2>
