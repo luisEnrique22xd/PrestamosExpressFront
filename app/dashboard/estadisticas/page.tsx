@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGri
 import { BarChart3, Loader2, Landmark, Percent, Wallet, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import api from '@/lib/api';
 import { exportToExcel, exportToPDF } from '@/lib/generateStatsReport';
+import { exportCashFlowToExcel, exportCashFlowToPDF } from '@/lib/generateCashFlow';
 
 const COLORS = {
   azulRey: '#0047AB',
@@ -92,6 +93,22 @@ export default function EstadisticasPage() {
               </button>
             ))}
           </div>
+          <div className="flex gap-2">
+  <button 
+    onClick={() => exportCashFlowToPDF(flujoEfectivo)}
+    className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 transition-colors"
+    title="Descargar PDF de Flujo"
+  >
+    <Landmark size={18} />
+  </button>
+  <button 
+    onClick={() => exportCashFlowToExcel(flujoEfectivo)}
+    className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+    title="Descargar Excel de Flujo"
+  >
+    <Wallet size={18} />
+  </button>
+</div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
