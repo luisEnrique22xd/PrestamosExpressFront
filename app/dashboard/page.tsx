@@ -190,7 +190,7 @@ export default function GlobalDashboard() {
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-black text-slate-800 uppercase italic flex items-center gap-2 text-sm tracking-tight">
               <Calendar size={18} className="text-[#0047AB]" />
-              Rendimiento Semanal
+              Pagos Semanales
             </h3>
             <span className="text-[9px] font-black bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full uppercase tracking-widest">Historial de Flujo</span>
           </div>

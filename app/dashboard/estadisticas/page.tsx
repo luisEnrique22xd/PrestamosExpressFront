@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend } from 'recharts';
-import { BarChart3, Loader2, Landmark, Percent, Wallet } from 'lucide-react';
+import { BarChart3, Loader2, Landmark, Percent, Wallet, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import api from '@/lib/api';
 import { exportToExcel, exportToPDF } from '@/lib/generateStatsReport';
 
@@ -9,6 +9,7 @@ const COLORS = {
   azulRey: '#0047AB',
   verdeExito: '#10B981',
   purpura: '#8B5CF6',
+  rojoPeligro: '#EF4444'
 };
 
 export default function EstadisticasPage() {
@@ -16,6 +17,10 @@ export default function EstadisticasPage() {
   const [statsGenerales, setStatsGenerales] = useState<any>(null);
   const [periodo, setPeriodo] = useState<'semana' | 'mes' | 'anio'>('semana');
   const [loading, setLoading] = useState(true);
+
+  // Estados para el Reporte de Ingresos vs Egresos
+  const [flujoEfectivo, setFlujoEfectivo] = useState<any>(null);
+  const [filtroFlujo, setFiltroFlujo] = useState('diario');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -39,6 +44,18 @@ export default function EstadisticasPage() {
     fetchGrafica();
   }, [periodo]);
 
+  // Nuevo efecto para traer el flujo de efectivo (Ingresos/Egresos)
+  useEffect(() => {
+    const fetchFlujo = async () => {
+      try {
+        // Asumiendo que el endpoint es /reporte-flujo-efectivo/
+        const res = await api.get(`/reporte-flujo-efectivo/?periodo=${filtroFlujo}`);
+        setFlujoEfectivo(res.data);
+      } catch (error) { console.error(error); }
+    };
+    fetchFlujo();
+  }, [filtroFlujo]);
+
   if (!statsGenerales && loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 text-slate-400">
@@ -51,7 +68,76 @@ export default function EstadisticasPage() {
   return (
     <div className="space-y-6 md:space-y-8 pb-10 animate-in fade-in duration-700">
       
-      {/* CONTENEDOR SUPERIOR: SIDEBAR + GRÁFICA */}
+      {/* 🚀 NUEVA SECCIÓN: REPORTE DE INGRESOS Y EGRESOS (DINERO PRESTADO VS COBRADO) */}
+      <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-slate-900 text-white rounded-2xl"><Activity size={24} /></div>
+            <div>
+              <h3 className="font-black text-slate-800 text-xl uppercase italic tracking-tight">Monitor de Flujo de Efectivo</h3>
+              <p className="text-slate-400 text-[10px] font-bold uppercase mt-1 tracking-widest italic">Capital Colocado vs Recuperado</p>
+            </div>
+          </div>
+          
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            {['diario', 'semanal', 'mensual', 'anual'].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFiltroFlujo(f)}
+                className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${
+                  filtroFlujo === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* TARJETA EGRESOS: DINERO PRESTADO */}
+          <div className="p-6 rounded-[2rem] bg-blue-50 border border-blue-100 relative overflow-hidden group">
+            <ArrowUpRight className="absolute -right-2 -top-2 text-blue-200 size-24 rotate-12 group-hover:scale-110 transition-transform" />
+            <p className="text-blue-600 text-[10px] font-black uppercase mb-2">Egresos (Préstamos)</p>
+            <h4 className="text-2xl font-black text-slate-800 tracking-tighter italic">
+              ${flujoEfectivo?.colocacion_capital?.toLocaleString('es-MX') || '0.00'}
+            </h4>
+            <p className="text-[9px] text-blue-400 font-bold mt-4 uppercase italic">Dinero total colocado en el periodo</p>
+          </div>
+
+          {/* TARJETA INGRESOS: DINERO COBRADO */}
+          <div className="p-6 rounded-[2rem] bg-emerald-50 border border-emerald-100 relative overflow-hidden group">
+            <ArrowDownRight className="absolute -right-2 -top-2 text-emerald-200 size-24 -rotate-12 group-hover:scale-110 transition-transform" />
+            <p className="text-emerald-600 text-[10px] font-black uppercase mb-2">Ingresos (Cobranza)</p>
+            <h4 className="text-2xl font-black text-slate-800 tracking-tighter italic">
+              ${flujoEfectivo?.recuperacion_total?.toLocaleString('es-MX') || '0.00'}
+            </h4>
+            <p className="text-[9px] text-emerald-400 font-bold mt-4 uppercase italic">Capital + Intereses + Multas recibidas</p>
+          </div>
+
+          {/* TARJETA BALANCE NETO */}
+          <div className={`p-6 rounded-[2rem] border relative overflow-hidden group ${
+            (flujoEfectivo?.balance_neto || 0) >= 0 ? 'bg-slate-900 border-slate-800' : 'bg-rose-50 border-rose-100'
+          }`}>
+            <p className={`text-[10px] font-black uppercase mb-2 ${
+              (flujoEfectivo?.balance_neto || 0) >= 0 ? 'text-slate-400' : 'text-rose-600'
+            }`}>Balance Neto de Caja</p>
+            <h4 className={`text-2xl font-black tracking-tighter italic ${
+              (flujoEfectivo?.balance_neto || 0) >= 0 ? 'text-white' : 'text-rose-900'
+            }`}>
+              {(flujoEfectivo?.balance_neto || 0) >= 0 ? '+' : ''}
+              ${flujoEfectivo?.balance_neto?.toLocaleString('es-MX') || '0.00'}
+            </h4>
+            <p className={`text-[9px] font-bold mt-4 uppercase italic ${
+              (flujoEfectivo?.balance_neto || 0) >= 0 ? 'text-slate-500' : 'text-rose-400'
+            }`}>
+              {flujoEfectivo?.balance_neto >= 0 ? 'Flujo de caja positivo' : 'Déficit (Inyección de capital)'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* CONTENEDOR SUPERIOR: SIDEBAR + GRÁFICA (MANTENIDO) */}
       <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
         
         {/* SIDEBAR IZQUIERDO */}
@@ -133,7 +219,6 @@ export default function EstadisticasPage() {
             </div>
           </div>
 
-          {/* Gráfica con altura definida para que Recharts la detecte */}
           <div className="w-full h-[350px] lg:h-[450px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dataGrafica} barGap={12}>
@@ -165,7 +250,7 @@ export default function EstadisticasPage() {
                       );
                     }
                     return null;
-                }} />
+                  }} />
                 <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', paddingBottom: '30px' }} />
                 <Bar dataKey="capital" fill={COLORS.azulRey} radius={[8, 8, 0, 0]} name="Capital" barSize={35} />
                 <Bar dataKey="interes" fill={COLORS.verdeExito} radius={[8, 8, 0, 0]} name="Ganancia" barSize={35} />
