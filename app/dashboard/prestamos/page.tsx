@@ -6,15 +6,13 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 
-const TASAS_POR_MODALIDAD = {
-  'S': 2.5,  // Semanal
-  'Q': 7.5,  // Quincenal
-  'M': 20.0, // Mensual
+// 1. CONFIGURACIÓN DE TASAS (NORMAL VS URGENTE)
+const TASAS_CONFIG = {
+  NORMAL: { 'S': 3.12, 'Q': 6.25, 'M': 15.0 },
+  URGENTE: { 'S': 3.75, 'Q': 7.5, 'M': 15.0 }
 };
 
 export default function PrestamosPage() {
-
-
   const [tipoPrestamo, setTipoPrestamo] = useState<'I' | 'G'>('I');
   const [clienteEncontrado, setClienteEncontrado] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +28,7 @@ export default function PrestamosPage() {
   const [mostrarSugerenciasGrupo, setMostrarSugerenciasGrupo] = useState(false);
 
   const [formData, setFormData] = useState({
-    cliente: '', // Aquí guardaremos el ID del cliente seleccionado
+    cliente: '', // ID del cliente
     nombre_grupo: '',
     grupo_id: '',
     monto_capital: '',
@@ -51,28 +49,36 @@ export default function PrestamosPage() {
   });
 
   const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  const [esUrgente, setEsUrgente] = useState(false);
+  const [user, setUser] = useState({ role: '' });
 
   const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
     setAlerta({ type, msg });
     setTimeout(() => setAlerta(null), 6000);
   };
-  const [esUrgente, setEsUrgente] = useState(false);
-  const [user, setUser] = useState({ role: '' });
 
   useEffect(() => {
-    // Leemos el rol del localStorage
     const savedRole = localStorage.getItem('user_role');
     setUser({ role: savedRole || '' });
   }, []);
 
-  // Variable auxiliar para scannability
   const isAdmin = user.role === 'admin';
 
-  // REGLA DE BLOQUEO: Si el cliente seleccionado ya debe (Individual o Grupal)
+  // REGLA DE BLOQUEO DINÁMICO
   const tieneBloqueo = useMemo(() => {
     if (!clienteEncontrado) return false;
     return clienteEncontrado.tiene_prestamo_activo || clienteEncontrado.saldo_actual > 0;
   }, [clienteEncontrado]);
+
+  // 🔥 ACTUALIZACIÓN AUTOMÁTICA DE TASAS SEGÚN MODO URGENTE
+  useEffect(() => {
+    const mod = formData.modalidad as 'S' | 'Q' | 'M';
+    const nuevaTasa = esUrgente 
+      ? TASAS_CONFIG.URGENTE[mod] 
+      : TASAS_CONFIG.NORMAL[mod];
+    
+    setFormData(prev => ({ ...prev, tasa_interes: nuevaTasa.toString() }));
+  }, [esUrgente, formData.modalidad]);
 
   useEffect(() => {
     const fetchGrupos = async () => {
@@ -101,17 +107,13 @@ export default function PrestamosPage() {
     const deudaActiva = cliente.tiene_prestamo_activo || cliente.saldo_actual > 0;
 
     if (deudaActiva) {
-      setClienteEncontrado(cliente);
       lanzarAlerta('error', `RESTRICCIÓN: ${cliente.nombre} presenta deudas vigentes.`);
-      setFormData(prev => ({ ...prev, cliente: cliente.id.toString() }));
-      setSugerenciasIndividual([]);
-      return;
     }
 
     setClienteEncontrado(cliente);
     setFormData({
       ...formData,
-      cliente: cliente.id.toString(), // Guardamos el ID para el POST
+      cliente: cliente.id.toString(),
       nombre_aval: cliente.datos_ultimo_aval?.nombre_aval || '',
       telefono_aval: cliente.datos_ultimo_aval?.telefono_aval || '',
       direccion_aval: cliente.datos_ultimo_aval?.direccion_aval || '',
@@ -178,7 +180,7 @@ export default function PrestamosPage() {
       }
       await api.post('/prestamos/', payload);
       lanzarAlerta('success', "Crédito autorizado correctamente.");
-      setEsUrgente(false); // Resetear el bypass tras el éxito
+      setEsUrgente(false);
       handleReset();
     } catch (error: any) {
       lanzarAlerta('error', error.response?.data?.error || "Error al procesar crédito.");
@@ -195,27 +197,30 @@ export default function PrestamosPage() {
     setIntegrantes([]);
     setClienteEncontrado(null);
     setConfirmando(false);
+    setEsUrgente(false);
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
 
       {/* SELECTOR */}
-      <div className="flex flex-col sm:flex-row bg-slate-100 p-2 rounded-3xl sm:rounded-[2.5rem] w-full sm:w-fit mx-auto shadow-inner gap-2">        <button onClick={() => { setTipoPrestamo('I'); handleReset(); }} className={`flex items-center gap-3 px-6 md:px-10 w-full sm:w-auto justify-center py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'I' ? 'bg-[#0047AB] text-white shadow-lg' : 'text-slate-400'}`}>
-        <User size={16} /> Individual
-      </button>
+      <div className="flex flex-col sm:flex-row bg-slate-100 p-2 rounded-3xl sm:rounded-[2.5rem] w-full sm:w-fit mx-auto shadow-inner gap-2">
+        <button onClick={() => { setTipoPrestamo('I'); handleReset(); }} className={`flex items-center gap-3 px-6 md:px-10 w-full sm:w-auto justify-center py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'I' ? 'bg-[#0047AB] text-white shadow-lg' : 'text-slate-400'}`}>
+          <User size={16} /> Individual
+        </button>
         <button onClick={() => { setTipoPrestamo('G'); handleReset(); }} className={`flex items-center gap-3 px-6 md:px-10 w-full sm:w-auto justify-center py-4 rounded-[2.2rem] text-xs font-black uppercase transition-all ${tipoPrestamo === 'G' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'}`}>
           <Users size={16} /> Grupal Solidario
         </button>
       </div>
 
-      <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] shadow-sm border border-slate-100 relative">        <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter mb-10 uppercase">
-        {tipoPrestamo === 'I' ? 'Nuevo Préstamo Cliente' : 'Apertura de Crédito Grupal'}
-      </h2>
+      <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] shadow-sm border border-slate-100 relative">
+        <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter mb-10 uppercase">
+          {tipoPrestamo === 'I' ? 'Nuevo Préstamo Cliente' : 'Apertura de Crédito Grupal'}
+        </h2>
 
         <form onSubmit={(e) => { e.preventDefault(); setConfirmando(true); }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-          {/* BUSCADOR POR NOMBRE (INDIVIDUAL) */}
+          {/* BUSCADOR (INDIVIDUAL) */}
           {tipoPrestamo === 'I' ? (
             <div className="space-y-2 relative">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Buscar Cliente (Nombre)</label>
@@ -228,39 +233,36 @@ export default function PrestamosPage() {
                     if (clienteEncontrado) setClienteEncontrado(null);
                     buscarClientePorNombre(e.target.value);
                   }}
-                  className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${tieneBloqueo ? 'bg-red-50 border-red-200 border' : 'bg-slate-50'}`}
+                  className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${tieneBloqueo && !esUrgente ? 'bg-red-50 border-red-200 border' : 'bg-slate-50'}`}
                   placeholder="Escriba nombre del cliente..."
                   required
                 />
               </div>
 
               {sugerenciasIndividual.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden max-h-60 overflow-y-auto">                  {sugerenciasIndividual.map(c => (
-                  <button key={c.id} type="button" onClick={() => seleccionarCliente(c)} className="w-full p-4 text-left hover:bg-blue-50 flex items-center justify-between border-b last:border-none">
-                    <span className="text-xs font-black uppercase">{c.nombre}</span>
-                    {(c.tiene_prestamo_activo || c.saldo_actual > 0) && (
-                      <span className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase">Bloqueado</span>
-                    )}
-                  </button>
-                ))}
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-[100] border border-slate-100 overflow-hidden max-h-60 overflow-y-auto">
+                  {sugerenciasIndividual.map(c => (
+                    <button key={c.id} type="button" onClick={() => seleccionarCliente(c)} className="w-full p-4 text-left hover:bg-blue-50 flex items-center justify-between border-b last:border-none">
+                      <span className="text-xs font-black uppercase">{c.nombre}</span>
+                      {(c.tiene_prestamo_activo || c.saldo_actual > 0) && (
+                        <span className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase">Bloqueado</span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
 
               {clienteEncontrado && tieneBloqueo && (
                 <div className="mt-4 space-y-3">
-                  {/* Mensaje de error visual */}
                   <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-red-600">
                     <X size={16} className="shrink-0" />
-                    <p className="text-[10px] font-black uppercase italic">
-                      Restricción: El cliente posee una deuda activa
-                    </p>
+                    <p className="text-[10px] font-black uppercase italic">Restricción: El cliente posee una deuda activa</p>
                   </div>
 
-                  {/* 🔥 SECCIÓN DE DESBLOQUEO (Solo para Admin) */}
                   {isAdmin && (
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-3xl border-dashed animate-in zoom-in-95 duration-300">
+                    <div className={`p-4 border-2 border-dashed rounded-3xl transition-all ${esUrgente ? 'bg-amber-500 border-amber-600' : 'bg-amber-50 border-amber-200'}`}>
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-amber-700">
+                        <div className={`flex items-center gap-2 ${esUrgente ? 'text-white' : 'text-amber-700'}`}>
                           <AlertCircle size={20} />
                           <div className="flex flex-col">
                             <span className="text-[9px] font-black uppercase leading-tight">Autorización Especial</span>
@@ -324,14 +326,17 @@ export default function PrestamosPage() {
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Monto ($)</label>
             <input type="number" min={0} value={formData.monto_capital} onChange={(e) => setFormData({ ...formData, monto_capital: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-black text-xl text-[#0047AB]" required />
           </div>
+
+          {/* RESUMEN AZUL OSCURO */}
           {Number(formData.monto_capital) > 0 && (
-            <div className="col-span-1 md:col-span-2 bg-[#050533] p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] text-white flex flex-col lg:flex-row justify-around items-center gap-8 shadow-2xl animate-in zoom-in-95 duration-300">              <div className="text-center">
-              <p className="text-[9px] font-black text-sky-400 uppercase mb-1">Abono {formData.modalidad === 'S' ? 'Semanal' : 'Estimado'}</p>
-              <p className="text-2xl md:text-3xl font-black italic">${calculos.pagoPorPeriodo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
-            </div>
+            <div className="col-span-1 md:col-span-2 bg-[#050533] p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] text-white flex flex-col lg:flex-row justify-around items-center gap-8 shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="text-center">
-                <p className="text-[9px] font-black text-emerald-400 uppercase mb-1">Interés Total</p>
-                <p className="text-2xl md:text-3xl font-black italic">${calculos.interesTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                <p className="text-[9px] font-black text-sky-400 uppercase mb-1">Cuota Estimada</p>
+                <p className="text-2xl md:text-3xl font-black italic">${calculos.pagoPorPeriodo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] font-black text-emerald-400 uppercase mb-1">Tasa Aplicada</p>
+                <p className={`text-2xl md:text-3xl font-black italic ${esUrgente ? 'text-amber-400' : 'text-emerald-400'}`}>{formData.tasa_interes}%</p>
               </div>
               <div className="text-center">
                 <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Total a Pagar</p>
@@ -340,10 +345,8 @@ export default function PrestamosPage() {
             </div>
           )}
 
-          {/* FORMULARIO DE AVAL */}
           {/* SECCIÓN DE AVALES */}
           <div className="col-span-1 md:col-span-2 space-y-6">
-            {/* AVAL 1 (Siempre visible) */}
             <div className="p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-6">
               <h3 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2 italic">
                 <ShieldCheck size={18} /> Información del Aval Principal
@@ -357,17 +360,16 @@ export default function PrestamosPage() {
               </div>
             </div>
 
-            {/* AVAL 2 (Condicional: Solo si Capital > 7500) */}
             {Number(formData.monto_capital) >= 7500 && (
               <div className="p-8 bg-purple-50/30 rounded-[2.5rem] border border-purple-100 space-y-6 animate-in slide-in-from-top duration-500">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-2 italic">
-                    <UserPlus size={18} />
+                    <UserPlus size={18} /> Segundo Aval
                   </h3>
                   <span className="text-[8px] bg-purple-200 text-purple-700 px-2 py-1 rounded-full font-black">OBLIGATORIO</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                  <input type="text" placeholder="Nombre completo del segundo aval" value={formData.nombre_aval_2} onChange={(e) => setFormData({ ...formData, nombre_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
+                  <input type="text" placeholder="Nombre completo" value={formData.nombre_aval_2} onChange={(e) => setFormData({ ...formData, nombre_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
                   <input type="tel" placeholder="Teléfono" value={formData.telefono_aval_2} onChange={(e) => setFormData({ ...formData, telefono_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
                   <input type="text" placeholder="Dirección" value={formData.direccion_aval_2} onChange={(e) => setFormData({ ...formData, direccion_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm md:col-span-2" required />
                   <input type="text" placeholder="CURP" value={formData.curp_aval_2} onChange={(e) => setFormData({ ...formData, curp_aval_2: e.target.value })} className="p-4 rounded-xl border border-purple-100 outline-none font-bold text-sm" required />
@@ -376,7 +378,6 @@ export default function PrestamosPage() {
               </div>
             )}
 
-            {/* GARANTÍA (Se mantiene abajo) */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
               <input type="text" placeholder="Descripción de la Garantía (Ej. Laptop, Factura de Moto...)" value={formData.garantia_descripcion} onChange={(e) => setFormData({ ...formData, garantia_descripcion: e.target.value })} className="w-full p-2 bg-transparent outline-none font-bold text-sm" />
             </div>
@@ -384,44 +385,30 @@ export default function PrestamosPage() {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Frecuencia</label>
-            <select value={formData.modalidad} onChange={(e) => {
-              const mod = e.target.value as 'S' | 'Q' | 'M';
-              setFormData({ ...formData, modalidad: mod, tasa_interes: TASAS_POR_MODALIDAD[mod].toString() });
-            }} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
-              <option value="S">Semanal (2.5%)</option>
-              <option value="Q">Quincenal (7.5%)</option>
-              <option value="M">Mensual (20%)</option>
+            <select value={formData.modalidad} onChange={(e) => setFormData({ ...formData, modalidad: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
+              <option value="S">Semanal</option>
+              <option value="Q">Quincenal</option>
+              <option value="M">Mensual</option>
             </select>
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Plazo</label>
-            <select
-              value={formData.cuotas}
-              onChange={(e) => setFormData({ ...formData, cuotas: e.target.value })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold"
-            >
-              {[...Array(99)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1} Periodos
-                </option>
-              ))}
-            </select>
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Plazo (Periodos)</label>
+            <input type="number" value={formData.cuotas} onChange={(e) => setFormData({ ...formData, cuotas: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold" />
           </div>
 
           <button
             type="submit"
-            // El botón se habilita si: (No hay bloqueo) O (Si hay bloqueo pero activaste esUrgente)
             disabled={(!esUrgente && tieneBloqueo) || loading || !formData.monto_capital}
             className={`col-span-1 md:col-span-2 mt-4 py-5 md:py-6 rounded-2xl md:rounded-[2.2rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all shadow-2xl flex items-center justify-center gap-4 ${(!esUrgente && tieneBloqueo)
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                : esUrgente
-                  ? 'bg-red-700 text-white animate-pulse shadow-red-200'
-                  : 'bg-[#050533] text-white hover:bg-[#0047AB]'
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : esUrgente
+                ? 'bg-red-700 text-white animate-pulse shadow-red-200'
+                : 'bg-[#050533] text-white hover:bg-[#0047AB]'
               }`}
           >
             <ShieldCheck size={18} />
-            <span>{loading ? 'Procesando...' : esUrgente ? 'AUTORIZAR COMO ADMIN' : 'Autorizar Crédito'}</span>
+            <span>{loading ? 'Procesando...' : esUrgente ? 'AUTORIZAR COMO ADMIN (URGENTE)' : 'Autorizar Crédito'}</span>
           </button>
         </form>
       </div>
@@ -429,11 +416,12 @@ export default function PrestamosPage() {
       {/* MODAL DE CONFIRMACIÓN */}
       {confirmando && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#050533]/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white w-full max-w-lg rounded-3xl md:rounded-[3rem] p-6 md:p-10 space-y-6 md:space-y-8 shadow-2xl border-t-8 border-[#0047AB] mx-4 max-h-[90vh] overflow-y-auto">            <h3 className="text-2xl font-black italic text-slate-800 uppercase leading-none text-center">Confirmar Datos</h3>
+          <div className="bg-white w-full max-w-lg rounded-3xl md:rounded-[3rem] p-6 md:p-10 space-y-6 md:space-y-8 shadow-2xl border-t-8 border-[#0047AB] mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-2xl font-black italic text-slate-800 uppercase leading-none text-center">Confirmar Datos</h3>
             <div className="bg-slate-50 p-8 rounded-[2.5rem] space-y-4 font-bold text-sm">
-              <div className="flex justify-between uppercase text-slate-500 text-[10px]"><span>Cliente:</span> <span className="text-slate-800 text-xs">{clienteEncontrado?.nombre || formData.nombre_grupo}</span></div>
+              <div className="flex justify-between uppercase text-slate-500 text-[10px]"><span>Sujeto:</span> <span className="text-slate-800 text-xs">{clienteEncontrado?.nombre || formData.nombre_grupo}</span></div>
               <div className="flex justify-between"><span>Capital:</span> <span>${Number(formData.monto_capital).toLocaleString()}</span></div>
-              <div className="flex justify-between text-red-500"><span>Interés Total:</span> <span>${calculos.interesTotal.toLocaleString()}</span></div>
+              <div className="flex justify-between"><span>Tasa Aplicada:</span> <span className={esUrgente ? 'text-red-600' : 'text-blue-600'}>{formData.tasa_interes}%</span></div>
               <div className="flex justify-between text-xl font-black text-emerald-600 border-t pt-4"><span>Total a Pagar:</span> <span>${calculos.totalPagar.toLocaleString()}</span></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -444,7 +432,7 @@ export default function PrestamosPage() {
         </div>
       )}
 
-      {/* ALERTAS */}
+      {/* ALERTA FLOTANTE */}
       {alerta && (
         <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'}`}>
           <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
