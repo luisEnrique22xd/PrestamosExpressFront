@@ -386,9 +386,6 @@ export default function PrestamosPage() {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 italic">Frecuencia</label>
             <select value={formData.modalidad} onChange={(e) => setFormData({ ...formData, modalidad: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
-              <option value="S">Semanal</option>
-              <option value="Q">Quincenal</option>
-              <option value="M">Mensual</option>
               <option value="S">
                 Semanal {esUrgente ? '(3.75%)' : '(2.5%)'}
               </option>
