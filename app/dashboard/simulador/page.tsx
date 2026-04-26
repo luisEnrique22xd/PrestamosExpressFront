@@ -101,8 +101,8 @@ const [direccionAval2, setDireccionAval2] = useState('');
   // 3. Tasas Automáticas
   useEffect(() => {
     if (modalidad === 'semanal') setInteres(2.5);
-    else if (modalidad === 'quincenal') setInteres(7.5);
-    else if (modalidad === 'mensual') setInteres(20);
+    else if (modalidad === 'quincenal') setInteres(6.25);
+    else if (modalidad === 'mensual') setInteres(15);
   }, [modalidad]);
 
   // 4. Cálculos Financieros
