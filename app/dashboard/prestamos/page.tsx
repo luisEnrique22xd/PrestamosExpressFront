@@ -73,10 +73,10 @@ export default function PrestamosPage() {
   // 🔥 ACTUALIZACIÓN AUTOMÁTICA DE TASAS SEGÚN MODO URGENTE
   useEffect(() => {
     const mod = formData.modalidad as 'S' | 'Q' | 'M';
-    const nuevaTasa = esUrgente 
-      ? TASAS_CONFIG.URGENTE[mod] 
+    const nuevaTasa = esUrgente
+      ? TASAS_CONFIG.URGENTE[mod]
       : TASAS_CONFIG.NORMAL[mod];
-    
+
     setFormData(prev => ({ ...prev, tasa_interes: nuevaTasa.toString() }));
   }, [esUrgente, formData.modalidad]);
 
@@ -389,6 +389,15 @@ export default function PrestamosPage() {
               <option value="S">Semanal</option>
               <option value="Q">Quincenal</option>
               <option value="M">Mensual</option>
+              <option value="S">
+                Semanal {esUrgente ? '(3.75%)' : '(2.5%)'}
+              </option>
+              <option value="Q">
+                Quincenal {esUrgente ? '(7.5%)' : '(6.25%)'}
+              </option>
+              <option value="M">
+                Mensual {esUrgente ? '(15.0%)' : '(15.0%)'}
+              </option>
             </select>
           </div>
 
