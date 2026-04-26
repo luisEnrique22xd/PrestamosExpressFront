@@ -8,7 +8,7 @@ import api from '@/lib/api';
 
 // 1. CONFIGURACIÓN DE TASAS (NORMAL VS URGENTE)
 const TASAS_CONFIG = {
-  NORMAL: { 'S': 3.12, 'Q': 6.25, 'M': 15.0 },
+  NORMAL: { 'S': 2.5, 'Q': 6.25, 'M': 15.0 },
   URGENTE: { 'S': 3.75, 'Q': 7.5, 'M': 15.0 }
 };
 
