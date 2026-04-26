@@ -6,14 +6,19 @@ import api from '@/lib/api';
 import {
   Search, PieChart, Info, User, MapPin,
   ChevronRight, Users, X, AlertCircle,
-  CheckCircle2
+  CheckCircle2, ShieldAlert
 } from 'lucide-react';
+
+// 1. CONFIGURACIÓN DE TASAS CENTRALIZADA
+const TASAS_CONFIG = {
+  NORMAL: { 'semanal': 2.5, 'quincenal': 6.25, 'mensual': 15.0 },
+  URGENTE: { 'semanal': 3.75, 'quincenal': 7.5, 'mensual': 15.0 }
+};
 
 export default function ProyeccionPage() {
   const [loading, setLoading] = useState(false);
   const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
-  // Función auxiliar para auto-limpiar la alerta
   const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
     setAlerta({ type, msg });
     setTimeout(() => setAlerta(null), 5000);
@@ -30,10 +35,9 @@ export default function ProyeccionPage() {
   const [esGrupal, setEsGrupal] = useState(false);
   const [numIntegrantes, setNumIntegrantes] = useState(1);
   const [nombreAval2, setNombreAval2] = useState('');
-const [telefonoAval2, setTelefonoAval2] = useState('');
-// Opcionales por si quieres mandarlos al PDF de una vez:
-const [curpAval2, setCurpAval2] = useState('');
-const [direccionAval2, setDireccionAval2] = useState('');
+  const [telefonoAval2, setTelefonoAval2] = useState('');
+  const [curpAval2, setCurpAval2] = useState('');
+  const [direccionAval2, setDireccionAval2] = useState('');
 
   const [busqueda, setBusqueda] = useState('');
   const [sugerencias, setSugerencias] = useState<any[]>([]);
@@ -46,13 +50,13 @@ const [direccionAval2, setDireccionAval2] = useState('');
   const [modalidad, setModalidad] = useState('semanal');
   const [cuotas, setCuotas] = useState(8);
   const [interes, setInteres] = useState(2.5);
+  const [esUrgente, setEsUrgente] = useState(false); // 🔥 NUEVO ESTADO
 
-  // Fecha de inicio forzada a hoy sin desfase
   const [fechaInicio, setFechaInicio] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
-  // 1. Cargar Folio Inicial
+
   useEffect(() => {
     const fetchFolio = async () => {
       try {
@@ -63,7 +67,6 @@ const [direccionAval2, setDireccionAval2] = useState('');
     fetchFolio();
   }, []);
 
-  // 2. Buscador Híbrido
   const buscarEntidades = async (query: string) => {
     setBusqueda(query);
     if (query.length > 1) {
@@ -98,14 +101,15 @@ const [direccionAval2, setDireccionAval2] = useState('');
     setBusqueda('');
   };
 
-  // 3. Tasas Automáticas
+  // 🔥 3. ACTUALIZACIÓN DE TASAS DINÁMICAS (NORMAL VS URGENTE)
   useEffect(() => {
-    if (modalidad === 'semanal') setInteres(2.5);
-    else if (modalidad === 'quincenal') setInteres(6.25);
-    else if (modalidad === 'mensual') setInteres(15);
-  }, [modalidad]);
+    const modKey = modalidad as 'semanal' | 'quincenal' | 'mensual';
+    const nuevaTasa = esUrgente 
+      ? TASAS_CONFIG.URGENTE[modKey] 
+      : TASAS_CONFIG.NORMAL[modKey];
+    setInteres(nuevaTasa);
+  }, [modalidad, esUrgente]);
 
-  // 4. Cálculos Financieros
   const { montoTotal, pagoPorCuota, cuotaPorSocio } = useMemo(() => {
     const interesPorCuota = monto * (interes / 100);
     const capitalPorCuota = monto / (cuotas || 1);
@@ -117,19 +121,15 @@ const [direccionAval2, setDireccionAval2] = useState('');
     };
   }, [monto, interes, cuotas, esGrupal, numIntegrantes]);
 
-  // --- 5. FECHAS DE PAGO BLINDADAS (Cálculo exacto) ---
   const fechasPago = useMemo(() => {
     let fechas = [];
     const [year, month, day] = fechaInicio.split('-').map(Number);
-
-    // Base al mediodía UTC para evitar saltos de zona horaria
     let fechaReferencia = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
     for (let i = 1; i <= cuotas; i++) {
       let nuevaFecha = new Date(fechaReferencia.getTime());
       let fueRecorrido = false;
 
-      // 1. Calculamos la fecha según modalidad
       if (modalidad === 'semanal') {
         nuevaFecha.setUTCDate(fechaReferencia.getUTCDate() + (7 * i));
       } else if (modalidad === 'quincenal') {
@@ -138,22 +138,16 @@ const [direccionAval2, setDireccionAval2] = useState('');
         nuevaFecha.setUTCMonth(fechaReferencia.getUTCMonth() + i);
       }
 
-      // 2. Aplicamos REGLA ALEXANDER (Domingo -> Lunes)
       if (nuevaFecha.getUTCDay() === 0) {
         nuevaFecha.setUTCDate(nuevaFecha.getUTCDate() + 1);
         fueRecorrido = true;
       }
 
-      // 3. Guardamos el objeto final (UNA SOLA VEZ)
-      fechas.push({ 
-        fechaCobro: nuevaFecha, 
-        recorrido: fueRecorrido 
-      });
+      fechas.push({ fechaCobro: nuevaFecha, recorrido: fueRecorrido });
     }
     return fechas;
   }, [fechaInicio, modalidad, cuotas]);
 
-  // 6. Exportación de Documentos
   const exportarDocumentacion = async () => {
     setLoading(true);
     try {
@@ -168,7 +162,7 @@ const [direccionAval2, setDireccionAval2] = useState('');
 
       const datosFinales = {
         nombreCliente, direccion, poblacion, curp, telefono,
-        nombreAval, telefonoAval, nombreAval2, telefonoAval2,monto, modalidad, cuotas,
+        nombreAval, telefonoAval, nombreAval2, telefonoAval2, monto, modalidad, cuotas,
         interes, pagoPorCuota, montoTotal, esGrupal,
         numIntegrantes, cuotaPorSocio,
         fechaVencimiento: ultimaFecha,
@@ -247,35 +241,72 @@ const [direccionAval2, setDireccionAval2] = useState('');
               <MapPin className="absolute left-4 top-4 text-slate-300" size={16} />
               <input placeholder="Población" value={poblacion} onChange={e => setPoblacion(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-sm" />
             </div>
-            {/* PANEL IZQUIERDO: CONFIGURACIÓN (Dentro del panel de inputs) */}
-<div className="space-y-3 pt-4 border-t border-slate-50">
-    {/* Aval 1 (Ya lo tienes) */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-50 pt-4">
-        <input placeholder="Presidente / Aval 1" value={nombreAval} onChange={e => setNombreAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs uppercase" />
-        <input placeholder="Tel. Aval 1" value={telefonoAval} onChange={e => setTelefonoAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs" />
-    </div>
 
-    {/* SEGUNDO AVAL (Condicional) */}
-    {monto >= 7500 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t-2 border-dashed border-purple-100 pt-4 animate-in slide-in-from-top duration-300">
-            <div className="col-span-2">
-                <p className="text-[8px] font-black text-purple-500 uppercase tracking-[0.2em] mb-2 ml-2">Aval Solidario Requerido (Monto &gt; 7.5k)</p>
+            <div className="space-y-3 pt-4 border-t border-slate-50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-50 pt-4">
+                  <input placeholder="Presidente / Aval 1" value={nombreAval} onChange={e => setNombreAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs uppercase" />
+                  <input placeholder="Tel. Aval 1" value={telefonoAval} onChange={e => setTelefonoAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs" />
+              </div>
+
+              {monto >= 7500 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t-2 border-dashed border-purple-100 pt-4 animate-in slide-in-from-top duration-300">
+                      <div className="col-span-2">
+                          <p className="text-[8px] font-black text-purple-500 uppercase tracking-[0.2em] mb-2 ml-2">Aval Solidario Requerido (Monto &gt; 7.5k)</p>
+                      </div>
+                      <input 
+                          placeholder="Nombre Aval 2" 
+                          value={nombreAval2} 
+                          onChange={e => setNombreAval2(e.target.value)} 
+                          className="w-full p-4 bg-purple-50/50 rounded-2xl outline-none border border-purple-100 focus:ring-2 focus:ring-purple-500 font-bold text-xs uppercase" 
+                      />
+                      <input 
+                          placeholder="Tel. Aval 2" 
+                          value={telefonoAval2} 
+                          onChange={e => setTelefonoAval2(e.target.value)} 
+                          className="w-full p-4 bg-purple-50/50 rounded-2xl outline-none border border-purple-100 focus:ring-2 focus:ring-purple-500 font-bold text-xs" 
+                      />
+                  </div>
+              )}
             </div>
-            <input 
-                placeholder="Nombre Aval 2" 
-                value={nombreAval2} 
-                onChange={e => setNombreAval2(e.target.value)} 
-                className="w-full p-4 bg-purple-50/50 rounded-2xl outline-none border border-purple-100 focus:ring-2 focus:ring-purple-500 font-bold text-xs uppercase" 
-            />
-            <input 
-                placeholder="Tel. Aval 2" 
-                value={telefonoAval2} 
-                onChange={e => setTelefonoAval2(e.target.value)} 
-                className="w-full p-4 bg-purple-50/50 rounded-2xl outline-none border border-purple-100 focus:ring-2 focus:ring-purple-500 font-bold text-xs" 
-            />
-        </div>
-    )}
-</div>
+          </div>
+
+          {/* 🔥 SECCIÓN TOGGLE MODO URGENTE */}
+          <div className={`p-5 rounded-3xl border-2 transition-all duration-500 ${
+            esUrgente 
+              ? 'bg-amber-50 border-amber-400 shadow-lg shadow-amber-100' 
+              : 'bg-slate-50 border-transparent'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-2xl transition-colors duration-500 ${
+                  esUrgente ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'
+                }`}>
+                  <ShieldAlert size={22} className={esUrgente ? 'animate-pulse' : ''} />
+                </div>
+                <div>
+                  <p className={`text-[11px] font-black uppercase tracking-tight ${
+                    esUrgente ? 'text-amber-700' : 'text-slate-500'
+                  }`}>
+                    Modo Urgente
+                  </p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase italic">
+                    Sobre-tasa de riesgo
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEsUrgente(!esUrgente)}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none ${
+                  esUrgente ? 'bg-amber-500' : 'bg-slate-300'
+                }`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+                  esUrgente ? 'translate-x-8' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4 pt-4 border-t border-slate-50">
@@ -293,14 +324,14 @@ const [direccionAval2, setDireccionAval2] = useState('');
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Modalidad</label>
                 <select value={modalidad} onChange={e => setModalidad(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-slate-600 outline-none">
-                  <option value="semanal">Semanal</option>
-                  <option value="quincenal">Quincenal</option>
-                  <option value="mensual">Mensual</option>
+                  <option value="semanal">Semanal {esUrgente ? '3.75%' : '2.5%'}</option>
+                  <option value="quincenal">Quincenal {esUrgente ? '7.5%' : '5.0%'}</option>
+                  <option value="mensual">Mensual {esUrgente ? '15.0%' : '10.0%'}</option>
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Interés (%)</label>
-                <input value={interes} readOnly className="w-full p-4 bg-slate-100 rounded-2xl font-black text-[#0047AB] outline-none" />
+                <input value={interes + '%'} readOnly className={`w-full p-4 rounded-2xl font-black outline-none transition-colors ${esUrgente ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-[#0047AB]'}`} />
               </div>
             </div>
           </div>
@@ -308,16 +339,16 @@ const [direccionAval2, setDireccionAval2] = useState('');
           <button
             onClick={exportarDocumentacion}
             disabled={loading}
-            className={`w-full py-4 md:py-5 text-white rounded-2xl md:rounded-[2rem] font-black uppercase text-[10px] md:text-xs tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${esGrupal ? 'bg-purple-600 shadow-purple-900/20' : 'bg-[#0047AB] shadow-blue-900/20'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`w-full py-4 md:py-5 text-white rounded-2xl md:rounded-[2rem] font-black uppercase text-[10px] md:text-xs tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 ${esGrupal ? 'bg-purple-600 shadow-purple-900/20' : esUrgente ? 'bg-amber-600 shadow-amber-900/20' : 'bg-[#0047AB] shadow-blue-900/20'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {loading ? 'Generando...' : `Generar Documentos #PR-${folioConsecutivo.toString().padStart(3, '0')}`}
+            {loading ? 'Generando...' : `Generar #PR-${folioConsecutivo.toString().padStart(3, '0')}`}
           </button>
         </div>
       </div>
 
       {/* PANEL DERECHO: VISTA PREVIA */}
       <div className="lg:col-span-2 space-y-6">
-        <div className={`p-6 md:p-10 rounded-3xl md:rounded-[3rem] text-white shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-6 transition-colors duration-500 ${esGrupal ? 'bg-gradient-to-br from-purple-900 to-slate-900' : 'bg-[#050533]'}`}>
+        <div className={`p-6 md:p-10 rounded-3xl md:rounded-[3rem] text-white shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-6 transition-colors duration-500 ${esGrupal ? 'bg-gradient-to-br from-purple-900 to-slate-900' : esUrgente ? 'bg-gradient-to-br from-amber-600 to-slate-900' : 'bg-[#050533]'}`}>
           <div className="text-center md:text-left">
             <p className="text-sky-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2 italic">Pago por {esGrupal ? 'Grupo' : 'Cliente'} ({modalidad})</p>
             <h2 className="text-4xl md:text-6xl font-black tracking-tighter italic text-white">${pagoPorCuota.toFixed(2)}</h2>
@@ -332,7 +363,7 @@ const [direccionAval2, setDireccionAval2] = useState('');
           </div>
           <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 text-right min-w-[200px]">
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total del Crédito</p>
-            <h2 className="text-3xl font-black text-emerald-400">${montoTotal.toFixed(2)}</h2>
+            <h2 className={`text-3xl font-black ${esUrgente ? 'text-amber-400' : 'text-emerald-400'}`}>{montoTotal.toFixed(2)}</h2>
           </div>
         </div>
 
@@ -340,7 +371,7 @@ const [direccionAval2, setDireccionAval2] = useState('');
           {fechasPago.map((item, index) => (
             <div key={index} className="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100 flex items-center justify-between shadow-sm group hover:border-[#0047AB] transition-all">
               <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-slate-100 font-bold transition-colors ${esGrupal ? 'bg-purple-50 group-hover:bg-purple-100' : 'bg-slate-50 group-hover:bg-blue-50'}`}>
+                <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-slate-100 font-bold transition-colors ${esGrupal ? 'bg-purple-50 group-hover:bg-purple-100' : esUrgente ? 'bg-amber-50 group-hover:bg-amber-100 border-amber-100' : 'bg-slate-50 group-hover:bg-blue-50'}`}>
                   <span className="text-[8px] text-slate-400 uppercase">
                     {item.fechaCobro.toLocaleDateString('es-MX', { month: 'short', timeZone: 'UTC' })}
                   </span>
@@ -351,51 +382,44 @@ const [direccionAval2, setDireccionAval2] = useState('');
                 <div>
                   <p className="font-black text-slate-800 text-sm">Pago #{index + 1}</p>
                   <div className="flex items-center gap-2">
-                    {/* Forzamos el nombre del día a local para que no cambie */}
                     <p className="text-[10px] text-slate-400 font-bold uppercase">
-                      {item.fechaCobro.toLocaleDateString('es-MX', {
-                        weekday: 'long',
-                        timeZone: 'UTC'
-                      })}
+                      {item.fechaCobro.toLocaleDateString('es-MX', { weekday: 'long', timeZone: 'UTC' })}
                     </p>
                     {item.recorrido && (
-  <span className="text-[7px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">
-    Domingo Recorrido
-  </span>
-)}
+                      <span className="text-[7px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">
+                        Domingo Recorrido
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-              <p className={`text-2xl font-black italic ${esGrupal ? 'text-purple-600' : 'text-[#0047AB]'}`}>${pagoPorCuota.toFixed(2)}</p>
+              <p className={`text-2xl font-black italic ${esGrupal ? 'text-purple-600' : esUrgente ? 'text-amber-600' : 'text-[#0047AB]'}`}>${pagoPorCuota.toFixed(2)}</p>
             </div>
           ))}
         </div>
 
-        <div className={`p-8 rounded-[3rem] border flex items-start gap-4 ${esGrupal ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'}`}>
-          <Info size={24} className={`${esGrupal ? 'text-purple-600' : 'text-[#0047AB]'} shrink-0 mt-1`} />
-          <p className={`text-xs font-medium leading-relaxed italic ${esGrupal ? 'text-purple-700' : 'text-blue-700/80'}`}>
-            <strong>Proyección Solidaria:</strong> {esGrupal
-              ? `Este cálculo divide la cuota total entre los ${numIntegrantes} clientes responsables. En caso de que un integrante no aporte, el grupo deberá cubrir su parte solidariamente.`
-              : `Este cálculo es individual. Los domingos se recorren al lunes para asegurar la efectividad del cobro en Acuitlapilco.`}
+        <div className={`p-8 rounded-[3rem] border flex items-start gap-4 ${esUrgente ? 'bg-amber-50 border-amber-100' : esGrupal ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'}`}>
+          {esUrgente ? <ShieldAlert size={24} className="text-amber-600 shrink-0 mt-1" /> : <Info size={24} className={`${esGrupal ? 'text-purple-600' : 'text-[#0047AB]'} shrink-0 mt-1`} />}
+          <p className={`text-xs font-medium leading-relaxed italic ${esUrgente ? 'text-amber-800' : esGrupal ? 'text-purple-700' : 'text-blue-700/80'}`}>
+            <strong>Aviso {esUrgente ? 'de Riesgo' : 'Solidario'}:</strong> {esUrgente 
+              ? "Esta proyección aplica una sobretasa de interés por excepción de riesgo. Los montos calculados son definitivos bajo esta modalidad."
+              : esGrupal 
+                ? `Este cálculo divide la cuota total entre los ${numIntegrantes} clientes responsables. En caso de que un integrante no aporte, el grupo deberá cubrir su parte solidariamente.`
+                : `Este cálculo es individual. Los domingos se recorren al lunes para asegurar la efectividad del cobro.`}
           </p>
         </div>
       </div>
+
       {alerta && (
-        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
-          }`}>
-          <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
-            }`}>
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'}`}>
+          <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
             {alerta.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
-              {alerta.type === 'success' ? 'Sistema Express' : 'Atención'}
-            </p>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{alerta.type === 'success' ? 'Sistema Express' : 'Atención'}</p>
             <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
           </div>
-          <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-500">
-            <X size={18} />
-          </button>
+          <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-500"><X size={18} /></button>
         </div>
       )}
     </div>
