@@ -86,8 +86,11 @@ export default function GlobalDashboard() {
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
         <div>
           <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
-            Sistema <span className="text-[#0047AB]">Express</span>
+            SAPE <span className="text-[#0047AB]"></span>
           </h1>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
+            SISTEMA DE ADMINISTRACIÓN PRÉSTAMOS EXPRESS
+          </p>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
             Control Central • Santa Maria Acuitlapilco, Tlaxcala
           </p>
