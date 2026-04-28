@@ -85,13 +85,17 @@ export default function GlobalDashboard() {
       {/* HEADER */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
         <div className="flex flex-col items-center justify-center text-center">
-          <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
-            SAPPE <span className="text-[#0047AB]"></span>
-          </h1>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
-            SISTEMA DE ADMINISTRACIÓN PARA PRÉSTAMOS EXPRESS
-          </p>
-        </div>
+  {/* SAPPE en Azul Rey */}
+  <h1 className="text-4xl font-black text-[#0047AB] italic uppercase tracking-tighter leading-none">
+    SAPPE
+  </h1>
+  
+  {/* Subtítulo en Rojo */}
+  {/* He usado text-red-600, pero puedes usar [#FF0000] si quieres el rojo puro */}
+  <p className="text-red-600 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
+    SISTEMAS DE ADMINISTRACIÓN PARA PRÉSTAMOS EXPRESS
+  </p>
+</div>
 
         {/* BUSCADOR */}
         <div className="relative w-full lg:w-96 group">
