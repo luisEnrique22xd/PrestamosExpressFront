@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { 
-  DollarSign, ArrowRight, Search, TrendingUp, 
+import {
+  DollarSign, ArrowRight, Search, TrendingUp,
   Users, Wallet, Calendar, ArrowUpRight, Loader2,
   Activity, AlertCircle
 } from 'lucide-react';
@@ -37,10 +37,10 @@ export default function GlobalDashboard() {
         setLoading(true);
         const res = await api.get('/estadisticas-globales/');
         setResumen(res.data);
-      } catch (e) { 
-        console.error("Error al cargar estadísticas:", e); 
-      } finally { 
-        setLoading(false); 
+      } catch (e) {
+        console.error("Error al cargar estadísticas:", e);
+      } finally {
+        setLoading(false);
       }
     };
     fetchGlobalData();
@@ -63,8 +63,8 @@ export default function GlobalDashboard() {
   const capitalEnCalle = useMemo(() => {
     if (!resumen?.rangos) return 0;
     return resumen.rangos.reduce((acc: number, r: any) => {
-      const valor = typeof r.total === 'string' 
-        ? parseFloat(r.total.replace(/[^0-9.-]+/g, "")) 
+      const valor = typeof r.total === 'string'
+        ? parseFloat(r.total.replace(/[^0-9.-]+/g, ""))
         : (r.total || 0);
       return acc + (isNaN(valor) ? 0 : valor);
     }, 0);
@@ -81,17 +81,16 @@ export default function GlobalDashboard() {
 
   return (
     <div className="space-y-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
+
       {/* HEADER */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
-        <div>
-          <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none center">
+        <div className="flex flex-col items-center justify-center text-center">
+          <h1 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
             SAPPE <span className="text-[#0047AB]"></span>
           </h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
             SISTEMA DE ADMINISTRACIÓN PRÉSTAMOS EXPRESS
           </p>
-        
         </div>
 
         {/* BUSCADOR */}
@@ -107,7 +106,7 @@ export default function GlobalDashboard() {
           {sugerencias.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-slate-50 overflow-hidden animate-in zoom-in-95 duration-200">
               {sugerencias.map((c) => (
-                <button 
+                <button
                   key={c.id}
                   onClick={() => router.push(`/dashboard/${c.id}`)}
                   className="w-full p-4 flex items-center justify-between hover:bg-blue-50 transition-colors border-b border-slate-50 last:border-none"
@@ -177,11 +176,11 @@ export default function GlobalDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Moras por Recuperar" 
-          value={`${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} 
-          icon={AlertCircle} 
-          color="#DC2626" 
+        <StatCard
+          title="Moras por Recuperar"
+          value={`${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+          icon={AlertCircle}
+          color="#DC2626"
         />
       </div>
 
@@ -200,17 +199,17 @@ export default function GlobalDashboard() {
               <AreaChart data={resumen?.grafica_semanal || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRecup" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0047AB" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#0047AB" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#0047AB" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#0047AB" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} tickFormatter={(v) => `$${v}`} />
-                <Tooltip 
-                   contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '15px'}}
-                   itemStyle={{color: '#0047AB', fontWeight: '900', fontSize: '12px'}}
-                   formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Recuperado']}
+                <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={(v) => `$${v}`} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '15px' }}
+                  itemStyle={{ color: '#0047AB', fontWeight: '900', fontSize: '12px' }}
+                  formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Recuperado']}
                 />
                 <Area type="monotone" dataKey="monto" stroke="#0047AB" strokeWidth={4} fillOpacity={1} fill="url(#colorRecup)" animationDuration={1500} />
               </AreaChart>
@@ -221,50 +220,50 @@ export default function GlobalDashboard() {
         <div className="space-y-6 md:space-y-8">
           {/* GRÁFICA DE PASTEL */}
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[300px]">
-  <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
-    <Activity size={18} className="text-[#0047AB]" />
-    Métodos de Hoy
-  </h3>
-  
-  <div className="h-[180px] w-full flex items-center justify-center">
-    {resumen?.metodos_pago && resumen.metodos_pago.length > 0 ? (
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={resumen.metodos_pago}
-            cx="50%" cy="50%"
-            innerRadius={55} outerRadius={75}
-            paddingAngle={8} dataKey="monto" nameKey="label" stroke="none"
-          >
-            {resumen.metodos_pago.map((entry: any, index: number) => (
-              <Cell key={`cell-${index}`} fill={COLORES_MODALIDAD[entry.label] || COLORES_MODALIDAD['Otro']} />
-            ))}
-          </Pie>
-          <Tooltip 
-            contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-            formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Recuperado']}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-    ) : (
-      /* ✨ ESTADO VACÍO ELEGANTE */
-      <div className="flex flex-col items-center justify-center opacity-20">
-        <DollarSign size={60} className="text-slate-400 mb-2" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sin cobranza aún</p>
-      </div>
-    )}
-  </div>
+            <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
+              <Activity size={18} className="text-[#0047AB]" />
+              Métodos de Hoy
+            </h3>
 
-  {/* Leyendas (Solo si hay datos) */}
-  <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full min-h-[20px]">
-    {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
-      <div key={idx} className="flex items-center gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_MODALIDAD[metodo.label as keyof typeof COLORES_MODALIDAD] || COLORES_MODALIDAD['Otro'] }}></div>
-        <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{metodo.label}</span>
-      </div>
-    ))}
-  </div>
-</div>
+            <div className="h-[180px] w-full flex items-center justify-center">
+              {resumen?.metodos_pago && resumen.metodos_pago.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={resumen.metodos_pago}
+                      cx="50%" cy="50%"
+                      innerRadius={55} outerRadius={75}
+                      paddingAngle={8} dataKey="monto" nameKey="label" stroke="none"
+                    >
+                      {resumen.metodos_pago.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORES_MODALIDAD[entry.label] || COLORES_MODALIDAD['Otro']} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Recuperado']}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                /* ✨ ESTADO VACÍO ELEGANTE */
+                <div className="flex flex-col items-center justify-center opacity-20">
+                  <DollarSign size={60} className="text-slate-400 mb-2" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sin cobranza aún</p>
+                </div>
+              )}
+            </div>
+
+            {/* Leyendas (Solo si hay datos) */}
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full min-h-[20px]">
+              {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_MODALIDAD[metodo.label as keyof typeof COLORES_MODALIDAD] || COLORES_MODALIDAD['Otro'] }}></div>
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{metodo.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* LISTA DE CONCENTRACIÓN */}
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col">
