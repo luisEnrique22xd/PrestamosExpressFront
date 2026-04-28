@@ -89,7 +89,7 @@ export default function GlobalDashboard() {
             SAPPE <span className="text-[#0047AB]"></span>
           </h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
-            SISTEMA DE ADMINISTRACIÓN PRÉSTAMOS EXPRESS
+            SISTEMA DE ADMINISTRACIÓN PARA PRÉSTAMOS EXPRESS
           </p>
         </div>
 
