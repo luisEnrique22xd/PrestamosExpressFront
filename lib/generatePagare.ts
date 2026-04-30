@@ -84,7 +84,7 @@ export const generarPagare = (data: any) => {
   doc.text(`$ ${capital.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, 180, 17);
 
   doc.setFontSize(9);
-  doc.text(`No. PR-${folioFormateado}`, 7, 27);
+  doc.text(`No. PE-${folioFormateado}`, 7, 27);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
