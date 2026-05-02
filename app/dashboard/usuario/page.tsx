@@ -39,7 +39,7 @@ useEffect(() => {
 
 const handleCreateUser = async () => {
   try {
-    await api.post('/registrar-trabajador/', userData);
+    await api.post('/auth/registrar-trabajador/', userData);
     alert("✅ Usuario creado con éxito");
     setShowAdminModal(false);
     setUserData({ username: '', password: '', email: '' });
