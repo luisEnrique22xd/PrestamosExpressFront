@@ -15,10 +15,10 @@ import { useRouter } from 'next/navigation';
 import StatCard from '../components/statscard';
 
 const COLORES_MODALIDAD: { [key: string]: string } = {
-  'Efectivo': '#10B981',      // Esmeralda
+  'Efectivo': '#10B981',      // Verde Esmeralda
   'Transferencia': '#3B82F6', // Azul
   'Depósito': '#8B5CF6',      // Violeta
-  'Otro': '#94A3B8'           // Slate
+  'Otro': '#94A3B8'           // Gris Slate
 };
 
 export default function GlobalDashboard() {

@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   UserCircle, Landmark, ShieldCheck, LogOut,
-  Key, Settings, Search, Loader2, X, CheckCircle2, AlertCircle, Edit2, Save, History, Printer
+  Key, Settings, Search, Loader2, X, CheckCircle2, AlertCircle, Edit2, Save, History, Printer,
+  Users
 } from "lucide-react";
 import api from '@/lib/api';
 import Cookies from 'js-cookie';
@@ -28,6 +29,24 @@ export default function UsuarioPage() {
 
   // Utilidad para formateo de fecha (Solución al "1 Issue" de hidratación)
   const [fechaLocal, setFechaLocal] = useState('');
+  const [showAdminModal, setShowAdminModal] = useState(false);
+const [userData, setUserData] = useState({ username: '', password: '', email: '' });
+const [userRole, setUserRole] = useState<string | null>(null);
+
+useEffect(() => {
+  setUserRole(localStorage.getItem('user_role'));
+}, []);
+
+const handleCreateUser = async () => {
+  try {
+    await api.post('/registrar-trabajador/', userData);
+    alert("✅ Usuario creado con éxito");
+    setShowAdminModal(false);
+    setUserData({ username: '', password: '', email: '' });
+  } catch (e) {
+    alert("❌ Error al crear usuario");
+  }
+};
 
   const fetchPerfil = async () => {
     try {
@@ -174,6 +193,7 @@ export default function UsuarioPage() {
   };
 
   return (
+    
     <div className="max-w-5xl mx-auto space-y-8 pb-10 relative animate-in fade-in duration-700">
 
       {/* TOAST NOTIFICATION */}
@@ -199,6 +219,14 @@ export default function UsuarioPage() {
           <button onClick={() => setShowEditModal(true)} className="absolute -bottom-2 -right-2 bg-white p-4 rounded-2xl shadow-xl text-[#0047AB] border border-slate-50 hover:scale-110 transition-all active:scale-95">
             <Settings size={20} />
           </button>
+          {userRole === 'admin' && (
+  <button 
+    onClick={() => setShowAdminModal(true)}
+    className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0047AB] transition-all flex items-center gap-2 shadow-lg"
+  >
+    <Users size={16} /> Registrar Trabajador
+  </button>
+)}
         </div>
 
         <div className="flex-1 relative z-10 text-center md:text-left">
@@ -428,10 +456,60 @@ export default function UsuarioPage() {
                     <p className="font-black italic text-sm uppercase tracking-widest">Bóveda vacía</p>
                 </div>
             )}
+            {showAdminModal && (
+  <div className="fixed inset-0 bg-[#050533]/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-2xl font-black text-slate-800 italic uppercase leading-none">Nuevo Usuario</h2>
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-2">Acceso para Personal de Cobranza</p>
+        </div>
+        <button onClick={() => setShowAdminModal(false)} className="text-slate-300 hover:text-red-500 transition-colors">
+          <X size={28} />
+        </button>
+      </div>
+
+      <div className="space-y-5">
+        <div>
+          <label className="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Nombre de Usuario</label>
+          <input 
+            type="text" 
+            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700"
+            onChange={(e) => setUserData({...userData, username: e.target.value})}
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Correo Electrónico</label>
+          <input 
+            type="email" 
+            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700"
+            onChange={(e) => setUserData({...userData, email: e.target.value})}
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Contraseña Temporal</label>
+          <input 
+            type="password" 
+            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700"
+            onChange={(e) => setUserData({...userData, password: e.target.value})}
+          />
+        </div>
+
+        <button 
+          onClick={handleCreateUser}
+          className="w-full py-5 bg-[#0047AB] text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
+        >
+          Dar de Alta en SAPPE
+        </button>
+      </div>
+    </div>
+  </div>
+)}
             </div>
         </div>
       )}
     </div>
+    
   );
 }
 
