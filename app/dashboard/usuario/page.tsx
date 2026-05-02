@@ -219,14 +219,7 @@ const handleCreateUser = async () => {
           <button onClick={() => setShowEditModal(true)} className="absolute -bottom-2 -right-2 bg-white p-4 rounded-2xl shadow-xl text-[#0047AB] border border-slate-50 hover:scale-110 transition-all active:scale-95">
             <Settings size={20} />
           </button>
-          {userRole === 'admin' && (
-  <button 
-    onClick={() => setShowAdminModal(true)}
-    className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0047AB] transition-all flex items-center gap-2 shadow-lg"
-  >
-    <Users size={16} /> Registrar Trabajador
-  </button>
-)}
+          
         </div>
 
         <div className="flex-1 relative z-10 text-center md:text-left">
@@ -256,6 +249,14 @@ const handleCreateUser = async () => {
                 {fechaLocal}
               </p>
             </div>
+            {userRole === 'admin' && (
+  <button 
+    onClick={() => setShowAdminModal(true)}
+    className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0047AB] transition-all flex items-center gap-2 shadow-lg"
+  >
+    <Users size={16} /> Registrar Trabajador
+  </button>
+)}
           </div>
         </div>
       </div>
