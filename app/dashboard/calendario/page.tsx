@@ -110,11 +110,26 @@ export default function CalendarioCobranza() {
               <span className={`text-lg font-black ${isSelected ? 'text-[#0047AB]' : 'text-slate-700'}`}>{dia}</span>
 
               {cobros.length > 0 && (
-                <div className={`flex gap-1.5 p-2 rounded-xl ${tienePendientes ? 'bg-blue-100/50' : 'bg-emerald-100/50'}`}>
-                  {cobros.slice(0, 3).map((c, i) => (
-                    <div key={i} className={`w-2 h-2 rounded-full ${c.estatus === 'pagado' ? 'bg-emerald-500' : 'bg-[#0047AB]'}`} />
-                  ))}
-                  {cobros.length > 3 && <span className="text-[8px] font-black text-blue-600">+{cobros.length - 3}</span>}
+                <div className={`flex gap-1.5 p-2 rounded-xl ${tienePendientes ? 'bg-slate-100/50' : 'bg-emerald-100/50'}`}>
+                  {cobros.slice(0, 3).map((c, i) => {
+                    // Determinamos el color del punto basado en la lógica solicitada
+                    let colorPunto = "bg-red-500"; // Por defecto: Rojo (Pendiente)
+
+                    if (c.estatus === 'pagado') {
+                      // Si está pagado, verificamos si tuvo penalización
+                      // (Ajusta 'c.con_penalizacion' según el nombre exacto que devuelva tu API)
+                      colorPunto = c.con_penalizacion ? "bg-yellow-500" : "bg-emerald-500";
+                    }
+
+                    return (
+                      <div
+                        key={i}
+                        className={`w-2 h-2 rounded-full ${colorPunto} shadow-sm`}
+                        title={c.estatus}
+                      />
+                    );
+                  })}
+                  {cobros.length > 3 && <span className="text-[8px] font-black text-slate-400">+{cobros.length - 3}</span>}
                 </div>
               )}
             </button>
@@ -170,8 +185,12 @@ export default function CalendarioCobranza() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`text-[8px] font-black uppercase px-2 py-1 rounded-md mb-2 w-fit ml-auto ${cobro.estatus === 'pagado' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-sky-500/20 text-sky-400'
-                      }`}>{cobro.estatus}</p>
+                    <p className={`text-[8px] font-black uppercase px-2 py-1 rounded-md mb-2 w-fit ml-auto ${cobro.estatus === 'pagado'
+                        ? (cobro.con_penalizacion ? 'bg-yellow-500/20 text-yellow-500' : 'bg-emerald-500/20 text-emerald-400')
+                        : 'bg-red-500/20 text-red-500'
+                      }`}>
+                      {cobro.estatus === 'pagado' && cobro.con_penalizacion ? 'Pagado c/ Mora' : cobro.estatus}
+                    </p>
                     <p className="text-lg font-black">${cobro.monto}</p>
                   </div>
                 </div>
@@ -190,8 +209,8 @@ export default function CalendarioCobranza() {
                   <button
                     onClick={() => router.push(`/dashboard/pagos`)}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] font-black uppercase transition-all shadow-xl min-w-[120px] ${cobro.estatus === 'pagado'
-                        ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                        : 'bg-[#10B981] text-white hover:bg-emerald-600 shadow-emerald-900/40'
+                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                      : 'bg-[#10B981] text-white hover:bg-emerald-600 shadow-emerald-900/40'
                       }`}
                   >
                     {cobro.estatus === 'pagado' ? <CheckCircle2 size={14} /> : <DollarSign size={14} />}
