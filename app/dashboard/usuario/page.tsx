@@ -11,6 +11,12 @@ import { useRouter } from 'next/navigation';
 import { generarPDFRecibo } from '@/lib/generateTicket';
 
 export default function UsuarioPage() {
+  const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+
+  const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+    setAlerta({ type, msg });
+    setTimeout(() => setAlerta(null), 5000);
+  };
   const router = useRouter();
   const [perfil, setPerfil] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -40,11 +46,11 @@ useEffect(() => {
 const handleCreateUser = async () => {
   try {
     await api.post('/auth/registrar-trabajador/', userData);
-    alert("✅ Usuario creado con éxito");
+   lanzarAlerta('success', "✅ Usuario creado con éxito");
     setShowAdminModal(false);
     setUserData({ username: '', password: '', email: '' });
   } catch (e) {
-    alert("❌ Error al crear usuario");
+    lanzarAlerta('error', "❌ Error al crear usuario");
   }
 };
 
@@ -507,6 +513,20 @@ const handleCreateUser = async () => {
   </div>
 )}
             </div>
+        </div>
+      )}
+       {alerta && (
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'}`}>
+          <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
+            {alerta.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{alerta.type === 'success' ? 'Sistema Express' : 'Atención'}</p>
+            <p className="font-bold text-sm italic text-slate-700">{alerta.msg}</p>
+          </div>
+          <button onClick={() => setAlerta(null)} className="ml-4 text-slate-300 hover:text-slate-500">
+            <X size={18} />
+          </button>
         </div>
       )}
     </div>
