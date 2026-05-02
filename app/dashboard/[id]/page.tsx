@@ -228,6 +228,28 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
   );
 };
 
+const ClientHealthBadge = ({ count }: { count: number }) => {
+  // Lógica de Semáforo: 0 = Excelente, 1-3 = Regular, >3 = Malo
+  const config = {
+    color: count === 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+           count <= 3 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+           'bg-red-50 text-red-600 border-red-100',
+    label: count === 0 ? 'Excelente' : 
+           count <= 3 ? 'Regular' : 'Malo (Crítico)',
+    icon: count === 0 ? <CheckCircle2 size={12} /> : 
+          count <= 3 ? <AlertTriangle size={12} /> : 
+          <AlertCircle size={12} />
+  };
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1 rounded-full border shadow-sm animate-in fade-in duration-500 ${config.color}`}>
+      {config.icon}
+      <span className="text-[10px] font-black uppercase tracking-widest">
+        Perfil: {config.label} ({count})
+      </span>
+    </div>
+  );
+}; 
   return (
     <div className="flex min-h-screen bg-[#F8FAFE]">
       <main className="flex-1 p-10 overflow-auto">
@@ -275,6 +297,7 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
                   <span className="text-[10px] font-black uppercase tracking-widest">Resumen General de Deuda</span>
                 </div>
                 <StatusBadge data={data} />
+                <ClientHealthBadge count={data.conteo_penalizaciones || 0} />
               </div>
               <h1 className="text-4xl font-black text-slate-800 italic tracking-tighter">
                 {data.tipo === 'G' ? `Grupo: ${data.nombre}` : data.nombre}
