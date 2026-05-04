@@ -8,70 +8,116 @@ import { saveAs } from 'file-saver'; // Necesitarás instalar file-saver tambié
 export const exportToExcel = async (stats: any, grafica: any[]) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Estadísticas');
-
-  // 1. CONFIGURAR EL LOGO
-  // Puedes usar una URL de tu carpeta /public o una URL externa
-  const response = await fetch('/images/logo.png'); // Asegúrate de que esta ruta sea correcta
-  const buffer = await response.arrayBuffer();
   
-  const logoId = workbook.addImage({
-    buffer: buffer,
-    extension: 'png',
-  });
+  // Ocultar líneas de cuadrícula para un look más limpio
+  worksheet.views = [{ showGridLines: false }];
 
-  // Insertar imagen (ajusta tl.col y tl.row para posicionarla)
-  worksheet.addImage(logoId, {
-    tl: { col: 0.2, row: 0.1 }, // Top-Left: un poco desplazado de la esquina A1
-    ext: { width: 100, height: 100 } // Tamaño en píxeles
-  });
+  // 1. CARGA DEL LOGO (Asegúrate de que la ruta sea correcta)
+  try {
+    const response = await fetch('/images/logo.png');
+    if (response.ok) {
+      const buffer = await response.arrayBuffer();
+      const logoId = workbook.addImage({
+        buffer: buffer,
+        extension: 'png',
+      });
+      worksheet.addImage(logoId, {
+        tl: { col: 0.1, row: 0.1 },
+        ext: { width: 80, height: 80 }
+      });
+    }
+  } catch (e) {
+    console.error("No se pudo cargar el logo para el Excel");
+  }
 
-  // 2. ESTRUCTURA DE DATOS (Dejamos espacio arriba para el logo)
-  worksheet.addRow([]); // Fila 1 (Logo)
-  worksheet.addRow([]); // Fila 2 (Logo)
-  worksheet.addRow([]); // Fila 3 (Logo)
-  worksheet.addRow([]); // Fila 4 (Logo)
-  
+  // 2. CONFIGURACIÓN DE COLUMNAS
+  worksheet.columns = [
+    { header: 'Concepto / Rango', key: 'label', width: 25 },
+    { header: 'Capital Inicial', key: 'capital', width: 20 },
+    { header: 'Interés Generado', key: 'interes', width: 20 },
+    { header: 'Total a Cobrar', key: 'total', width: 20 },
+    { header: 'Clientes', key: 'clientes', width: 15 },
+  ];
+
+  // Espacio para el logo
+  worksheet.addRow([]); worksheet.addRow([]); worksheet.addRow([]); worksheet.addRow([]);
+
+  // 3. TÍTULO PRINCIPAL
   const titleRow = worksheet.addRow(["REPORTE FINANCIERO - SAPPE"]);
-  titleRow.font = { name: 'Arial Black', size: 16, italic: true, color: { argb: '0047AB' } };
+  worksheet.mergeCells(`A${titleRow.number}:E${titleRow.number}`);
+  titleRow.font = { name: 'Arial Black', size: 14, italic: true, color: { argb: '0047AB' } };
+  titleRow.alignment = { horizontal: 'center' };
 
   worksheet.addRow(["Fecha de reporte:", new Date().toLocaleDateString()]);
   worksheet.addRow([]);
 
-  // 3. RESUMEN GENERAL
-  worksheet.addRow(["RESUMEN GENERAL"]).font = { bold: true };
-  worksheet.addRow(["Capital en Calle", stats.capital_en_calle]);
-  worksheet.addRow(["Préstamos Activos", stats.prestamos_activos]);
-  worksheet.addRow(["Total Recuperado", stats.total_recuperado]);
+  // 4. SECCIÓN: DETALLE POR RANGOS (Con tus nuevas columnas)
+  const rangeHeader = worksheet.addRow(["DESGLOSE POR RANGOS DE CAPITAL"]);
+  rangeHeader.font = { bold: true, size: 12 };
+  
+  // Encabezados de la tabla de rangos
+  const tableHeader = worksheet.addRow([
+    "Rango de Préstamo", 
+    "Capital Inicial", 
+    "Interés Estimado", 
+    "Total Cobrado", 
+    "Cant. Clientes"
+  ]);
+  
+  // Estilo para el encabezado de la tabla
+  tableHeader.eachCell((cell) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F2F2F2' } };
+    cell.font = { bold: true, size: 10 };
+    cell.border = { bottom: { style: 'thin' } };
+  });
+
+  // Lógica de datos de rangos
+  if (stats.rangos) {
+    stats.rangos.forEach((r: any) => {
+      // Limpiamos el string del total (quitando "$" y ",") para hacer cálculos si es necesario
+      const capitalNumerico = typeof r.total === 'string' 
+        ? parseFloat(r.total.replace(/[^0-9.-]+/g, "")) 
+        : (r.total || 0);
+
+      // Cálculo de intereses (Ejemplo: basándonos en tu interés global, supongamos 40% o el que traigas)
+      // Si el backend no envía el interés por rango, podemos estimarlo aquí:
+      const interesEstimado = capitalNumerico * 0.40; // Ajusta este factor según tu negocio
+      const totalCobrado = capitalNumerico + interesEstimado;
+
+      const row = worksheet.addRow([
+        r.label,          // Col A: "3001 a 5000"
+        capitalNumerico,  // Col B: 5000
+        interesEstimado,  // Col C: 2000
+        totalCobrado,     // Col D: 7000
+        r.cant            // Col E: "1"
+      ]);
+
+      // Formato de moneda para las columnas B, C y D
+      [2, 3, 4].forEach(colIndex => {
+        row.getCell(colIndex).numFmt = '"$"#,##0.00';
+      });
+    });
+  }
+
   worksheet.addRow([]);
 
-  // 4. DETALLE POR RANGOS
-  worksheet.addRow(["DETALLE POR RANGOS"]).font = { bold: true };
-  (stats.rangos || []).forEach((r: any) => {
-    worksheet.addRow([r.label, r.total, `${r.cant} clientes`]);
-  });
-  worksheet.addRow([]);
+  // 5. RESUMEN DE TOTALES EN CALLE
+  const resumenRow = worksheet.addRow(["CAPITAL TOTAL EN CALLE ACTUAL", Number(stats.capital_en_calle)]);
+  resumenRow.font = { bold: true };
+  resumenRow.getCell(2).numFmt = '"$"#,##0.00';
+  resumenRow.getCell(2).font = { color: { argb: 'DC2626' } }; // Rojo para inversión
 
-  // 5. HISTORIAL
-  worksheet.addRow(["HISTORIAL DEL PERIODO"]).font = { bold: true };
-  const headerHistorial = worksheet.addRow(["Periodo", "Monto Recuperado"]);
-  headerHistorial.font = { bold: true, color: { argb: 'FFFFFF' } };
-  headerHistorial.eachCell(cell => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0047AB' } };
-  });
-
-  (grafica || []).forEach((g: any) => {
-    worksheet.addRow([g.dia, g.monto]);
-  });
-
-  // Ajustar ancho de columnas automáticamente
-  worksheet.columns.forEach(column => {
-    column.width = 25;
-  });
-
-  // 6. GENERAR Y DESCARGAR
+  // 6. GENERAR DESCARGA
   const bufferExcel = await workbook.xlsx.writeBuffer();
   const blob = new Blob([bufferExcel], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `Reporte_SAPPE_${new Date().getTime()}.xlsx`);
+  
+  // Usar una función de descarga simple si no tienes file-saver
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `Reporte_Detallado_SAPPE_${new Date().getTime()}.xlsx`;
+  anchor.click();
+  window.URL.revokeObjectURL(url);
 };
 
 export const exportToPDF = (stats: any, grafica: any[]) => {
