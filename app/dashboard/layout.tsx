@@ -4,15 +4,7 @@ import { useEffect } from "react";
 import  Sidebar  from "../components/sidebar"
 import "../globals.css"
 
-export const metadata = {
-  title: 'SAPPE - Préstamos Express',
-  manifest: '/manifest.json', // <--- Vinculación clave
-  icons: {
-    icon: '/images/logo-192.png',
-    apple: '/images/logo-192.png',
-  },
-  themeColor: '#0047AB',
-};
+
 
 export default function RootLayout({
   children,
