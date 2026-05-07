@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import  Sidebar  from "../components/sidebar"
 import "../globals.css"
 
-
-
 export default function RootLayout({
   children,
 }: {
@@ -21,9 +19,6 @@ export default function RootLayout({
   
   return (
     <html lang="es">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-      </head>
       <body className="bg-gray-100 antialiased text-slate-900">
         <div className="flex flex-col md:flex-row min-h-screen">
           
