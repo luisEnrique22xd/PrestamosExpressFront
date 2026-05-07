@@ -4,6 +4,16 @@ import { useEffect } from "react";
 import  Sidebar  from "../components/sidebar"
 import "../globals.css"
 
+export const metadata = {
+  title: 'SAPPE - Préstamos Express',
+  manifest: '/manifest.json', // Esto vincula el archivo que creamos arriba
+  themeColor: '#0047AB',      // Color de la barra de estado en Android
+  icons: {
+    icon: '/images/icon-192x192.png',
+    apple: '/images/icon-192x192.png', // Específico para iPhone
+  },
+};
+
 export default function RootLayout({
   children,
 }: {
