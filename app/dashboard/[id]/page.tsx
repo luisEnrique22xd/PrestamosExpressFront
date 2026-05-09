@@ -33,6 +33,25 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 
 
 export default function ClienteDashboard({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const [showEditAvalModal, setShowEditAvalModal] = useState(false);
+const [editAvalData, setEditAvalData] = useState({
+  nombre_aval: '',
+  telefono_aval: '',
+  direccion_aval: ''
+});
+const [procesandoAval, setProcesandoAval] = useState(false);
+const abrirEditarAval = () => {
+  if (data.datos_ultimo_aval) {
+    setEditAvalData({
+      nombre_aval: data.datos_ultimo_aval.nombre_aval || '',
+      telefono_aval: data.datos_ultimo_aval.telefono_aval || '',
+      direccion_aval: data.datos_ultimo_aval.direccion_aval || ''
+    });
+    setShowEditAvalModal(true);
+  } else {
+    lanzarAlerta('error', "⚠️ No hay datos de aval para editar.");
+  }
+};
   const [selectedPrestamoId, setSelectedPrestamoId] = useState<number | null>(null);
   const params = use(paramsPromise);
   const router = useRouter();
@@ -198,6 +217,24 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
   }
 };
 
+const handleUpdateAval = async () => {
+  try {
+    setProcesandoAval(true);
+    // Asumimos que el endpoint es /clientes/{id}/actualizar-aval/ o similar
+    await api.patch(`/clientes/${params.id}/actualizar-aval/`, editAvalData);
+    
+    lanzarAlerta('success', "✅ Datos del aval actualizados correctamente.");
+    setShowEditAvalModal(false);
+    
+    // Recargar datos del expediente
+    const res = await api.get(`/clientes/${params.id}/`);
+    setData(res.data);
+  } catch (error) {
+    lanzarAlerta('error', "❌ Error al actualizar el aval.");
+  } finally {
+    setProcesandoAval(false);
+  }
+};
   if (loading && !data) return <div className="p-10 flex items-center gap-3 font-black italic text-slate-400"><Loader2 className="animate-spin"/> Sincronizando Acuitlapilco...</div>;
   if (!data) return <div className="p-10 font-black italic text-red-400 text-center">⚠️ Error: Entidad no localizada en el sistema.</div>;
 
@@ -340,9 +377,18 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
                     <p className="font-bold text-slate-600 text-sm">${p.capital.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase">Aval Responsable</p>
-                    <p className="font-bold text-slate-600 text-[10px] uppercase">{p.aval}</p>
-                  </div>
+  <p className="text-[9px] font-black text-slate-400 uppercase">Aval Responsable</p>
+  <div className="flex items-center gap-2">
+    <p className="font-bold text-slate-600 text-[10px] uppercase">{p.aval}</p>
+    {/* BOTÓN PARA EDITAR */}
+    <button 
+      onClick={abrirEditarAval}
+      className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
+    >
+      <User size={12} />
+    </button>
+  </div>
+</div>
                 </div>
                 <button 
                   onClick={() => {
@@ -515,6 +561,57 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
           </button>
         </div>
       )}
+      {/* MODAL EDITAR AVAL */}
+{showEditAvalModal && (
+  <div className="fixed inset-0 bg-[#050533]/60 backdrop-blur-md z-[150] flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-black text-slate-800 italic uppercase">Editar Aval</h2>
+        <button onClick={() => setShowEditAvalModal(false)} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Nombre del Aval</label>
+          <input 
+            type="text" 
+            value={editAvalData.nombre_aval} 
+            onChange={(e) => setEditAvalData({...editAvalData, nombre_aval: e.target.value})}
+            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700" 
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Teléfono</label>
+          <input 
+            type="text" 
+            value={editAvalData.telefono_aval} 
+            onChange={(e) => setEditAvalData({...editAvalData, telefono_aval: e.target.value})}
+            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700" 
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Dirección</label>
+          <textarea 
+            value={editAvalData.direccion_aval} 
+            onChange={(e) => setEditAvalData({...editAvalData, direccion_aval: e.target.value})}
+            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 min-h-[80px]" 
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3 pt-4">
+          <button onClick={() => setShowEditAvalModal(false)} className="py-4 bg-slate-100 text-slate-500 font-black text-[10px] uppercase rounded-2xl">Cancelar</button>
+          <button 
+            onClick={handleUpdateAval} 
+            disabled={procesandoAval}
+            className="py-4 bg-[#0047AB] text-white font-black text-[10px] uppercase rounded-2xl shadow-lg disabled:opacity-50"
+          >
+            {procesandoAval ? 'Guardando...' : 'Guardar Cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
