@@ -4,7 +4,8 @@ import {
   Search, X, TrendingUp, CheckCircle2, Printer,
   DollarSign, UserCheck, Users, Phone,
   User, ArrowRight, Loader2, AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  Edit
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -385,7 +386,7 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
       onClick={abrirEditarAval}
       className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
     >
-      <User size={12} />
+      <Edit size={12} />
     </button>
   </div>
 </div>
