@@ -220,7 +220,7 @@ export default function GlobalDashboard() {
         {/* COLUMNA DE COMPONENTES LATERALES (Ocupa 1 columna) */}
         <div className="space-y-6 md:space-y-8">
           
-          {/* 🎂 NUEVO WIDGET DE CUMPLEAÑOS INTEGRADO AQUÍ */}
+          {/* 🎂 WIDGET DE CUMPLEAÑOS COMPLEMENTARIO (SIEMPRE VISIBLE) */}
           <BirthdayWidget />
 
           {/* GRÁFICA DE PASTEL */}
@@ -275,7 +275,7 @@ export default function GlobalDashboard() {
               Concentración
             </h3>
             <div className="space-y-3 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar">
-              {resumen?.rangos?.filter((r: any) => r.cant > 0).map((r: any, i: number) => (
+              {resumen?.ranges?.filter((r: any) => r.cant > 0).map((r: any, i: number) => (
                 <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-[1.5rem] border border-transparent hover:border-blue-100 hover:bg-white transition-all group">
                   <div>
                     <p className="text-[10px] font-black text-slate-700 group-hover:text-[#0047AB] transition-colors uppercase tracking-tight">{r.label}</p>
