@@ -103,8 +103,7 @@ export default function GlobalDashboard() {
             {/* Tu gráfica de flujo o historial */}
           </div>
           <div>
-            {/* El nuevo widget de festejos */}
-            <BirthdayWidget />
+            {/* Removido de aquí para evitar desbalancear el header */}
           </div>
         </div>
 
@@ -233,6 +232,10 @@ export default function GlobalDashboard() {
         </div>
 
         <div className="space-y-6 md:space-y-8">
+          
+          {/* 🎂 INTEGRADO EN LA COLUMNA LATERAL (SE MOSTRARÁ SIEMPRE FIJO AQUÍ) */}
+          <BirthdayWidget />
+
           {/* GRÁFICA DE PASTEL */}
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[300px]">
             <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
