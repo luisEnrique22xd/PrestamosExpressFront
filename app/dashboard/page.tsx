@@ -13,6 +13,7 @@ import {
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import StatCard from '../components/statscard';
+import BirthdayWidget from '../components/BirthWitget';
 
 const COLORES_MODALIDAD: { [key: string]: string } = {
   'Efectivo': '#10B981',      // Verde Esmeralda
@@ -95,6 +96,15 @@ export default function GlobalDashboard() {
   <p className="text-red-600 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
     "SISTEMAS DE ADMINISTRACIÓN PARA PRÉSTAMOS EXPRESS"
   </p>
+</div>
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+  <div className="lg:col-span-2">
+    {/* Tu gráfica de flujo o historial */}
+  </div>
+  <div>
+    {/* El nuevo widget de festejos */}
+    <BirthdayWidget />
+  </div>
 </div>
 
         {/* BUSCADOR */}
