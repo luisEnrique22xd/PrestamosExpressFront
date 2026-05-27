@@ -25,11 +25,12 @@ const COLORES_MODALIDAD: { [key: string]: string } = {
 export default function GlobalDashboard() {
   const [resumen, setResumen] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false); // Para evitar errores de hidratación
   const [busqueda, setBusqueda] = useState('');
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const router = useRouter();
 
+  // 1. Carga de datos globales
   useEffect(() => {
     setMounted(true);
     const fetchGlobalData = async () => {
@@ -46,6 +47,7 @@ export default function GlobalDashboard() {
     fetchGlobalData();
   }, []);
 
+  // 2. Buscador en tiempo real
   const handleSearch = async (val: string) => {
     setBusqueda(val);
     if (val.length > 1) {
@@ -58,6 +60,7 @@ export default function GlobalDashboard() {
     }
   };
 
+  // 3. Cálculo dinámico de Inversión
   const capitalEnCalle = useMemo(() => {
     if (!resumen?.rangos) return 0;
     return resumen.rangos.reduce((acc: number, r: any) => {
@@ -80,15 +83,29 @@ export default function GlobalDashboard() {
   return (
     <div className="space-y-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-      {/* HEADER INTEGRADO */}
+      {/* HEADER */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
-        <div>
+        <div className="flex flex-col items-center justify-center text-center">
+          {/* SAPPE en Azul Rey */}
           <h1 className="text-4xl font-black text-[#0047AB] italic uppercase tracking-tighter leading-none">
             SAPPE
           </h1>
+          
+          {/* Subtítulo en Rojo */}
+          {/* He usado text-red-600, pero puedes usar [#FF0000] si quieres el rojo puro */}
           <p className="text-red-600 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">
             "SISTEMAS DE ADMINISTRACIÓN PARA PRÉSTAMOS EXPRESS"
           </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+          <div className="lg:col-span-2">
+            {/* Tu gráfica de flujo o historial */}
+          </div>
+          <div>
+            {/* El nuevo widget de festejos */}
+            <BirthdayWidget />
+          </div>
         </div>
 
         {/* BUSCADOR */}
@@ -182,10 +199,8 @@ export default function GlobalDashboard() {
         />
       </div>
 
-      {/* GRÁFICA Y COLUMNA DERECHA DE DETALLES */}
+      {/* GRÁFICA Y CONCENTRACIÓN */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        
-        {/* Gráfica de Líneas/Área (Ocupa 2 columnas) */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-black text-slate-800 uppercase italic flex items-center gap-2 text-sm tracking-tight">
@@ -217,12 +232,7 @@ export default function GlobalDashboard() {
           </div>
         </div>
 
-        {/* COLUMNA DE COMPONENTES LATERALES (Ocupa 1 columna) */}
         <div className="space-y-6 md:space-y-8">
-          
-          {/* 🎂 WIDGET DE CUMPLEAÑOS COMPLEMENTARIO (SIEMPRE VISIBLE) */}
-          <BirthdayWidget />
-
           {/* GRÁFICA DE PASTEL */}
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[300px]">
             <h3 className="font-black text-slate-800 uppercase italic mb-6 flex items-center gap-2 text-sm self-start">
@@ -258,6 +268,7 @@ export default function GlobalDashboard() {
               )}
             </div>
 
+            {/* Leyendas (Solo si hay datos) */}
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full min-h-[20px]">
               {resumen?.metodos_pago?.map((metodo: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-1.5">
@@ -275,7 +286,7 @@ export default function GlobalDashboard() {
               Concentración
             </h3>
             <div className="space-y-3 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar">
-              {resumen?.ranges?.filter((r: any) => r.cant > 0).map((r: any, i: number) => (
+              {resumen?.rangos?.filter((r: any) => r.cant > 0).map((r: any, i: number) => (
                 <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-[1.5rem] border border-transparent hover:border-blue-100 hover:bg-white transition-all group">
                   <div>
                     <p className="text-[10px] font-black text-slate-700 group-hover:text-[#0047AB] transition-colors uppercase tracking-tight">{r.label}</p>
@@ -286,7 +297,6 @@ export default function GlobalDashboard() {
               ))}
             </div>
           </div>
-
         </div>
       </div>
 
@@ -305,7 +315,6 @@ export default function GlobalDashboard() {
           <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
-
     </div>
   );
 }
