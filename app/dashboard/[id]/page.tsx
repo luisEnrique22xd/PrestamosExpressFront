@@ -35,34 +35,34 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 
 export default function ClienteDashboard({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const [showEditAvalModal, setShowEditAvalModal] = useState(false);
-const [editAvalData, setEditAvalData] = useState({
-  nombre_aval: '',
-  telefono_aval: '',
-  direccion_aval: ''
-});
-const [procesandoAval, setProcesandoAval] = useState(false);
-const abrirEditarAval = () => {
-  if (data.datos_ultimo_aval) {
-    setEditAvalData({
-      nombre_aval: data.datos_ultimo_aval.nombre_aval || '',
-      telefono_aval: data.datos_ultimo_aval.telefono_aval || '',
-      direccion_aval: data.datos_ultimo_aval.direccion_aval || ''
-    });
-    setShowEditAvalModal(true);
-  } else {
-    lanzarAlerta('error', "⚠️ No hay datos de aval para editar.");
-  }
-};
+  const [editAvalData, setEditAvalData] = useState({
+    nombre_aval: '',
+    telefono_aval: '',
+    direccion_aval: ''
+  });
+  const [procesandoAval, setProcesandoAval] = useState(false);
+  const abrirEditarAval = () => {
+    if (data.datos_ultimo_aval) {
+      setEditAvalData({
+        nombre_aval: data.datos_ultimo_aval.nombre_aval || '',
+        telefono_aval: data.datos_ultimo_aval.telefono_aval || '',
+        direccion_aval: data.datos_ultimo_aval.direccion_aval || ''
+      });
+      setShowEditAvalModal(true);
+    } else {
+      lanzarAlerta('error', "⚠️ No hay datos de aval para editar.");
+    }
+  };
   const [selectedPrestamoId, setSelectedPrestamoId] = useState<number | null>(null);
   const params = use(paramsPromise);
   const router = useRouter();
   const [alerta, setAlerta] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
-// Función auxiliar para auto-limpiar la alerta
-const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
-  setAlerta({ type, msg });
-  setTimeout(() => setAlerta(null), 5000);
-};
+  // Función auxiliar para auto-limpiar la alerta
+  const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
+    setAlerta({ type, msg });
+    setTimeout(() => setAlerta(null), 5000);
+  };
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ const lanzarAlerta = (type: 'success' | 'error', msg: string) => {
   const [motivoCondonacion, setMotivoCondonacion] = useState('');
   const [procesandoCondonacion, setProcesandoCondonacion] = useState(false);
 
-const [user, setUser] = useState<{ role: string | null }>({ role: null });
+  const [user, setUser] = useState<{ role: string | null }>({ role: null });
 
   useEffect(() => {
     // 2. Leemos el rol cuando el componente se monta
@@ -100,8 +100,8 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
     const fetchData = async () => {
       try {
         setLoading(true);
-        let endpoint = params.id.startsWith('grupo-') 
-          ? `/grupos/${params.id.replace('grupo-', '')}/detalle/` 
+        let endpoint = params.id.startsWith('grupo-')
+          ? `/grupos/${params.id.replace('grupo-', '')}/detalle/`
           : `/clientes/${params.id}/`;
 
         const res = await api.get(endpoint);
@@ -165,7 +165,7 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
       });
 
       // 🔥 CAMBIO: Los cálculos ahora se basan en el préstamo seleccionado de la lista
-      const pActivo = data.prestamos_activos?.find((p:any) => p.id === selectedPrestamoId);
+      const pActivo = data.prestamos_activos?.find((p: any) => p.id === selectedPrestamoId);
       const capitalOriginal = parseFloat(pActivo?.capital || 0);
       const abonoActual = parseFloat(montoAbono);
       const saldoAnteriorManual = parseFloat(pActivo?.monto_total || 0);
@@ -184,9 +184,9 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
 
       setPagoExitoso(true);
       setMontoAbono('');
-      
-      const endpoint = params.id.startsWith('grupo-') 
-        ? `/grupos/${params.id.replace('grupo-', '')}/detalle/` 
+
+      const endpoint = params.id.startsWith('grupo-')
+        ? `/grupos/${params.id.replace('grupo-', '')}/detalle/`
         : `/clientes/${params.id}/`;
       const resRefresh = await api.get(endpoint);
       setData(resRefresh.data);
@@ -196,47 +196,47 @@ const [user, setUser] = useState<{ role: string | null }>({ role: null });
   };
 
   const handleCondonar = async () => {
-  if (motivoCondonacion.length < 10) return lanzarAlerta('error', "⚠️ Justificación muy corta.");
-  try {
-    setProcesandoCondonacion(true);
-    // Usamos el ID de la mora que seleccionamos al abrir el modal
-    await api.post(`/penalizaciones/${selectedPenalizacion.id}/condonar/`, { 
-      motivo: motivoCondonacion 
-    });
-    
-    setShowCondonarModal(false);
-    
-    // 🔥 IMPORTANTE: Recarga los datos para que el saldo baje de $1,115 a $1,100
-    const res = await api.get(`/clientes/${params.id}/`);
-    setData(res.data);
-    
-    lanzarAlerta('success', "✅ Recargos condonados. El saldo ha sido actualizado.");
-  } catch (error) { 
-    lanzarAlerta('error', "❌ Error al condonar la mora."); 
-  } finally { 
-    setProcesandoCondonacion(false); 
-  }
-};
+    if (motivoCondonacion.length < 10) return lanzarAlerta('error', "⚠️ Justificación muy corta.");
+    try {
+      setProcesandoCondonacion(true);
+      // Usamos el ID de la mora que seleccionamos al abrir el modal
+      await api.post(`/penalizaciones/${selectedPenalizacion.id}/condonar/`, {
+        motivo: motivoCondonacion
+      });
 
-const handleUpdateAval = async () => {
-  try {
-    setProcesandoAval(true);
-    // Asumimos que el endpoint es /clientes/{id}/actualizar-aval/ o similar
-    await api.patch(`/clientes/${params.id}/actualizar-aval/`, editAvalData);
-    
-    lanzarAlerta('success', "✅ Datos del aval actualizados correctamente.");
-    setShowEditAvalModal(false);
-    
-    // Recargar datos del expediente
-    const res = await api.get(`/clientes/${params.id}/`);
-    setData(res.data);
-  } catch (error) {
-    lanzarAlerta('error', "❌ Error al actualizar el aval.");
-  } finally {
-    setProcesandoAval(false);
-  }
-};
-  if (loading && !data) return <div className="p-10 flex items-center gap-3 font-black italic text-slate-400"><Loader2 className="animate-spin"/> Sincronizando Acuitlapilco...</div>;
+      setShowCondonarModal(false);
+
+      // 🔥 IMPORTANTE: Recarga los datos para que el saldo baje de $1,115 a $1,100
+      const res = await api.get(`/clientes/${params.id}/`);
+      setData(res.data);
+
+      lanzarAlerta('success', "✅ Recargos condonados. El saldo ha sido actualizado.");
+    } catch (error) {
+      lanzarAlerta('error', "❌ Error al condonar la mora.");
+    } finally {
+      setProcesandoCondonacion(false);
+    }
+  };
+
+  const handleUpdateAval = async () => {
+    try {
+      setProcesandoAval(true);
+      // Asumimos que el endpoint es /clientes/{id}/actualizar-aval/ o similar
+      await api.patch(`/clientes/${params.id}/actualizar-aval/`, editAvalData);
+
+      lanzarAlerta('success', "✅ Datos del aval actualizados correctamente.");
+      setShowEditAvalModal(false);
+
+      // Recargar datos del expediente
+      const res = await api.get(`/clientes/${params.id}/`);
+      setData(res.data);
+    } catch (error) {
+      lanzarAlerta('error', "❌ Error al actualizar el aval.");
+    } finally {
+      setProcesandoAval(false);
+    }
+  };
+  if (loading && !data) return <div className="p-10 flex items-center gap-3 font-black italic text-slate-400"><Loader2 className="animate-spin" /> Sincronizando Acuitlapilco...</div>;
   if (!data) return <div className="p-10 font-black italic text-red-400 text-center">⚠️ Error: Entidad no localizada en el sistema.</div>;
 
   const cumplimientoData = [
@@ -245,49 +245,63 @@ const handleUpdateAval = async () => {
   ];
 
   const StatusBadge = ({ data }: { data: any }) => {
-  // 1. Si no tiene préstamo activo y el saldo es 0, está LIBRE/LIQUIDADO
-  const isLiquidado = !data.tiene_prestamo_activo && Number(data.saldo_actual) <= 0;
+    // 1. Si no tiene préstamo activo y el saldo es 0, está LIBRE/LIQUIDADO
+    const isLiquidado = !data.tiene_prestamo_activo && Number(data.saldo_actual) <= 0;
 
-  if (isLiquidado) {
+    if (isLiquidado) {
+      return (
+        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-in zoom-in duration-500">
+          <CheckCircle2 size={14} className="animate-bounce" />
+          <span className="text-[10px] font-black uppercase tracking-[0.15em]">Préstamo Liquidado</span>
+        </div>
+      );
+    }
+
+    // 2. Si tiene préstamo activo o saldo pendiente, está EN COBRO
     return (
-      <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-in zoom-in duration-500">
-        <CheckCircle2 size={14} className="animate-bounce" />
-        <span className="text-[10px] font-black uppercase tracking-[0.15em]">Préstamo Liquidado</span>
+      <div className="flex items-center gap-2 bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full border border-blue-100 shadow-sm">
+        <div className="w-1.5 h-1.5 bg-[#0047AB] rounded-full animate-pulse" />
+        <span className="text-[10px] font-black uppercase tracking-[0.15em]">Cuenta en Cobro</span>
       </div>
     );
-  }
-
-  // 2. Si tiene préstamo activo o saldo pendiente, está EN COBRO
-  return (
-    <div className="flex items-center gap-2 bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full border border-blue-100 shadow-sm">
-      <div className="w-1.5 h-1.5 bg-[#0047AB] rounded-full animate-pulse" />
-      <span className="text-[10px] font-black uppercase tracking-[0.15em]">Cuenta en Cobro</span>
-    </div>
-  );
-};
-
-const ClientHealthBadge = ({ count }: { count: number }) => {
-  // Lógica de Semáforo: 0 = Excelente, 1-3 = Regular, >3 = Malo
-  const config = {
-    color: count === 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-           count <= 3 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-           'bg-red-50 text-red-600 border-red-100',
-    label: count === 0 ? 'Excelente' : 
-           count <= 3 ? 'Regular' : 'Malo (Crítico)',
-    icon: count === 0 ? <CheckCircle2 size={12} /> : 
-          count <= 3 ? <AlertTriangle size={12} /> : 
-          <AlertCircle size={12} />
   };
 
-  return (
-    <div className={`flex items-center gap-2 px-3 py-1 rounded-full border shadow-sm animate-in fade-in duration-500 ${config.color}`}>
-      {config.icon}
-      <span className="text-[10px] font-black uppercase tracking-widest">
-        Perfil: {config.label} ({count})
-      </span>
-    </div>
-  );
-}; 
+  const ClientHealthBadge = ({ count }: { count: number }) => {
+    // Lógica de Semáforo: 0 = Excelente, 1-3 = Regular, >3 = Malo
+    const config = {
+      color: count === 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+        count <= 3 ? 'bg-amber-50 text-amber-600 border-amber-100' :
+          'bg-red-50 text-red-600 border-red-100',
+      label: count === 0 ? 'Excelente' :
+        count <= 3 ? 'Regular' : 'Malo (Crítico)',
+      icon: count === 0 ? <CheckCircle2 size={12} /> :
+        count <= 3 ? <AlertTriangle size={12} /> :
+          <AlertCircle size={12} />
+    };
+
+    return (
+      <div className={`flex items-center gap-2 px-3 py-1 rounded-full border shadow-sm animate-in fade-in duration-500 ${config.color}`}>
+        {config.icon}
+        <span className="text-[10px] font-black uppercase tracking-widest">
+          Perfil: {config.label} ({count})
+        </span>
+      </div>
+    );
+  };
+  const mapearPlazo = (cuotas: number, modalidad: string) => {
+    const mod = modalidad?.trim().toUpperCase() || '';
+
+    if (mod.startsWith('S') || mod.includes('SEMANAL')) {
+      return `${cuotas} ${cuotas === 1 ? 'Semana' : 'Semanas'}`;
+    }
+    if (mod.startsWith('Q') || mod.includes('QUINCENAL')) {
+      return `${cuotas} ${cuotas === 1 ? 'Quincena' : 'Quincenas'}`;
+    }
+    if (mod.startsWith('M') || mod.includes('MENSUAL')) {
+      return `${cuotas} ${cuotas === 1 ? 'Mes' : 'Meses'}`;
+    }
+    return `${cuotas} Cuotas`;
+  };
   return (
     <div className="flex min-h-screen bg-[#F8FAFE]">
       <main className="flex-1 p-10 overflow-auto">
@@ -307,7 +321,7 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
                   <button key={`${c.es_grupo ? 'G' : 'I'}-${c.id}`} onClick={() => seleccionarEntidad(c)} className="w-full px-5 py-4 hover:bg-blue-50 text-left border-b last:border-none flex justify-between items-center group">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${c.es_grupo ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                        {c.es_grupo ? <Users size={14}/> : <User size={14}/>}
+                        {c.es_grupo ? <Users size={14} /> : <User size={14} />}
                       </div>
                       <div>
                         <p className="text-sm font-black text-slate-800">{c.nombre}</p>
@@ -326,7 +340,7 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
         <header className="flex justify-between items-start mb-10">
           <div className="flex items-center gap-6">
             <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center font-black text-3xl text-white shadow-xl shadow-blue-200 uppercase ${data.tipo === 'G' ? 'bg-purple-600' : 'bg-[#0047AB]'}`}>
-              {data.tipo === 'G' ? <Users size={32}/> : data.nombre[0]}
+              {data.tipo === 'G' ? <Users size={32} /> : data.nombre[0]}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -350,11 +364,11 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
           <StatCard title="Saldo Consolidado" value={`$${(data.saldo_actual || 0).toLocaleString()}`} icon={DollarSign} color={COLORS.rojoAlerta} />
           <StatCard title="Total Pagado" value={`$${(data.progreso_pagos?.monto_pagado || 0).toLocaleString()}`} icon={UserCheck} color={COLORS.verdeExito} />
           <StatCard title="Total Contratado" value={`$${(data.progreso_pagos?.monto_capital || 0).toLocaleString()}`} icon={TrendingUp} color={COLORS.azulRey} />
-          <StatCard 
-            title={data.tipo === 'G' ? "Integrantes" : "Teléfono"} 
-            value={data.tipo === 'G' ? `${data.integrantes_detalle?.length || 0} Clientes` : (data.telefono !== 'N/A' ? data.telefono : data.datos_ultimo_aval?.telefono_aval || 'S/N')} 
-            icon={data.tipo === 'G' ? Users : Phone} 
-            color={data.tipo === 'G' ? '#7C3AED' : COLORS.amarilloCuidado} 
+          <StatCard
+            title={data.tipo === 'G' ? "Integrantes" : "Teléfono"}
+            value={data.tipo === 'G' ? `${data.integrantes_detalle?.length || 0} Clientes` : (data.telefono !== 'N/A' ? data.telefono : data.datos_ultimo_aval?.telefono_aval || 'S/N')}
+            icon={data.tipo === 'G' ? Users : Phone}
+            color={data.tipo === 'G' ? '#7C3AED' : COLORS.amarilloCuidado}
           />
         </div>
 
@@ -372,26 +386,41 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
                     ${p.monto_total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </h2>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-50">
+                  {/* Columna 1: Capital Inicial */}
                   <div>
                     <p className="text-[9px] font-black text-slate-400 uppercase">Capital Inicial</p>
-                    <p className="font-bold text-slate-600 text-sm">${p.capital.toLocaleString()}</p>
+                    <p className="font-bold text-slate-600 text-xs md:text-sm">${p.capital.toLocaleString()}</p>
                   </div>
+
+                  {/* Columna 2: Fecha de Emisión y Plazo Pactado */}
                   <div>
-  <p className="text-[9px] font-black text-slate-400 uppercase">Aval Responsable</p>
-  <div className="flex items-center gap-2">
-    <p className="font-bold text-slate-600 text-[10px] uppercase">{p.aval}</p>
-    {/* BOTÓN PARA EDITAR */}
-    <button 
-      onClick={abrirEditarAval}
-      className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
-    >
-      <Edit size={12} />
-    </button>
-  </div>
-</div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase">Emisión / Plazo</p>
+                    <p className="font-bold text-slate-700 text-[11px]">
+                      {p.fecha_inicio ? new Date(p.fecha_inicio).toLocaleDateString('es-MX', { timeZone: 'UTC' }) : new Date().toLocaleDateString('es-MX')}
+                    </p>
+                    <p className="text-[10px] font-black text-[#0047AB] uppercase tracking-tighter mt-0.5">
+                      {mapearPlazo(p.cuotas, p.modalidad)}
+                    </p>
+                  </div>
+
+                  {/* Columna 3: Aval Responsable */}
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase">Aval Responsable</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-bold text-slate-600 text-[10px] uppercase truncate max-w-[80px]" title={p.aval}>
+                        {p.aval || 'Sin Asignar'}
+                      </p>
+                      <button
+                        onClick={abrirEditarAval}
+                        className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors flex-shrink-0"
+                      >
+                        <Edit size={11} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setSelectedPrestamoId(p.id);
                     setPagoExitoso(false);
@@ -451,11 +480,11 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
                     <p className="text-sm font-bold text-white">${parseFloat(data.total_penalizaciones).toFixed(2)}</p>
                     <p className="text-[8px] text-slate-400 italic">Recargo por atraso en cuota</p>
                   </div>
-                  <button 
-                    onClick={() => { 
-                      setSelectedPenalizacion({ id: data.id_mora_activa, monto_penalizado: data.total_penalizaciones }); 
-                      setShowCondonarModal(true); 
-                    }} 
+                  <button
+                    onClick={() => {
+                      setSelectedPenalizacion({ id: data.id_mora_activa, monto_penalizado: data.total_penalizaciones });
+                      setShowCondonarModal(true);
+                    }}
                     className="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"
                   >
                     Condonar
@@ -481,14 +510,14 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
                 <div className="flex justify-between items-center mb-8">
                   {/* 🔥 AGREGADO: Titulo con Folio Seleccionado 🔥 */}
                   <h2 className="text-2xl font-black text-slate-800 italic uppercase">
-                    Registrar Abono 
+                    Registrar Abono
                     {selectedPrestamoId && (
                       <span className="text-[#0047AB] ml-2 font-black italic">
-                        #{data.prestamos_activos?.find((p:any) => p.id === selectedPrestamoId)?.folio}
+                        #{data.prestamos_activos?.find((p: any) => p.id === selectedPrestamoId)?.folio}
                       </span>
                     )}
                   </h2>
-                  <button onClick={() => {setShowModal(false); setSelectedPrestamoId(null);}} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
+                  <button onClick={() => { setShowModal(false); setSelectedPrestamoId(null); }} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
                 </div>
                 <div className="space-y-6">
                   <div>
@@ -543,13 +572,11 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
         </div>
       )}
       {alerta && (
-        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${
-          alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
-        }`}>
-          <div className={`p-3 rounded-2xl ${
-            alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+        <div className={`fixed top-10 right-10 z-[130] p-6 rounded-[2rem] shadow-2xl flex items-center gap-4 border-b-4 bg-white animate-in slide-in-from-right duration-500 ${alerta.type === 'success' ? 'border-emerald-500' : 'border-red-500'
           }`}>
-            {alerta.type === 'success' ? <CheckCircle2 size={24}/> : <AlertCircle size={24}/>}
+          <div className={`p-3 rounded-2xl ${alerta.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+            }`}>
+            {alerta.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
           </div>
           <div>
             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">
@@ -563,56 +590,56 @@ const ClientHealthBadge = ({ count }: { count: number }) => {
         </div>
       )}
       {/* MODAL EDITAR AVAL */}
-{showEditAvalModal && (
-  <div className="fixed inset-0 bg-[#050533]/60 backdrop-blur-md z-[150] flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-black text-slate-800 italic uppercase">Editar Aval</h2>
-        <button onClick={() => setShowEditAvalModal(false)} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
-      </div>
-      
-      <div className="space-y-4">
-        <div>
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Nombre del Aval</label>
-          <input 
-            type="text" 
-            value={editAvalData.nombre_aval} 
-            onChange={(e) => setEditAvalData({...editAvalData, nombre_aval: e.target.value})}
-            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700" 
-          />
+      {showEditAvalModal && (
+        <div className="fixed inset-0 bg-[#050533]/60 backdrop-blur-md z-[150] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-black text-slate-800 italic uppercase">Editar Aval</h2>
+              <button onClick={() => setShowEditAvalModal(false)} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Nombre del Aval</label>
+                <input
+                  type="text"
+                  value={editAvalData.nombre_aval}
+                  onChange={(e) => setEditAvalData({ ...editAvalData, nombre_aval: e.target.value })}
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Teléfono</label>
+                <input
+                  type="text"
+                  value={editAvalData.telefono_aval}
+                  onChange={(e) => setEditAvalData({ ...editAvalData, telefono_aval: e.target.value })}
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Dirección</label>
+                <textarea
+                  value={editAvalData.direccion_aval}
+                  onChange={(e) => setEditAvalData({ ...editAvalData, direccion_aval: e.target.value })}
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 min-h-[80px]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-4">
+                <button onClick={() => setShowEditAvalModal(false)} className="py-4 bg-slate-100 text-slate-500 font-black text-[10px] uppercase rounded-2xl">Cancelar</button>
+                <button
+                  onClick={handleUpdateAval}
+                  disabled={procesandoAval}
+                  className="py-4 bg-[#0047AB] text-white font-black text-[10px] uppercase rounded-2xl shadow-lg disabled:opacity-50"
+                >
+                  {procesandoAval ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Teléfono</label>
-          <input 
-            type="text" 
-            value={editAvalData.telefono_aval} 
-            onChange={(e) => setEditAvalData({...editAvalData, telefono_aval: e.target.value})}
-            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700" 
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Dirección</label>
-          <textarea 
-            value={editAvalData.direccion_aval} 
-            onChange={(e) => setEditAvalData({...editAvalData, direccion_aval: e.target.value})}
-            className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0047AB] font-bold text-slate-700 min-h-[80px]" 
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3 pt-4">
-          <button onClick={() => setShowEditAvalModal(false)} className="py-4 bg-slate-100 text-slate-500 font-black text-[10px] uppercase rounded-2xl">Cancelar</button>
-          <button 
-            onClick={handleUpdateAval} 
-            disabled={procesandoAval}
-            className="py-4 bg-[#0047AB] text-white font-black text-[10px] uppercase rounded-2xl shadow-lg disabled:opacity-50"
-          >
-            {procesandoAval ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 }
