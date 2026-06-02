@@ -267,8 +267,9 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     );
   };
 
-  <ClientHealthBadge 
-  count={data.conteo_historico_penalizaciones} 
+ 
+<ClientHealthBadge 
+  count={data.conteo_historico_penalizaciones || 0} 
   tieneMora={data.tiene_moras_activas} 
 />
   const mapearPlazo = (cuotas: number, modalidad: string) => {
@@ -332,7 +333,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                   <span className="text-[10px] font-black uppercase tracking-widest">Resumen General de Deuda</span>
                 </div>
                 <StatusBadge data={data} />
-                <ClientHealthBadge count={data.conteo_penalizaciones || 0} />
+                <ClientHealthBadge count={data.conteo_historico_penalizaciones || 0} tieneMora={data.tiene_moras_activas} />
               </div>
               <h1 className="text-4xl font-black text-slate-800 italic tracking-tighter">
                 {data.tipo === 'G' ? `Grupo: ${data.nombre}` : data.nombre}
