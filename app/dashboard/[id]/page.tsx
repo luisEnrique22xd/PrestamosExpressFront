@@ -244,27 +244,54 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     { name: 'Pendiente', value: 100 - (data.progreso_pagos?.pagado || 0), color: '#F1F5F9' },
   ];
 
-  const StatusBadge = ({ data }: { data: any }) => {
-    // 1. Si no tiene préstamo activo y el saldo es 0, está LIBRE/LIQUIDADO
-    const isLiquidado = !data.tiene_prestamo_activo && Number(data.saldo_actual) <= 0;
+ const StatusBadge = ({ data }: { data: any }) => {
+  // 1. EXTRAER MÉTRICAS DE RIESGO
+  const penalizaciones = Number(data.conteo_historico_penalizaciones || 0);
+  const tieneMoraActiva = data.tiene_moras_activas === true || data.id_mora_activa !== null;
+  const isLiquidado = !data.tiene_prestamo_activo && Number(data.saldo_actual) <= 0;
 
-    if (isLiquidado) {
-      return (
-        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-in zoom-in duration-500">
-          <CheckCircle2 size={14} className="animate-bounce" />
-          <span className="text-[10px] font-black uppercase tracking-[0.15em]">Préstamo Liquidado</span>
-        </div>
-      );
-    }
-
-    // 2. Si tiene préstamo activo o saldo pendiente, está EN COBRO
+  // 2. CASO: CLIENTE TOTALMENTE AL CORRIENTE Y LIQUIDADO
+  if (isLiquidado) {
     return (
-      <div className="flex items-center gap-2 bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full border border-blue-100 shadow-sm">
-        <div className="w-1.5 h-1.5 bg-[#0047AB] rounded-full animate-pulse" />
-        <span className="text-[10px] font-black uppercase tracking-[0.15em]">Cuenta en Cobro</span>
+      <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-in zoom-in duration-500">
+        <CheckCircle2 size={14} className="animate-bounce" />
+        <span className="text-[10px] font-black uppercase tracking-[0.15em]">Préstamo Liquidado</span>
       </div>
     );
-  };
+  }
+
+  // 3. CASO: CLIENTE CON MORA ACTIVA O PÉSIMO HISTORIAL (ALTO RIESGO)
+  if (tieneMoraActiva || penalizaciones >= 6) {
+    return (
+      <div className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-1.5 rounded-full border border-red-100 shadow-sm animate-in shake duration-300">
+        <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping" />
+        <span className="text-[10px] font-black uppercase tracking-[0.15em]">
+          Riesgo Crítico ({penalizaciones} Pen.)
+        </span>
+      </div>
+    );
+  }
+
+  // 4. CASO: CLIENTE REGULAR (RETRASOS INTERMITENTES)
+  if (penalizaciones >= 2 && penalizaciones < 6) {
+    return (
+      <div className="flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full border border-amber-100 shadow-sm">
+        <div className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+        <span className="text-[10px] font-black uppercase tracking-[0.15em]">
+          Perfil Regular ({penalizaciones} Pen.)
+        </span>
+      </div>
+    );
+  }
+
+  // 5. CASO: CUENTA EN COBRO NORMAL (EXCELENTE HISTORIAL)
+  return (
+    <div className="flex items-center gap-2 bg-blue-50 text-[#0047AB] px-4 py-1.5 rounded-full border border-blue-100 shadow-sm">
+      <div className="w-1.5 h-1.5 bg-[#0047AB] rounded-full animate-pulse" />
+      <span className="text-[10px] font-black uppercase tracking-[0.15em]">Excelente / En Cobro</span>
+    </div>
+  );
+};
 
   const ClientHealthBadge = ({ count }: { count: number }) => {
     // Lógica de Semáforo: 0 = Excelente, 1-3 = Regular, >3 = Malo
