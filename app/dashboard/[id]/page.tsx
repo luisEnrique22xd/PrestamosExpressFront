@@ -267,11 +267,11 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
     );
   };
 
- 
-<ClientHealthBadge 
-  count={data.conteo_historico_penalizaciones || 0} 
-  tieneMora={data.tiene_moras_activas} 
-/>
+
+  <ClientHealthBadge
+    count={data.conteo_historico_penalizaciones || 0}
+    tieneMora={data.tiene_moras_activas}
+  />
   const mapearPlazo = (cuotas: number, modalidad: string) => {
     const mod = modalidad?.trim().toUpperCase() || '';
 
@@ -455,14 +455,21 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
         {/* RECARGOS */}
         <div className="mt-8">
           <div className="bg-[#050533] p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-900/20">
-            <h4 className="font-black mb-6 uppercase italic text-sky-400">Recargos Activos (1.5%)</h4>
+            <h4 className="font-black mb-6 uppercase italic text-sky-400">Recargos del Crédito (1.5%)</h4>
             <div className="space-y-4 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
               {data.total_penalizaciones > 0 ? (
                 <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-right-4">
                   <div>
-                    <p className="text-[9px] text-red-400 font-black uppercase">Mora Detectada</p>
+                    {/* 🔥 CAMBIO AQUÍ: Texto dinámico según el estado real de la mora */}
+                    <p className={`text-[9px] font-black uppercase ${data.tiene_moras_activas ? 'text-red-400' : 'text-amber-400'}`}>
+                      {data.tiene_moras_activas ? '⚠️ Mora Activa Detectada' : '⏳ Saldo de Recargos Pendiente'}
+                    </p>
                     <p className="text-sm font-bold text-white">${parseFloat(data.total_penalizaciones).toFixed(2)}</p>
-                    <p className="text-[8px] text-slate-400 italic">Recargo por atraso en cuota</p>
+                    <p className="text-[8px] text-slate-400 italic">
+                      {data.tiene_moras_activas
+                        ? 'El cliente presenta un atraso en la cuota actual.'
+                        : 'El cliente va al corriente en cuotas, pero arrastra recargos anteriores.'}
+                    </p>
                   </div>
                   <button
                     onClick={() => {
@@ -477,7 +484,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
               ) : (
                 <div className="flex items-center gap-4 text-emerald-400 py-4 italic font-bold animate-in zoom-in">
                   <CheckCircle2 size={18} />
-                  <span>✓ El cliente está al corriente</span>
+                  <span>✓ El cliente está al corriente y sin recargos</span>
                 </div>
               )}
             </div>
