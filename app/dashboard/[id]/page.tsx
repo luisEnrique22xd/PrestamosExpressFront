@@ -455,7 +455,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
         {/* RECARGOS */}
         <div className="mt-8">
           <div className="bg-[#050533] p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-900/20">
-            <h4 className="font-black mb-6 uppercase italic text-sky-400">Recargos del Crédito (1.5%)</h4>
+            <h4 className="font-black mb-6 uppercase italic text-sky-400">Recargos del Crédito (1%)</h4>
             <div className="space-y-4 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
               {data.total_penalizaciones > 0 ? (
                 <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-right-4">
