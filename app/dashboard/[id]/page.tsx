@@ -198,6 +198,7 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
 
   const handleCondonar = async () => {
     if (motivoCondonacion.length < 10) return lanzarAlerta('error', "⚠️ Justificación muy corta.");
+    if(!selectedPenalizacion?.id) return lanzarAlerta('error', "❌ Error: No se ha seleccionado una penalización válida.");
     try {
       setProcesandoCondonacion(true);
       // Usamos el ID de la mora que seleccionamos al abrir el modal
@@ -471,15 +472,19 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                         : 'El cliente va al corriente en cuotas, pero arrastra recargos anteriores.'}
                     </p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedPenalizacion({ id: data.id_mora_activa, monto_penalizado: data.total_penalizaciones });
-                      setShowCondonarModal(true);
-                    }}
-                    className="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"
-                  >
-                    Condonar
-                  </button>
+                  // 1. Al abrir el modal, pasa como respaldo el ID del préstamo si id_mora_activa es null
+<button
+  onClick={() => {
+    setSelectedPenalizacion({ 
+      id: data.id_mora_activa || data.ultimo_prestamo_id || data.prestamos_activos?.[0]?.id, 
+      monto_penalizado: data.total_penalizaciones 
+    });
+    setShowCondonarModal(true);
+  }}
+  className="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"
+>
+  Condonar
+</button>
                 </div>
               ) : (
                 <div className="flex items-center gap-4 text-emerald-400 py-4 italic font-bold animate-in zoom-in">
