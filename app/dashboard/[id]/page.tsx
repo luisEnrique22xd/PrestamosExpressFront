@@ -381,9 +381,11 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                   {/* Columna 2: Fecha de Emisión y Plazo Pactado */}
                   <div>
                     <p className="text-[9px] font-black text-slate-400 uppercase">Emisión / Plazo</p>
-                    <p className="font-bold text-slate-700 text-[11px]">
-                      {p.fecha_inicio ? new Date(p.fecha_inicio).toLocaleDateString('es-MX', { timeZone: 'UTC' }) : new Date().toLocaleDateString('es-MX')}
-                    </p>
+                   <p className="font-bold text-slate-700 text-[11px]">
+  {p.fecha_inicio
+    ? p.fecha_inicio.split('T')[0].split('-').reverse().join('/')
+    : new Date().toLocaleDateString('es-MX')}
+</p>
                     <p className="text-[10px] font-black text-[#0047AB] uppercase tracking-tighter mt-0.5">
                       {mapearPlazo(p.cuotas, p.modalidad)}
                     </p>
