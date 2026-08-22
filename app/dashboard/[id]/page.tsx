@@ -472,7 +472,6 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                         : 'El cliente va al corriente en cuotas, pero arrastra recargos anteriores.'}
                     </p>
                   </div>
-                  // 1. Al abrir el modal, pasa como respaldo el ID del préstamo si id_mora_activa es null
 <button
   onClick={() => {
     setSelectedPenalizacion({ 
