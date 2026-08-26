@@ -398,6 +398,10 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                       <p className="font-bold text-slate-600 text-[10px] uppercase truncate max-w-[80px]" title={p.aval}>
                         {p.aval || 'Sin Asignar'}
                       </p>
+                      <p className="font-bold text-slate-600 text-[10px] uppercase truncate max-w-[80px]" title={p.numero}>
+                        {p.numero || 'Sin Asignar'}
+                      </p>
+
                       <button
                         onClick={abrirEditarAval}
                         className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors flex-shrink-0"
