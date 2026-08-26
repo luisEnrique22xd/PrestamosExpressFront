@@ -392,24 +392,45 @@ export default function ClienteDashboard({ params: paramsPromise }: { params: Pr
                   </div>
 
                   {/* Columna 3: Aval Responsable */}
-                  <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase">Aval Responsable</p>
-                    <div className="flex items-center gap-1">
-                      <p className="font-bold text-slate-600 text-[10px] uppercase truncate max-w-[80px]" title={p.aval}>
-                        {p.aval || 'Sin Asignar'}
-                      </p>
-                      <p className="font-bold text-slate-600 text-[10px] uppercase truncate max-w-[80px]" title={p.numero}>
-                        {p.numero || 'Sin Asignar'}
-                      </p>
+                  {/* Columna 3: Aval Responsable */}
+<div>
+  <p className="text-[9px] font-black text-slate-400 uppercase">Aval Responsable</p>
+  
+  <div className="flex items-center justify-between gap-1 mt-0.5">
+    <div className="min-w-0 flex-1">
+      {/* Nombre del Aval */}
+      <p 
+        className="font-bold text-slate-700 text-[11px] uppercase truncate block" 
+        title={p.aval || data.datos_ultimo_aval?.nombre_aval}
+      >
+        {p.aval || data.datos_ultimo_aval?.nombre_aval || 'Sin Asignar'}
+      </p>
 
-                      <button
-                        onClick={abrirEditarAval}
-                        className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors flex-shrink-0"
-                      >
-                        <Edit size={11} />
-                      </button>
-                    </div>
-                  </div>
+      {/* Teléfono del Aval */}
+      {(p.telefono_aval || data.datos_ultimo_aval?.telefono_aval) ? (
+        <a
+          href={`tel:${p.telefono_aval || data.datos_ultimo_aval?.telefono_aval}`}
+          className="text-[10px] font-semibold text-slate-500 hover:text-[#0047AB] transition-colors flex items-center gap-1 truncate"
+          title="Llamar al aval"
+        >
+          <Phone size={10} className="shrink-0 text-slate-400" />
+          <span className="truncate">{p.telefono_aval || data.datos_ultimo_aval?.telefono_aval}</span>
+        </a>
+      ) : (
+        <p className="text-[10px] font-semibold text-slate-400 italic">S/N</p>
+      )}
+    </div>
+
+    {/* Botón Editar Aval */}
+    <button
+      onClick={abrirEditarAval}
+      className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors shrink-0"
+      title="Editar datos del aval"
+    >
+      <Edit size={13} />
+    </button>
+  </div>
+</div>
                 </div>
                 <button
                   onClick={() => {
