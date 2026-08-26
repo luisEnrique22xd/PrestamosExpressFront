@@ -48,7 +48,7 @@ export default function UsuarioPage() {
   const fetchTickets = async (pagina = 1, query = '') => {
     try {
       setLoadingTickets(true);
-      let url = `/tickets/?page=${pagina}`;
+      let url = `/usuarios/tickets/?page=${pagina}`;
       if (query) url += `&search=${encodeURIComponent(query)}`;
 
       const res = await api.get(url);
