@@ -248,7 +248,7 @@ export default function ProyeccionPage() {
                   <input placeholder="Tel. Aval 1" value={telefonoAval} onChange={e => setTelefonoAval(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-emerald-50 focus:ring-2 focus:ring-emerald-500 font-bold text-xs" />
               </div>
 
-              {monto >= 7500 && (
+              {monto >= 7501 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t-2 border-dashed border-purple-100 pt-4 animate-in slide-in-from-top duration-300">
                       <div className="col-span-2">
                           <p className="text-[8px] font-black text-purple-500 uppercase tracking-[0.2em] mb-2 ml-2">Aval Solidario Requerido (Monto &gt; 7.5k)</p>
