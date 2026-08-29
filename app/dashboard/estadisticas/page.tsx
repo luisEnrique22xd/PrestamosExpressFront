@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { BarChart3, Loader2, Landmark, Percent, Wallet, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import api from '@/lib/api';
-import { exportToExcel, exportToPDF } from '@/lib/generateStatsReport';
+import { exportToExcel } from '@/lib/generateStatsReport';
 import { exportCashFlowToExcel, exportCashFlowToPDF } from '@/lib/generateCashFlow';
 
 const COLORS = {
@@ -295,12 +295,12 @@ export default function EstadisticasPage() {
             >
               <Wallet size={16} /> Exportar Excel
             </button>
-            <button
+            {/* <button
               onClick={() => exportToPDF(statsGenerales, dataGrafica)}
               className="flex items-center justify-center gap-3 bg-white text-slate-700 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-slate-200 hover:bg-slate-50 hover:-translate-y-1 transition-all shadow-sm w-full"
             >
               <Landmark size={16} /> Reporte PDF
-            </button>
+            </button> */}
           </div>
         </div>
 
