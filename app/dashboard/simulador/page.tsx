@@ -325,8 +325,8 @@ export default function ProyeccionPage() {
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Modalidad</label>
                 <select value={modalidad} onChange={e => setModalidad(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-slate-600 outline-none">
                   <option value="semanal">Semanal {esUrgente ? '3.75%' : '2.5%'}</option>
-                  <option value="quincenal">Quincenal {esUrgente ? '7.5%' : '5.0%'}</option>
-                  <option value="mensual">Mensual {esUrgente ? '15.0%' : '10.0%'}</option>
+                  <option value="quincenal">Quincenal {esUrgente ? '7.5%' : '6.25%'}</option>
+                  <option value="mensual">Mensual {esUrgente ? '15.0%' : '15.0%'}</option>
                 </select>
               </div>
               <div className="space-y-1">
