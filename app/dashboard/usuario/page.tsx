@@ -466,31 +466,126 @@ export default function UsuarioPage() {
                 Cargando recibos...
               </div>
             ) : tickets.map((pago: any) => (
-              <div key={pago.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-[2.2rem] border border-transparent hover:border-purple-200 transition-all group relative overflow-hidden">
-                <div className="absolute -right-2 -bottom-2 opacity-[0.03] text-slate-900 rotate-12"><Printer size={80} /></div>
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex flex-col items-center justify-center shadow-sm font-black transition-colors group-hover:bg-purple-600 group-hover:text-white shrink-0">
-                    <span className="text-[8px] uppercase opacity-50">Sem</span>
-                    <span className="text-xl leading-none">{pago.semana_numero}</span>
-                  </div>
-                  <div>
-                    <p className="font-black text-slate-800 text-xs uppercase tracking-tighter truncate max-w-[140px]">{pago.cliente}</p>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase">{pago.fecha} {pago.hora && `• ${pago.hora}`}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="text-right">
-                    <span className="text-lg font-black text-emerald-600 block leading-none">
-                      ${pago.monto?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter italic">ID #{pago.id}</span>
-                  </div>
-                  <button onClick={() => handleReimprimir(pago)} className="p-4 bg-white text-slate-300 hover:text-emerald-500 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-90 shrink-0 border border-slate-100" title="Reimprimir Comprobante">
-                    <Printer size={18} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              <div
+                key={pago.id}
+                className="
+                  flex flex-col sm:flex-row
+                  sm:items-center sm:justify-between
+                  gap-4
+      p-4 sm:p-6
+      bg-slate-50
+      rounded-[2.2rem]
+      border border-transparent
+      hover:border-purple-200
+      transition-all
+      group
+      relative
+      overflow-hidden
+    "
+  >
+    {/* DECORACIÓN */}
+    <div className="absolute -right-2 -bottom-2 opacity-[0.03] text-slate-900 rotate-12 pointer-events-none">
+      <Printer size={80} />
+    </div>
+
+    {/* INFORMACIÓN DEL CLIENTE */}
+    <div className="flex items-center gap-4 relative z-10 min-w-0 w-full sm:w-auto">
+
+      <div
+        className="
+          w-14 h-14
+          bg-purple-100
+          text-purple-600
+          rounded-2xl
+          flex flex-col
+          items-center
+          justify-center
+          shadow-sm
+          font-black
+          transition-colors
+          group-hover:bg-purple-600
+          group-hover:text-white
+          shrink-0
+        "
+      >
+        <span className="text-[8px] uppercase opacity-50">
+          Sem
+        </span>
+
+        <span className="text-xl leading-none">
+          {pago.semana_numero}
+        </span>
+      </div>
+
+      <div className="min-w-0">
+        <p className="font-black text-slate-800 text-xs uppercase tracking-tighter truncate max-w-[180px] sm:max-w-[140px]">
+          {pago.cliente}
+        </p>
+
+        <p className="text-[9px] text-slate-400 font-bold uppercase truncate">
+          {pago.fecha}
+          {pago.hora && ` • ${pago.hora}`}
+        </p>
+      </div>
+
+    </div>
+
+    {/* MONTO + BOTÓN */}
+    <div
+      className="
+        flex
+        items-center
+        justify-between
+        sm:justify-end
+        gap-3
+        relative
+        z-10
+        w-full
+        sm:w-auto
+      "
+    >
+
+      <div className="text-left sm:text-right min-w-0">
+        <span className="text-lg font-black text-emerald-600 block leading-none whitespace-nowrap">
+          ${pago.monto?.toLocaleString('es-MX', {
+            minimumFractionDigits: 2
+          })}
+        </span>
+
+        <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter italic">
+          ID #{pago.id}
+        </span>
+      </div>
+
+      {/* BOTÓN REIMPRIMIR */}
+      <button
+        type="button"
+        onClick={() => handleReimprimir(pago)}
+        className="
+          p-4
+          bg-white
+          text-slate-300
+          hover:text-emerald-500
+          rounded-2xl
+          shadow-sm
+          hover:shadow-md
+          transition-all
+          active:scale-90
+          shrink-0
+          border
+          border-slate-100
+        "
+        title="Reimprimir Comprobante"
+        aria-label={`Reimprimir comprobante ${pago.id}`}
+      >
+        <Printer size={18} />
+      </button>
+
+    </div>
+
+  </div>
+))}
+            
 
             {!loadingTickets && tickets.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center py-16 opacity-30 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100">
