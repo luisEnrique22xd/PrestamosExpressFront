@@ -485,7 +485,7 @@ export default function UsuarioPage() {
                     </span>
                     <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter italic">ID #{pago.id}</span>
                   </div>
-                  <button onClick={() => handleReimprimir(pago)} className="p-4 bg-white text-slate-300 hover:text-emerald-500 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-90" title="Reimprimir Comprobante">
+                  <button onClick={() => handleReimprimir(pago)} className="p-4 bg-white text-slate-300 hover:text-emerald-500 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-90 shrink-0 border border-slate-100" title="Reimprimir Comprobante">
                     <Printer size={18} />
                   </button>
                 </div>
