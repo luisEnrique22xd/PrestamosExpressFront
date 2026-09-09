@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   DollarSign, ArrowRight, Search, TrendingUp,
   Users, Wallet, Calendar, ArrowUpRight, Loader2,
-  Activity, AlertCircle
+  Activity, AlertCircle, CheckCircle2, ShieldAlert, FileText
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -189,14 +189,48 @@ export default function GlobalDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Moras por Recuperar"
-          value={`${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={AlertCircle}
-          color="#DC2626"
-        />
-      </div>
+      <div className="space-y-3">
+  <div className="flex items-center gap-2 px-2">
+    <ShieldAlert size={16} className="text-[#0047AB]" />
+    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest italic">
+      Balance de Penalizaciones y Recargos
+    </h3>
+  </div>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    {/* 1. Total Histórico */}
+    <StatCard
+      title="Total Penalizaciones"
+      value={`$${(resumen?.total_penalizaciones_historicas || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+      icon={FileText}
+      color="#0047AB"
+    />
+
+    {/* 2. Cobradas */}
+    <StatCard
+      title="Penalizaciones Cobradas"
+      value={`$${(resumen?.penalizaciones_cobradas || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+      icon={CheckCircle2}
+      color="#10B981"
+    />
+
+    {/* 3. Condonadas */}
+    <StatCard
+      title="Penalizaciones Condonadas"
+      value={`$${(resumen?.penalizaciones_condonadas || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+      icon={TrendingUp}
+      color="#F59E0B"
+    />
+
+    {/* 4. Moras Pendientes */}
+    <StatCard
+      title="Moras por Recuperar"
+      value={`$${(resumen?.total_moras_pendientes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+      icon={AlertCircle}
+      color="#DC2626"
+    />
+  </div>
+</div>
 
       {/* GRÁFICA Y CONCENTRACIÓN */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
