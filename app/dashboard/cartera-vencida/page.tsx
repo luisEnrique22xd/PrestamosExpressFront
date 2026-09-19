@@ -60,11 +60,16 @@ export default function CarteraVencidaPage() {
     const motivo = window.prompt(`¿Por qué condonas la mora de ${nombre}? (Mín. 10 carac.)`);
     if (!motivo || motivo.length < 10) return lanzarAlerta('error', "❌ Motivo inválido.");
     try {
-      // Ajustamos a la ruta de condonación basada en el préstamo si es necesario
-      await api.post(`/condonar-mora/${idPrestamo}/`, { motivo });
+      // ✅ Ruta corregida coincidiendo con tu backend:
+      await api.post(`/penalizaciones/${idPrestamo}/condonar/`, { motivo });
+      
       lanzarAlerta('success', "✅ Condonación exitosa.");
       fetchCartera();
-    } catch (e) { lanzarAlerta('error', "❌ Error al procesar condonación."); }
+    } catch (e: any) { 
+      console.error('Error al condonar:', e);
+      const msg = e.response?.data?.error || "❌ Error al procesar condonación.";
+      lanzarAlerta('error', msg); 
+    }
   };
 
   if (loading) return (
