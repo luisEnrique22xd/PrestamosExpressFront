@@ -57,20 +57,24 @@ export default function CarteraVencidaPage() {
   const deudoresActuales = deudoresFiltrados.slice((currentPage - 1) * itemsPorPagina, currentPage * itemsPorPagina);
 
   const condonarMora = async (idPrestamo: number, nombre: string) => {
-    const motivo = window.prompt(`¿Por qué condonas la mora de ${nombre}? (Mín. 10 carac.)`);
-    if (!motivo || motivo.length < 10) return lanzarAlerta('error', "❌ Motivo inválido.");
-    try {
-      // ✅ Ruta corregida coincidiendo con tu backend:
-      await api.post(`/penalizaciones/${idPrestamo}/condonar/`, { motivo });
-      
-      lanzarAlerta('success', "✅ Condonación exitosa.");
-      fetchCartera();
-    } catch (e: any) { 
-      console.error('Error al condonar:', e);
-      const msg = e.response?.data?.error || "❌ Error al procesar condonación.";
-      lanzarAlerta('error', msg); 
-    }
-  };
+  const motivo = window.prompt(`¿Por qué condonas la mora de ${nombre}? (Mín. 10 carac.)`);
+  if (!motivo || motivo.trim().length < 10) {
+    return lanzarAlerta('error', "❌ Motivo inválido (mínimo 10 caracteres).");
+  }
+
+  try {
+    // Apunta al endpoint correcto registrado en urls.py
+    await api.post(`/penalizaciones/${idPrestamo}/condonar/`, { motivo });
+    
+    lanzarAlerta('success', "✅ Condonación realizada con éxito.");
+    setExpandedId(null); // Plegar el detalle tras la acción
+    await fetchCartera(); // Recargar cartera
+  } catch (e: any) { 
+    console.error('Error al condonar:', e);
+    const msg = e.response?.data?.error || e.response?.data?.message || "❌ Error al procesar condonación.";
+    lanzarAlerta('error', msg); 
+  }
+};
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
