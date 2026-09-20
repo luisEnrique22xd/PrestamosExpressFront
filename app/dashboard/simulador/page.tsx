@@ -151,7 +151,7 @@ export default function ProyeccionPage() {
   const exportarDocumentacion = async () => {
     setLoading(true);
     try {
-      if (monto >= 7500 && (!nombreAval2 || !telefonoAval2)) {
+      if (monto > 7500 && (!nombreAval2 || !telefonoAval2)) {
         lanzarAlerta('error', "❌ Para montos > $7,500 se requieren los datos del Segundo Aval.");
         setLoading(false);
         return;
